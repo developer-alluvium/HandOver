@@ -25,6 +25,7 @@ import {
 import "../styles/VGM.scss";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import ImagePreview from "../gallery/ImagePreview.jsx";
 
 
 // --- Helper Components ---
@@ -194,6 +195,21 @@ const VGMForm = ({
             payload.shipRegNo = values.shipRegNo;
           }
         
+        // Convert DD-MM-YYYY HH:MM:SS to YYYY-MM-DD HH:MM:SS for backend
+        if (values.weighBridgeWtTs) {
+          const ddmmyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;
+          const match = values.weighBridgeWtTs.match(ddmmyyyyPattern);
+          
+          if (match) {
+            const [, day, month, year, hour, minute, second] = match;
+            payload.weighBridgeWtTs = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+            console.log('Date converted for backend:', payload.weighBridgeWtTs);
+          } else {
+            // If already in YYYY-MM-DD format or other format, keep as-is
+            payload.weighBridgeWtTs = values.weighBridgeWtTs;
+          }
+        }
+
 
         if (attachments.length > 0) payload.vgmWbAttList = attachments;
 
@@ -343,19 +359,32 @@ const VGMForm = ({
     });
     setFormValues(newValues);
 
-    // if (requestBody.vgmWbAttList) setAttachments(requestBody.vgmWbAttList);
-    // enqueueSnackbar("Form pre-filled with existing data", { variant: "info" });
+    if (requestBody.vgmWbAttList) setAttachments(requestBody.vgmWbAttList);
+    enqueueSnackbar("Form pre-filled with existing data", { variant: "info" });
   };
 
   const loadExistingBooking = async (vgmId) => {
     try {
       setLoading(true);
       const response = await vgmAPI.getRequestById(vgmId);
-      prefillForm(response.data);
+      
+      // Determine the object to modify (handle potential nested structure)
+      // We modify the data in memory before passing to prefillForm
+      const responseData = response.data;
+      const targetBody = responseData.request?.body || responseData;
+
+      // Clear specific fields as requested
+      targetBody.cntnrNo = "";
+      targetBody.cscPlateMaxWtLimit = "";
+      targetBody.tareWt = "";
+      targetBody.totWt = "";
+
+      prefillForm(responseData);
       enqueueSnackbar("Form data copied from existing booking.", {
         variant: "success",
       });
     } catch (error) {
+      console.error(error);
       enqueueSnackbar("Failed to load existing booking details", {
         variant: "error",
       });
@@ -889,7 +918,6 @@ const VGMForm = ({
                 name="weighBridgeRegNo"
                 required
               />
-              <InputField label="Slip No" name="weighBridgeSlipNo" required />
               <InputField
                 label="Address Line 1"
                 name="weighBridgeAddrLn1"
@@ -898,43 +926,48 @@ const VGMForm = ({
               <InputField label="Address Line 2" name="weighBridgeAddrLn2" />
               <InputField label="Address Line 3" name="weighBridgeAddrLn3" />
 
+                            <InputField label="Slip No" name="weighBridgeSlipNo" required />
+
+
               {/* DateTime Input */}
               <div className="form-group">
                 <label>
                   Date & Time of Weighing <span className="required">*</span>
                 </label>
+           
 
                 <input
-                  type="datetime-local"
+                  type="text"
                   name="weighBridgeWtTs"
-                  /* 1. HIGHLIGHT LOGIC: This adds a red border if touched + error exists */
+                  placeholder="12-12-2025 14:30:00"
                   className={`form-control ${
                     formik.touched.weighBridgeWtTs &&
                     formik.errors.weighBridgeWtTs
-                      ? "is-invalid"
+                      ? "error"
                       : ""
                   }`}
-                  /* 2. STYLE FALLBACK: If 'is-invalid' class doesn't exist in your CSS, this forces the red border */
-                  style={
-                    formik.touched.weighBridgeWtTs &&
-                    formik.errors.weighBridgeWtTs
-                      ? { borderColor: "#dc3545" }
-                      : {}
-                  }
-                  /* 3. TRIGGER: onBlur is required to trigger validation when leaving the field */
                   onBlur={formik.handleBlur}
-                  value={
-                    formik.values.weighBridgeWtTs
-                      ? formik.values.weighBridgeWtTs
-                          .replace(" ", "T")
-                          .slice(0, 16)
-                      : ""
-                  }
+                  value={formik.values.weighBridgeWtTs || ""}
                   onChange={(e) => {
-                    const val = e.target.value
-                      ? e.target.value.replace("T", " ") + ":00"
-                      : "";
-                    formik.setFieldValue("weighBridgeWtTs", val);
+                    // Just store the value as-is, no conversion
+                    formik.setFieldValue("weighBridgeWtTs", e.target.value);
+                  }}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text').trim();
+                    console.log('Pasted datetime:', pastedText);
+                    
+                    setTimeout(() => {
+                      let val = e.target.value.trim();
+                      
+                      // Auto-add seconds if missing (DD-MM-YYYY HH:MM)
+                      if (val && val.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/)) {
+                        formik.setFieldValue("weighBridgeWtTs", val + ":00");
+                      }
+                      // Auto-add seconds if missing (YYYY-MM-DD HH:MM) - legacy support
+                      else if (val && val.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)) {
+                        formik.setFieldValue("weighBridgeWtTs", val + ":00");
+                      }
+                    }, 0);
                   }}
                 />
 
@@ -973,45 +1006,65 @@ const VGMForm = ({
                     fontSize: "0.9rem",
                   }}
                 >
+                  {type.label}
                 </div>
 
                 {/* CONTROLS SECTION */}
                 <div className="d-flex align-items-center">
-                  {/* 1. File Name Text (Added marginRight) */}
-                  <div className="file-name" style={{ marginRight: "15px" }}>
-                    {attachments.find((a) => a.attTitle === type.value)
-                      ?.attNm || "No file chosen"}
-                  </div>
-
-                  {/* 2. Choose File Button (Added marginRight) */}
-                  <label
-                    className="btn btn-sm btn-outline"
-                    style={{ marginBottom: 0, marginRight: "10px" }}
-                  >
-                    Choose File
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      hidden
-                      onChange={(e) => handleFileUpload(e, type.value)}
-                    />
-                  </label>
-
-                  {/* 3. Remove Button */}
-                  {attachments.find((a) => a.attTitle === type.value) && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger-outline"
-                      onClick={() =>
-                        removeAttachment(
-                          attachments.findIndex(
-                            (a) => a.attTitle === type.value
-                          )
-                        )
-                      }
+                  
+                  {/* 2. Choose File Button (Hide if file exists to rely on ImagePreview delete for clearing) */}
+                  {!attachments.find((a) => a.attTitle === type.value) && (
+                    <label
+                      className="btn btn-sm btn-outline"
+                      style={{ marginBottom: 0, marginRight: "10px" }}
                     >
-                      Remove
-                    </button>
+                      Choose File
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        hidden
+                        onChange={(e) => handleFileUpload(e, type.value)}
+                      />
+                    </label>
+                  )}
+
+                  {/* 3. Image Preview with Delete Dialog */}
+                  {attachments.find((a) => a.attTitle === type.value) && (
+                     <div style={{ flex: 1 }}>
+                       <ImagePreview
+                        images={[
+                          {
+                            url: (() => {
+                              const att = attachments.find((a) => a.attTitle === type.value);
+                              if (!att) return "";
+                              
+                              // Check for common URL fields if attData is base64 or missing
+                              const possibleUrl = att.url || att.path || att.s3Url || att.link;
+                              if (possibleUrl && (possibleUrl.startsWith("http") || possibleUrl.startsWith("/"))) {
+                                  return possibleUrl;
+                              }
+
+                              // Strict check: if attData is a URL
+                              if (att.attData && (att.attData.startsWith("http") || att.attData.startsWith("https"))) {
+                                  return att.attData;
+                              }
+                              // Otherwise behave as base64 (local upload)
+                              return `data:application/pdf;base64,${att.attData}`;
+                            })(),
+                            name: attachments.find(
+                              (a) => a.attTitle === type.value
+                            ).attNm,
+                          },
+                        ]}
+                        onDeleteImage={() =>
+                          removeAttachment(
+                            attachments.findIndex(
+                              (a) => a.attTitle === type.value
+                            )
+                          )
+                        }
+                      />
+                     </div>
                   )}
                 </div>
               </div>
