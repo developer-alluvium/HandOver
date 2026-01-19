@@ -1,12 +1,13 @@
 // server/src/controllers/apiLogController.js
 import { ApiLogger } from "../services/apiLogger.js";
 import ApiLog from "../models/ApiLog.js";
+import config from "../config.js";
 
 export const submitVGM = async (req, res) => {
   try {
     // Don't forward all headers from client - create clean headers
     const requestData = {
-      url: "https://staging.odexglobal.com/RS/iVGMService/json/saveVgmWb",
+      url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,7 +82,7 @@ export const getVGMStatus = async (req, res) => {
 export const getAuthorization = async (req, res) => {
   try {
     const requestData = {
-      url: "https://staging.odexglobal.com/RS/iVGMService/json/getVGMAccessInfo",
+      url: `${config.odex.baseUrl}/RS/iVGMService/json/getVGMAccessInfo`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -16,13 +16,13 @@ export const form13API = {
   submitForm13: async (formData) => {
     try {
       const response = await api.post(`${FORM13_BASE_URL}/submit`, formData);
-      
+
       // Handle ODeX API response structure
       if (response.data.responseMessage && response.data.responseMessage !== "Success") {
         // This is an ODeX error response
         throw new Error(response.data.responseMessage);
       }
-      
+
       // If we have odexRefNo, it's successful
       if (response.data.odexRefNo) {
         return {
@@ -31,7 +31,7 @@ export const form13API = {
           odexRefNo: response.data.odexRefNo
         };
       }
-      
+
       return response;
     } catch (error) {
       // Enhanced error handling for ODeX responses
@@ -49,6 +49,10 @@ export const form13API = {
   // Form 13 Cancellation API - Calls actual ODeX API
   cancelForm13: (cancelData) =>
     api.post(`${FORM13_BASE_URL}/cancel`, cancelData),
+
+  // Get previous entry for copying data
+  getPreviousEntry: (searchData) =>
+    api.post(`${FORM13_BASE_URL}/search-previous`, searchData),
 
   // Get hashkey from backend
   getHashKey: (hashData) => api.post(`${FORM13_BASE_URL}/hashkey`, hashData),

@@ -45,9 +45,8 @@ const InputField = ({
       <input
         type={type}
         name={name}
-        className={`form-control ${
-          formik.touched[name] && formik.errors[name] ? "error" : ""
-        }`}
+        className={`form-control ${formik.touched[name] && formik.errors[name] ? "error" : ""
+          }`}
         value={formik.values[name]}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
@@ -69,9 +68,8 @@ const SelectField = ({ label, name, options, required = false, ...props }) => {
       </label>
       <select
         name={name}
-        className={`form-control ${
-          formik.touched[name] && formik.errors[name] ? "error" : ""
-        }`}
+        className={`form-control ${formik.touched[name] && formik.errors[name] ? "error" : ""
+          }`}
         value={formik.values[name]}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
@@ -171,8 +169,7 @@ const VGMForm = ({
       }
       setLoading(true);
       try {
-        const payload = { ...values,     shipperTp: "S"  // Override regardless of selection
-};
+        ;
         // Manual Transformations
         payload.cscPlateMaxWtLimit = values.cscPlateMaxWtLimit?.toString();
         payload.totWt = values.totWt?.toString();
@@ -187,19 +184,19 @@ const VGMForm = ({
           payload.tareWt = values.tareWt?.toString();
         }
 
-      
-          if (values.shipId) payload.shipId = values.shipId;
-          else {
-            payload.shipperNm = values.shipperNm;
-            payload.shipRegTP = values.shipRegTP;
-            payload.shipRegNo = values.shipRegNo;
-          }
-        
+
+        if (values.shipId) payload.shipId = values.shipId;
+        else {
+          payload.shipperNm = values.shipperNm;
+          payload.shipRegTP = values.shipRegTP;
+          payload.shipRegNo = values.shipRegNo;
+        }
+
         // Convert DD-MM-YYYY HH:MM:SS to YYYY-MM-DD HH:MM:SS for backend
         if (values.weighBridgeWtTs) {
           const ddmmyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;
           const match = values.weighBridgeWtTs.match(ddmmyyyyPattern);
-          
+
           if (match) {
             const [, day, month, year, hour, minute, second] = match;
             payload.weighBridgeWtTs = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
@@ -367,7 +364,7 @@ const VGMForm = ({
     try {
       setLoading(true);
       const response = await vgmAPI.getRequestById(vgmId);
-      
+
       // Determine the object to modify (handle potential nested structure)
       // We modify the data in memory before passing to prefillForm
       const responseData = response.data;
@@ -417,13 +414,13 @@ const VGMForm = ({
       console.log('[BOOKING CHECK] Skipped - missing data:', { currentBookNo, currentLinerId });
       return;
     }
-    
+
     // Prevent duplicate checks if already checking
     if (checkingBookingRef.current) {
       console.log('[BOOKING CHECK] Skipped - already checking');
       return;
     }
-    
+
     // Skip if we already checked this exact combination
     if (
       lastCheckedBookingRef.current.bookNo === currentBookNo &&
@@ -436,10 +433,10 @@ const VGMForm = ({
     try {
       checkingBookingRef.current = true;
       lastCheckedBookingRef.current = { bookNo: currentBookNo, linerId: currentLinerId };
-      
+
       console.log('[BOOKING CHECK] Starting API call at:', new Date().toISOString());
       const startTime = performance.now();
-      
+
       // Use exact matching to prevent partial matches
       const response = await vgmAPI.getRequests({
         bookingNo: currentBookNo,
@@ -447,25 +444,25 @@ const VGMForm = ({
         limit: 5,
         exactMatch: true, // Only match exact booking numbers
       });
-      
+
       const endTime = performance.now();
       console.log(`[BOOKING CHECK] API call completed in ${(endTime - startTime).toFixed(2)}ms`);
-      
+
       if (response.data && response.data.requests && response.data.requests.length > 0) {
         // Filter out current ID if in edit mode
-        const validRequests = response.data.requests.filter(r => 
+        const validRequests = response.data.requests.filter(r =>
           !isEditMode || (requestData && (r.vgmId !== requestData._id && r.vgmId !== requestData.vgmId))
         );
 
         if (validRequests.length > 0) {
-           const match = validRequests[0];
-           console.log('[BOOKING CHECK] Match found, showing notification at:', new Date().toISOString());
-           
-           // Close any existing persistent snackbars to prevent maxSnack warning
-           closeSnackbar();
-           
-           // Show notification immediately (removed delay)
-           enqueueSnackbar(
+          const match = validRequests[0];
+          console.log('[BOOKING CHECK] Match found, showing notification at:', new Date().toISOString());
+
+          // Close any existing persistent snackbars to prevent maxSnack warning
+          closeSnackbar();
+
+          // Show notification immediately (removed delay)
+          enqueueSnackbar(
             "Booking information for this Shipping Line and Booking No. exists. Do you wish to copy here?",
             {
               variant: "default",
@@ -475,53 +472,53 @@ const VGMForm = ({
                 horizontal: 'center',
               },
               content: (key, message) => (
-                 <div style={{
-                    backgroundColor: '#333',
-                    color: '#fff',
-                    padding: '12px 24px',
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    boxShadow: '0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12)',
-                    maxWidth: '600px',
-                    fontSize: '0.95rem'
-                 }}>
-                    <div style={{ flex: 1 }}>{message}</div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                            onClick={() => {
-                                closeSnackbar(key);
-                                loadExistingBooking(match.vgmId);
-                            }}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#90caf9',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                padding: '4px 8px',
-                                textTransform: 'uppercase'
-                            }}
-                        >
-                            Yes
-                        </button>
-                        <button 
-                             onClick={() => closeSnackbar(key)}
-                             style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#f48fb1',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                padding: '4px 8px',
-                                textTransform: 'uppercase'
-                             }}
-                        >
-                            No
-                        </button>
-                    </div>
-                 </div>
+                <div style={{
+                  backgroundColor: '#333',
+                  color: '#fff',
+                  padding: '12px 24px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  boxShadow: '0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12)',
+                  maxWidth: '600px',
+                  fontSize: '0.95rem'
+                }}>
+                  <div style={{ flex: 1 }}>{message}</div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => {
+                        closeSnackbar(key);
+                        loadExistingBooking(match.vgmId);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#90caf9',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        textTransform: 'uppercase'
+                      }}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => closeSnackbar(key)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#f48fb1',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        textTransform: 'uppercase'
+                      }}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
               )
             }
           );
@@ -613,17 +610,14 @@ const VGMForm = ({
       [
         "8",
         "Weighbridge registration no. & Address of Weighbridge",
-        `${values.weighBridgeRegNo || ""}\n${
-          values.weighBridgeAddrLn1 || ""
-        }, ${values.weighBridgeAddrLn2 || ""}, ${
-          values.weighBridgeAddrLn3 || ""
+        `${values.weighBridgeRegNo || ""}\n${values.weighBridgeAddrLn1 || ""
+        }, ${values.weighBridgeAddrLn2 || ""}, ${values.weighBridgeAddrLn3 || ""
         }`,
       ],
       [
         "9",
         "Verified gross mass of container (Method-1/Method-2)",
-        `${values.totWt || ""} ${values.totWtUom || ""} (${
-          values.vgmEvalMethod === "M1" ? "METHOD-1" : "METHOD-2"
+        `${values.totWt || ""} ${values.totWtUom || ""} (${values.vgmEvalMethod === "M1" ? "METHOD-1" : "METHOD-2"
         })`,
       ],
       [
@@ -700,9 +694,9 @@ const VGMForm = ({
               />
               {/* <InputField label="Vessel Name" name="vesselNm" />
               <InputField label="Voyage Number" name="voyageNo" /> */}
-              <InputField 
-                label="Booking Number" 
-                name="bookNo" 
+              <InputField
+                label="Booking Number"
+                name="bookNo"
                 required
                 onChange={(e) => {
                   formik.handleChange(e);
@@ -745,34 +739,34 @@ const VGMForm = ({
                 required
               />
 
-       
+
+              <>
                 <>
-                    <>
-                      <InputField
-                        label="Shipper Name"
-                        name="shipperNm"
-                        required
-                                               disabled={formik.values.shipperTp === "O"}
+                  <InputField
+                    label="Shipper Name"
+                    name="shipperNm"
+                    required
+                    disabled={formik.values.shipperTp === "S"}
 
-                      />
-                      <SelectField
-                        label="Reg Type"
-                        name="shipRegTP"
-                        options={REGISTRATION_TYPES}
-                        required
-                                               disabled={formik.values.shipperTp === "O"}
+                  />
+                  <SelectField
+                    label="Reg Type"
+                    name="shipRegTP"
+                    options={REGISTRATION_TYPES}
+                    required
+                    disabled={formik.values.shipperTp === "S"}
 
-                      />
-                      <InputField
-                        label="Reg Number"
-                        name="shipRegNo"
-                        required
-                                               disabled={formik.values.shipperTp === "O"}
+                  />
+                  <InputField
+                    label="Reg Number"
+                    name="shipRegNo"
+                    required
+                    disabled={formik.values.shipperTp === "S"}
 
-                      />
-                    </>
+                  />
                 </>
-              
+              </>
+
             </div>
 
             <div className="form-grid mt-4">
@@ -926,7 +920,7 @@ const VGMForm = ({
               <InputField label="Address Line 2" name="weighBridgeAddrLn2" />
               <InputField label="Address Line 3" name="weighBridgeAddrLn3" />
 
-                            <InputField label="Slip No" name="weighBridgeSlipNo" required />
+              <InputField label="Slip No" name="weighBridgeSlipNo" required />
 
 
               {/* DateTime Input */}
@@ -934,18 +928,17 @@ const VGMForm = ({
                 <label>
                   Date & Time of Weighing <span className="required">*</span>
                 </label>
-           
+
 
                 <input
                   type="text"
                   name="weighBridgeWtTs"
                   placeholder="12-12-2025 14:30:00"
-                  className={`form-control ${
-                    formik.touched.weighBridgeWtTs &&
-                    formik.errors.weighBridgeWtTs
+                  className={`form-control ${formik.touched.weighBridgeWtTs &&
+                      formik.errors.weighBridgeWtTs
                       ? "error"
                       : ""
-                  }`}
+                    }`}
                   onBlur={formik.handleBlur}
                   value={formik.values.weighBridgeWtTs || ""}
                   onChange={(e) => {
@@ -955,10 +948,10 @@ const VGMForm = ({
                   onPaste={(e) => {
                     const pastedText = e.clipboardData.getData('text').trim();
                     console.log('Pasted datetime:', pastedText);
-                    
+
                     setTimeout(() => {
                       let val = e.target.value.trim();
-                      
+
                       // Auto-add seconds if missing (DD-MM-YYYY HH:MM)
                       if (val && val.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/)) {
                         formik.setFieldValue("weighBridgeWtTs", val + ":00");
@@ -1011,7 +1004,7 @@ const VGMForm = ({
 
                 {/* CONTROLS SECTION */}
                 <div className="d-flex align-items-center">
-                  
+
                   {/* 2. Choose File Button (Hide if file exists to rely on ImagePreview delete for clearing) */}
                   {!attachments.find((a) => a.attTitle === type.value) && (
                     <label
@@ -1030,23 +1023,23 @@ const VGMForm = ({
 
                   {/* 3. Image Preview with Delete Dialog */}
                   {attachments.find((a) => a.attTitle === type.value) && (
-                     <div style={{ flex: 1 }}>
-                       <ImagePreview
+                    <div style={{ flex: 1 }}>
+                      <ImagePreview
                         images={[
                           {
                             url: (() => {
                               const att = attachments.find((a) => a.attTitle === type.value);
                               if (!att) return "";
-                              
+
                               // Check for common URL fields if attData is base64 or missing
                               const possibleUrl = att.url || att.path || att.s3Url || att.link;
                               if (possibleUrl && (possibleUrl.startsWith("http") || possibleUrl.startsWith("/"))) {
-                                  return possibleUrl;
+                                return possibleUrl;
                               }
 
                               // Strict check: if attData is a URL
                               if (att.attData && (att.attData.startsWith("http") || att.attData.startsWith("https"))) {
-                                  return att.attData;
+                                return att.attData;
                               }
                               // Otherwise behave as base64 (local upload)
                               return `data:application/pdf;base64,${att.attData}`;
@@ -1064,7 +1057,7 @@ const VGMForm = ({
                           )
                         }
                       />
-                     </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1104,8 +1097,8 @@ const VGMForm = ({
                 {loading
                   ? "Processing..."
                   : isEditMode
-                  ? "Update VGM"
-                  : "Submit VGM"}
+                    ? "Update VGM"
+                    : "Submit VGM"}
               </button>
             </div>
           </div>

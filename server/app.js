@@ -10,6 +10,8 @@ import apiLogRoutes from "./routes/apiLogRoutes.js";
 import form13 from "./routes/form13.js";
 import handleS3Deletion from "./routes/handleS3Deletion.js";
 
+import config from "./config.js";
+
 const app = express();
 
 // Middleware
@@ -17,7 +19,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: [
-      process.env.CLIENT_URL || "http://localhost:3000",
+      config.clientUrl,
       "https://8c749e4308c4.ngrok-free.app",
       "http://3.108.244.38:3000",
       "http://eximdev.s3-website.ap-south-1.amazonaws.com",
@@ -45,8 +47,7 @@ app.get("/health", (req, res) => {
 });
 
 // MongoDB connection with better error handling
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/handover";
+const MONGODB_URI = config.mongodbUri;
 
 mongoose
   .connect(MONGODB_URI, {

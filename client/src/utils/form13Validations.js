@@ -670,22 +670,22 @@ export const ATTACHMENT_REQUIREMENTS = {
 // In your validation utils (form13Validations.js)
 export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
   const alwaysRequired = [
-    'locId', 'bnfCode', 'vesselNm', 'pod', 'cargoTp', 'origin',
-    'cntnrStatus', 'mobileNo', 'consigneeNm', 'cntnrNo', 'cntnrSize', 'vgmWt'
+    'locId', 'bnfCode', 'vesselNm', 'viaNo', 'terminalCode', 'service', 'pod', 'cargoTp', 'origin',
+    'bookNo', 'cntnrStatus', 'mobileNo', 'shipperNm', 'consigneeNm', 'cntnrNo', 'cntnrSize', 'vgmWt'
   ];
-  
+
   if (alwaysRequired.includes(fieldName)) {
     return true;
   }
-  
+
   // Conditional requirements
-  switch(fieldName) {
+  switch (fieldName) {
     case 'driverNm':
       return formData.origin === 'CFS';
-      
+
     case 'temp':
       return formData.cargoTp === 'REEFER';
-      
+
     case 'shipBillInvNo':
     case 'shipBillDt':
     case 'chaNm':
@@ -693,8 +693,11 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
     case 'exporterNm':
     case 'exporterIec':
     case 'noOfPkg':
-      return needsNhavashevaCodeValidation(formData);
-      
+      return true; // Usually mandatory for all exports
+
+    case 'leoDt':
+      return !!formData.containers?.[containerIndex]?.sbDtlsVo?.[0]?.leoNo;
+
     default:
       return false;
   }
@@ -903,74 +906,77 @@ export const validateFormData = (formData) => {
   formData.containers.forEach((container, index) => {
     // Always required container fields
     if (!container.cntnrNo?.trim()) {
-      errors[`container_${index}_cntnrNo`] = `Container ${
-        index + 1
-      }: Container No is required`;
+      errors[`container_${index}_cntnrNo`] = `Container ${index + 1
+        }: Container No is required`;
     }
     if (!container.cntnrSize?.trim()) {
-      errors[`container_${index}_cntnrSize`] = `Container ${
-        index + 1
-      }: Container Size is required`;
+      errors[`container_${index}_cntnrSize`] = `Container ${index + 1
+        }: Container Size is required`;
     }
     if (!container.vgmWt || isNaN(parseFloat(container.vgmWt))) {
-      errors[`container_${index}_vgmWt`] = `Container ${
-        index + 1
-      }: VGM Weight is required`;
+      errors[`container_${index}_vgmWt`] = `Container ${index + 1
+        }: VGM Weight is required`;
+    } else if (parseFloat(container.vgmWt) > 999.99) {
+      errors[`container_${index}_vgmWt`] = `Container ${index + 1
+        }: VGM Weight exceeds maximum allowed (999.99 MT). Please enter weight in Metric Tons.`;
     }
 
     // Conditionally required fields
     // Driver Name - only if origin is CFS
     if (formData.origin === "CFS" && !container.driverNm?.trim()) {
-      errors[`container_${index}_driverNm`] = `Container ${
-        index + 1
-      }: Driver Name is required`;
+      errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required`;
+    }
+
+    // Shipping Instruction No - only for MSC
+    if (formData.bnfCode?.toUpperCase() === "MSCU" && !container.shpInstructNo?.trim()) {
+      errors[`container_${index}_shpInstructNo`] = `Container ${index + 1}: Shipping Instruction No is required for MSC`;
+    }
+
+    // Hazardous fields
+    const isHaz = formData.cargoTp?.includes("HAZ") || formData.cargoTp === "HAZ";
+    if (isHaz) {
+      if (!container.imoNo1?.trim()) errors[`container_${index}_imoNo1`] = `Container ${index + 1}: IMO No 1 is required for hazardous cargo`;
+      if (!container.unNo1?.trim()) errors[`container_${index}_unNo1`] = `Container ${index + 1}: UN No 1 is required for hazardous cargo`;
     }
 
     // Temperature - only for reefer cargo
-    if (formData.cargoTp === "REEFER" && !container.temp?.trim()) {
-      errors[`container_${index}_temp`] = `Container ${
-        index + 1
-      }: Temperature is required for reefer cargo`;
+    const isRef = formData.cargoTp?.includes("REF") || formData.cargoTp === "REF";
+    if (isRef && !container.temp?.trim()) {
+      errors[`container_${index}_temp`] = `Container ${index + 1}: Temperature is required for reefer cargo`;
     }
 
-    // Shipping Bill fields - only for specific locations
-    if (needsNhavashevaCodeValidation(formData) && container.sbDtlsVo?.[0]) {
-      const sbDetails = container.sbDtlsVo[0];
+    // ODC dimensions
+    const isOdc = formData.cargoTp?.includes("ODC") || formData.cargoTp === "ODC";
+    if (isOdc) {
+      const dimFields = ["topDimensions", "frontDimensions", "backDimensions", "leftDimensions", "rightDimensions", "odcUnits"];
+      dimFields.forEach(f => {
+        if (!container[f]?.trim()) {
+          errors[`container_${index}_${f}`] = `Container ${index + 1}: ${getFieldLabel(f)} is required for ODC cargo`;
+        }
+      });
+    }
 
-      if (!sbDetails.shipBillInvNo?.trim()) {
-        errors[`container_${index}_shipBillInvNo`] = `Container ${
-          index + 1
-        }: Shipping Bill No is required`;
-      }
-      if (!sbDetails.shipBillDt) {
-        errors[`container_${index}_shipBillDt`] = `Container ${
-          index + 1
-        }: Shipping Bill Date is required`;
-      }
-      if (!sbDetails.chaNm?.trim()) {
-        errors[`container_${index}_chaNm`] = `Container ${
-          index + 1
-        }: CHA Name is required`;
-      }
+    // Special Stow for Nhava Sheva terminals
+    if (isSpecialStowRequired(formData.locId, formData.terminalCode)) {
+      if (!container.spclStow?.trim()) errors[`container_${index}_spclStow`] = `Container ${index + 1}: Special Stow is required`;
+      if (!container.spclStowRemark?.trim()) errors[`container_${index}_spclStowRemark`] = `Container ${index + 1}: Special Stow Remark is required`;
+    }
+
+    // Shipping Bill fields - mandatory if present
+    if (container.sbDtlsVo?.[0]) {
+      const sbDetails = container.sbDtlsVo[0];
+      if (!sbDetails.shipBillInvNo?.trim()) errors[`container_${index}_shipBillInvNo`] = `Container ${index + 1}: Shipping Bill No is required`;
+      if (!sbDetails.shipBillDt) errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date is required`;
+      if (!sbDetails.exporterNm?.trim()) errors[`container_${index}_exporterNm`] = `Container ${index + 1}: Exporter Name is required`;
+      if (!sbDetails.exporterIec?.trim()) errors[`container_${index}_exporterIec`] = `Container ${index + 1}: Exporter IEC is required`;
+      if (!sbDetails.chaNm?.trim()) errors[`container_${index}_chaNm`] = `Container ${index + 1}: CHA Name is required`;
       if (!sbDetails.chaPan?.trim()) {
-        errors[`container_${index}_chaPan`] = `Container ${
-          index + 1
-        }: CHA PAN is required`;
+        errors[`container_${index}_chaPan`] = `Container ${index + 1}: CHA PAN is required`;
+      } else if (!/^[A-Z]{5}\d{4}[A-Z]{1}$/.test(sbDetails.chaPan)) {
+        errors[`container_${index}_chaPan`] = `Container ${index + 1}: Invalid CHA PAN format`;
       }
-      if (!sbDetails.exporterNm?.trim()) {
-        errors[`container_${index}_exporterNm`] = `Container ${
-          index + 1
-        }: Exporter Name is required`;
-      }
-      if (!sbDetails.exporterIec?.trim()) {
-        errors[`container_${index}_exporterIec`] = `Container ${
-          index + 1
-        }: Exporter IEC is required`;
-      }
-      if (!sbDetails.noOfPkg || isNaN(parseInt(sbDetails.noOfPkg))) {
-        errors[`container_${index}_noOfPkg`] = `Container ${
-          index + 1
-        }: No of Packages is required`;
+      if (sbDetails.leoNo && !sbDetails.leoDt) {
+        errors[`container_${index}_leoDt`] = `Container ${index + 1}: LEO Date is required when LEO No is provided`;
       }
     }
   });
@@ -1119,10 +1125,15 @@ export const isFieldVisible = (fieldName, formData) => {
     "pod",
     "cargoTp",
     "origin",
+    "bookNo",
     "shipperNm",
+    "consigneeNm",
+    "consigneeAddr",
     "cntnrStatus",
     "mobileNo",
     "formType",
+    "cargoDesc",
+    "terminalLoginId"
   ];
 
   if (ALWAYS_VISIBLE.includes(fieldName)) {
@@ -1146,9 +1157,9 @@ export const isFieldVisible = (fieldName, formData) => {
     return bnfCode?.toUpperCase() === "MSCU";
   }
 
-  // Booking No - Only for MSC
+  // Booking No - Broadly visible
   if (fieldName === "bookNo") {
-    return bnfCode?.toUpperCase() === "MSCU";
+    return true;
   }
 
   // BL Number - Hapag Lloyd for non-reefer
@@ -1171,21 +1182,8 @@ export const isFieldVisible = (fieldName, formData) => {
     return locId === "INNSA1";
   }
 
-  // Location-specific fields (consignee, cargo desc, terminal login)
-  if (
-    ["consigneeNm", "consigneeAddr", "cargoDesc", "terminalLoginId"].includes(
-      fieldName
-    )
-  ) {
-    return [
-      "INMAA1",
-      "INPRT1",
-      "INKAT1",
-      "INCCU1",
-      "INENN1",
-      "INMUN1",
-    ].includes(locId);
-  }
+  // Stakeholder details - Always visible to ensure mandatory fields are not hidden
+  return true;
 
   // For container-specific fields, we handle in the container component
   return true;

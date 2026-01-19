@@ -3,11 +3,13 @@ import express from "express";
 import Form13 from "../models/Form13.js";
 import axios from "axios";
 
+import config from "../config.js";
+
 const router = express.Router();
 
 // ODeX API Configuration
 const ODEX_CONFIG = {
-  baseURL: process.env.ODEX_BASE_URL || "https://staging.odexglobal.com",
+  baseURL: config.odex.baseUrl,
   endpoints: {
     vesselMaster: "/RS/iForm13Service/json/getForm13VesselInfo",
 
@@ -24,11 +26,11 @@ const getCurrentTimestamp = () => {
   return now.toISOString().replace("T", " ").split(".")[0];
 };
 
-// Helper function to get hashkey from environment variable
+// Helper function to get hashkey from config
 const getHashKey = () => {
-  const hashKey = process.env.HASHKEY;
+  const hashKey = config.odex.hashKey;
   if (!hashKey) {
-    throw new Error("HASHKEY environment variable is not set");
+    throw new Error("ODeX HASHKEY is not configured for this environment");
   }
   return hashKey;
 };
@@ -36,7 +38,7 @@ const getHashKey = () => {
 // Helper function to call ODeX API with robust error handling
 
 export const callOdexAPI = async (endpoint, requestData) => {
-  const url = `${process.env.ODEX_BASE_URL}${endpoint}`;
+  const url = `${ODEX_CONFIG.baseURL}${endpoint}`;
   console.log("📤 ODeX Request →", url);
   // console.log("📤 Payload:", JSON.stringify(requestData, null, 2));
 
@@ -349,6 +351,33 @@ router.post("/cancel", async (req, res) => {
     });
   } catch (error) {
     console.error("Form 13 Cancellation Error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Search for previous Form 13 entry to copy data
+router.post("/search-previous", async (req, res) => {
+  try {
+    const { bnfCode, bookNo } = req.body;
+    if (!bnfCode || !bookNo) {
+      return res.status(400).json({
+        success: false,
+        error: "bnfCode and bookNo are required",
+      });
+    }
+
+    const previous = await Form13.findOne({ bnfCode, bookNo }).sort({
+      createdAt: -1,
+    });
+
+    res.json({
+      success: true,
+      data: previous,
+    });
+  } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message,
