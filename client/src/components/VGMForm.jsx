@@ -169,7 +169,7 @@ const VGMForm = ({
       }
       setLoading(true);
       try {
-        ;
+        const payload = { ...values };
         // Manual Transformations
         payload.cscPlateMaxWtLimit = values.cscPlateMaxWtLimit?.toString();
         payload.totWt = values.totWt?.toString();
@@ -350,10 +350,7 @@ const VGMForm = ({
       terminalCode: requestBody.terminalCode || "",
     };
 
-    Object.keys(formValues).forEach((key) => {
-      if (formValues[key] !== undefined)
-        formik.setFieldValue(key, formValues[key]);
-    });
+    formik.setValues(newValues);
     setFormValues(newValues);
 
     if (requestBody.vgmWbAttList) setAttachments(requestBody.vgmWbAttList);
@@ -935,9 +932,9 @@ const VGMForm = ({
                   name="weighBridgeWtTs"
                   placeholder="12-12-2025 14:30:00"
                   className={`form-control ${formik.touched.weighBridgeWtTs &&
-                      formik.errors.weighBridgeWtTs
-                      ? "error"
-                      : ""
+                    formik.errors.weighBridgeWtTs
+                    ? "error"
+                    : ""
                     }`}
                   onBlur={formik.handleBlur}
                   value={formik.values.weighBridgeWtTs || ""}

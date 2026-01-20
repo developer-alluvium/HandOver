@@ -18,7 +18,7 @@ import {
   DialogActions,
   DialogContentText,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Save as SaveIcon, Send as SendIcon } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { form13API } from "../../services/form13API";
@@ -37,6 +37,10 @@ const Form13 = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [showCopyPopup, setShowCopyPopup] = useState(false);
   const [previousEntry, setPreviousEntry] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [requestId, setRequestId] = useState(null);
   const [isCheckingPrevious, setIsCheckingPrevious] = useState(false);
 
   // Master Data States
@@ -216,6 +220,55 @@ const Form13 = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Initialize Edit Mode
+  useEffect(() => {
+    const initializeEditMode = async () => {
+      if (location.state?.editMode && location.state?.f13Id) {
+        setIsEditMode(true);
+        setRequestId(location.state.f13Id);
+        await fetchRequestDetails(location.state.f13Id);
+      }
+    };
+    initializeEditMode();
+  }, [location.state]);
+
+  const fetchRequestDetails = async (f13Id) => {
+    try {
+      setLoading(true);
+      const response = await form13API.getRequestById(f13Id);
+      if (response.data) {
+        prefillForm(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch request details:", err);
+      setError("Failed to load request details for editing");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const prefillForm = (data) => {
+    // Basic fields mapping
+    const newFormData = { ...formData };
+    Object.keys(data).forEach((key) => {
+      if (
+        key in newFormData &&
+        key !== "containers" &&
+        key !== "attachments"
+      ) {
+        newFormData[key] = data[key] || "";
+      }
+    });
+
+    // Special handling for containers if needed
+    if (data.containers && data.containers.length > 0) {
+      newFormData.containers = data.containers;
+    }
+
+    setFormData(newFormData);
+    setSuccess("Form pre-filled with existing data");
   };
 
   // Feature: Copy Data from Previous Entry
@@ -1149,19 +1202,27 @@ const Form13 = () => {
       console.log("📤 Sending payload:", payload);
 
       // Call API
-      const response = await form13API.submitForm13(payload);
+      let response;
+      if (isEditMode && requestId) {
+        response = await form13API.updateRequest(requestId, payload);
+      } else {
+        response = await form13API.submitForm13(payload);
+      }
 
       console.log("📥 Raw API Response:", response);
-      console.log("📥 Response data:", response?.data);
-
-      // FIXED: The response data is directly at response.data level
       const respData = response?.data || {};
 
-      console.log("🔍 Parsed response data:", respData);
-      console.log("🔍 Business validation:", respData.business_validation);
-      console.log("🔍 Business errors:", respData.business_validations);
+      const businessFlag = respData.business_validation;
+      const businessErrors = respData.business_validations;
 
-      // Handle Business Validation Failures - Check directly in respData
+      if (businessFlag === "FAIL" && businessErrors) {
+        console.log("🚨 Business validation failed");
+        const formattedErrors = formatBusinessErrors(businessErrors);
+        setValidationErrors(formattedErrors);
+        setError("Business Validation Failed");
+        setLoading(false);
+        return;
+      }
 
       // Handle Schema Validation Failures
       const schemaFlag = respData.schema_validation;
@@ -1176,19 +1237,18 @@ const Form13 = () => {
         return;
       }
 
-      // Check if the form was actually successful
-      // Since your API returns success: true even with business validation failures,
-      // we need to check the business_validation flag instead
       const odexRefNo = respData.odexRefNo;
 
-      if (odexRefNo && businessFlag !== "FAIL") {
+      if (odexRefNo) {
         console.log("✅ Form submitted successfully");
         setSuccess(
-          `Form 13 submitted successfully! Reference No: ${odexRefNo}`
+          `Form 13 ${isEditMode ? "updated" : "submitted"} successfully! Reference No: ${odexRefNo}`
         );
+        if (isEditMode) {
+          setTimeout(() => navigate("/track-f13"), 2000);
+        }
       } else {
         console.log("❌ Form submission failed or has validation errors");
-        // Show generic error if we didn't catch specific validation errors
         setError("Form submission failed. Please check your inputs and try again.");
       }
     } catch (err) {
@@ -1214,7 +1274,8 @@ const Form13 = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4 }}>
+      <TopNavDropdown />
       <Paper elevation={3} sx={{ p: 4 }}>
         {/* Header */}
         <Box sx={{ mb: 4 }}>
@@ -1325,7 +1386,7 @@ const Form13 = () => {
               startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
               sx={{ minWidth: 200 }}
             >
-              {loading ? "Submitting..." : "Submit Form 13"}
+              {loading ? (isEditMode ? "Updating..." : "Submitting...") : (isEditMode ? "Update Form 13" : "Submit Form 13")}
             </Button>
           </Box>
         </Box>

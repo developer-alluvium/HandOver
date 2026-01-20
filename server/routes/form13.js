@@ -385,4 +385,147 @@ router.post("/search-previous", async (req, res) => {
   }
 });
 
+// Get all Form 13 requests with filtering and pagination
+router.get("/requests", async (req, res) => {
+  try {
+    const {
+      status,
+      containerNo,
+      bookNo,
+      dateFrom,
+      dateTo,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const filterQuery = {};
+
+    if (status) {
+      filterQuery.status = { $regex: status, $options: "i" };
+    }
+
+    if (containerNo) {
+      filterQuery["containers.cntnrNo"] = { $regex: containerNo, $options: "i" };
+    }
+
+    if (bookNo) {
+      filterQuery.bookNo = { $regex: bookNo, $options: "i" };
+    }
+
+    if (dateFrom || dateTo) {
+      filterQuery.createdAt = {};
+      if (dateFrom) {
+        filterQuery.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const endOfDay = new Date(dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        filterQuery.createdAt.$lte = endOfDay;
+      }
+    }
+
+    const skip = (page - 1) * parseInt(limit);
+
+    const requests = await Form13.find(filterQuery)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await Form13.countDocuments(filterQuery);
+
+    res.json({
+      success: true,
+      data: {
+        requests,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get Form 13 requests error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Get Form 13 request by ID
+router.get("/requests/:f13Id", async (req, res) => {
+  try {
+    const { f13Id } = req.params;
+    const request = await Form13.findById(f13Id).lean();
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        error: "Form 13 request not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: request,
+    });
+  } catch (error) {
+    console.error("Get Form 13 request by ID error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Update Form 13 request and retrigger API
+router.put("/requests/:f13Id", async (req, res) => {
+  try {
+    const { f13Id } = req.params;
+    const updateData = req.body;
+
+    const originalRequest = await Form13.findById(f13Id);
+    if (!originalRequest) {
+      return res.status(404).json({
+        success: false,
+        error: "Form 13 request not found",
+      });
+    }
+
+    // Call ODeX API with updated data
+    const odexResponse = await callOdexAPI(
+      ODEX_CONFIG.endpoints.submitForm13,
+      updateData
+    );
+
+    // Update the record in database
+    const updatedStatus = odexResponse.odexRefNo ? "SUBMITTED" : "FAILED";
+    const updatedRequest = await Form13.findByIdAndUpdate(
+      f13Id,
+      {
+        ...updateData,
+        status: updatedStatus,
+        form13ApiResponse: odexResponse,
+        odexRefNo: odexResponse.odexRefNo || originalRequest.odexRefNo,
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      data: odexResponse,
+      internalRef: updatedRequest._id,
+    });
+  } catch (error) {
+    console.error("Update Form 13 request error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 export default router;

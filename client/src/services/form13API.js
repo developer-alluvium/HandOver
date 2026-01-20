@@ -54,6 +54,16 @@ export const form13API = {
   getPreviousEntry: (searchData) =>
     api.post(`${FORM13_BASE_URL}/search-previous`, searchData),
 
+  // Get Form 13 requests for tracking
+  getRequests: (filters) => api.get(`${FORM13_BASE_URL}/requests`, { params: filters }),
+
+  // Get Form 13 request by ID for editing
+  getRequestById: (f13Id) => api.get(`${FORM13_BASE_URL}/requests/${f13Id}`),
+
+  // Update Form 13 request
+  updateRequest: (f13Id, updateData) =>
+    api.put(`${FORM13_BASE_URL}/requests/${f13Id}`, updateData),
+
   // Get hashkey from backend
   getHashKey: (hashData) => api.post(`${FORM13_BASE_URL}/hashkey`, hashData),
 };
