@@ -273,15 +273,7 @@ const VGMForm = ({
     const fetchShippingLines = async () => {
       try {
         const response = await masterAPI.getShippingLines();
-        if (response.data && response.data.length > 0) {
-          setShippingLines(response.data);
-        } else {
-          // If no shipping lines in DB, seed them from static LINERS
-          console.log("Seeding shipping lines...");
-          await masterAPI.seedShippingLines(LINERS);
-          const retryResponse = await masterAPI.getShippingLines();
-          setShippingLines(retryResponse.data || []);
-        }
+        setShippingLines(response.data || []);
       } catch (error) {
         console.error("Error fetching shipping lines:", error);
         // Fallback to static LINERS on error
