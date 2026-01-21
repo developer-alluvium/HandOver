@@ -32,6 +32,13 @@ export const logAPI = {
     api.put(`/logs/${logId}/update`, completeData),
 };
 
+export const masterAPI = {
+  getShippingLines: (search) =>
+    api.get("/master/shipping-lines", { params: { search } }),
+  seedShippingLines: (shippingLines) =>
+    api.post("/master/shipping-lines/seed", { shippingLines }),
+};
+
 // Enhanced response interceptor to handle the new format
 api.interceptors.response.use(
   (response) => {

@@ -4,7 +4,7 @@ import { useSnackbar } from "notistack";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import TopNavDropdown from "./TopNavDropdown";
-import { vgmAPI } from "../services/api.js";
+import { vgmAPI, masterAPI } from "../services/api.js";
 import { vgmValidationSchema } from "../utils/validation.js";
 import { validateFile, fileToBase64 } from "../utils/fileUtils.js";
 import {
@@ -105,6 +105,7 @@ const VGMForm = ({
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { userData, shippers } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [shippingLines, setShippingLines] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [isEditMode, setIsEditMode] = useState(editMode);
   const [requestData, setRequestData] = useState(existingRequest);
@@ -266,6 +267,29 @@ const VGMForm = ({
       }
     },
   });
+
+  // Fetch Shipping Lines from Master API
+  useEffect(() => {
+    const fetchShippingLines = async () => {
+      try {
+        const response = await masterAPI.getShippingLines();
+        if (response.data && response.data.length > 0) {
+          setShippingLines(response.data);
+        } else {
+          // If no shipping lines in DB, seed them from static LINERS
+          console.log("Seeding shipping lines...");
+          await masterAPI.seedShippingLines(LINERS);
+          const retryResponse = await masterAPI.getShippingLines();
+          setShippingLines(retryResponse.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching shipping lines:", error);
+        // Fallback to static LINERS on error
+        setShippingLines(LINERS);
+      }
+    };
+    fetchShippingLines();
+  }, []);
 
   // --- Initialize Edit Mode ---
   useEffect(() => {
@@ -686,7 +710,7 @@ const VGMForm = ({
               <SelectField
                 label="Shipping Line"
                 name="linerId"
-                options={LINERS}
+                options={shippingLines}
                 required
               />
               {/* <InputField label="Vessel Name" name="vesselNm" />
