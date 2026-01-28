@@ -5,6 +5,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 import apiLogRoutes from "./routes/apiLogRoutes.js";
 import form13 from "./routes/form13.js";
@@ -17,6 +18,7 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+app.use(cookieParser());
 app.use(
   cors({
     origin: [

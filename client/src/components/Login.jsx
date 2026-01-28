@@ -44,7 +44,7 @@ const Login = () => {
 
         if (values.useEncryption) {
           const secretKey =
-            process.env.VITE_ODEX_SECRET_KEY || "test-secret-key";
+            import.meta.env.VITE_ODEX_SECRET_KEY || "test-secret-key";
           payload.hashKey = generateLoginHash(
             values.pyrCode,
             values.fromTs,
@@ -52,25 +52,9 @@ const Login = () => {
           );
         }
 
-        localStorage.setItem(
-          "last_login_request",
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            payload: payload,
-          })
-        );
 
         const response = await authAPI.login(payload);
 
-        localStorage.setItem(
-          "last_login_response",
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            response: response.data,
-          })
-        );
-
-        console.log("Login response:", response.data);
 
         if (response.data && Array.isArray(response.data)) {
           login({ pyrCode: values.pyrCode }, response.data);
@@ -88,13 +72,6 @@ const Login = () => {
         }
       } catch (error) {
         console.error("Login error:", error);
-        localStorage.setItem(
-          "last_login_error",
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            error: error.message,
-          })
-        );
         const errorMessage =
           error.response?.data?.message || error.message || "Login failed.";
         enqueueSnackbar(errorMessage, { variant: "error" });

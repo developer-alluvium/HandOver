@@ -8,10 +8,13 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   timeout: 30000,
+  withCredentials: true,
 });
 
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
+  logout: () => api.post("/auth/logout"),
+  me: () => api.get("/auth/me"),
 };
 
 export const vgmAPI = {

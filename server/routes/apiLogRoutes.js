@@ -11,6 +11,8 @@ import {
   getVGMRequests,
   updateVGMRequest,
   getVGMRequestById,
+  logout,
+  getCurrentUser,
 } from "../controllers/apiLogController.js";
 
 const router = express.Router();
@@ -19,6 +21,8 @@ const router = express.Router();
 router.post("/vgm/submit", submitVGM);
 router.get("/status/:vgmId", getVGMStatus);
 router.post("/auth/login", getAuthorization);
+router.post("/auth/logout", logout);
+router.get("/auth/me", getCurrentUser);
 
 // Log management endpoints
 router.get("/logs/:logId", getLogById);

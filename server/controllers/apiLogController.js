@@ -94,6 +94,20 @@ export const getAuthorization = async (req, res) => {
     const result = await ApiLogger.logAndForward("AUTHORIZATION", requestData);
 
     if (result.success) {
+      // Set authentication cookie
+      const authData = {
+        userData: { pyrCode: req.body.pyrCode },
+        shippers: result.data,
+        timestamp: new Date().toISOString(),
+      };
+
+      res.cookie("odex_auth", JSON.stringify(authData), {
+        httpOnly: true,
+        secure: config.isProduction, // True for HTTPS in production, false for HTTP in dev
+        sameSite: config.isProduction ? "None" : "Lax", // None for HTTPS cross-site support, Lax for HTTP localhost
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      });
+
       res.json({
         success: true,
         data: result.data,
@@ -112,6 +126,28 @@ export const getAuthorization = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+
+export const logout = async (req, res) => {
+  res.clearCookie("odex_auth");
+  res.json({ success: true, message: "Logged out successfully" });
+};
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const authCookie = req.cookies.odex_auth;
+    if (!authCookie) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+
+    const authData = JSON.parse(authCookie);
+    res.json({
+      success: true,
+      data: authData,
+    });
+  } catch (error) {
+    res.status(401).json({ success: false, message: "Invalid session" });
   }
 };
 

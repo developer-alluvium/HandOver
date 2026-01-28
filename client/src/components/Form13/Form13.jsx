@@ -169,8 +169,7 @@ const Form13 = () => {
       setLoading(true);
       setError("");
 
-      const userData = JSON.parse(localStorage.getItem("odex_auth"));
-      const pyrCode = userData?.userData?.pyrCode;
+      const pyrCode = userData?.pyrCode;
 
       if (!pyrCode) {
         throw new Error("Payor code not found. Please login again.");

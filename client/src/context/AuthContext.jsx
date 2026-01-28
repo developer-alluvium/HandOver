@@ -1,5 +1,5 @@
-// src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { authAPI } from "../services/api";
 
 const AuthContext = createContext();
 
@@ -15,45 +15,46 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userData, setUserData] = useState(null);
   const [shippers, setShippers] = useState([]);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedAuth = localStorage.getItem("odex_auth");
-    if (savedAuth) {
+    const checkAuthStatus = async () => {
       try {
-        const authData = JSON.parse(savedAuth);
-        setIsAuthenticated(true);
-        setUserData(authData.userData);
-        setShippers(authData.shippers || []);
+        const response = await authAPI.me();
+        if (response.data) {
+          setIsAuthenticated(true);
+          setUserData(response.data.userData);
+          setShippers(response.data.shippers || []);
+        }
       } catch (error) {
-        console.error("Error parsing saved auth data:", error);
-        localStorage.removeItem("odex_auth"); // Clear corrupted data
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    checkAuthStatus();
   }, []);
 
   const login = (userData, shippersData) => {
     setIsAuthenticated(true);
     setUserData(userData);
     setShippers(shippersData || []);
-
-    const authData = {
-      userData,
-      shippers: shippersData || [],
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem("odex_auth", JSON.stringify(authData));
   };
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUserData(null);
-    setShippers([]);
-    localStorage.removeItem("odex_auth");
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsAuthenticated(false);
+      setUserData(null);
+      setShippers([]);
+    }
   };
 
-  // Add a function to check authentication status
   const checkAuth = () => {
     return isAuthenticated;
   };
