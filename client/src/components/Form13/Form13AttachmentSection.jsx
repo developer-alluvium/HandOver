@@ -29,11 +29,12 @@ const Form13AttachmentSection = ({
 }) => {
   // Common document types to show as fixed rows (inspired by the image)
   const commonDocs = [
+    { code: 'BOOKING_COPY', name: 'Booking Copy' },
+    { code: 'SHIP_BILL', name: 'Shipping Bill' },
+    { code: 'VGM_ANXR1', name: 'VGM-Annexure 1' },
     { code: 'DLVRY_ORDER', name: 'Delivery Order' },
     { code: 'INVOICE', name: 'Invoice' },
     { code: 'PACK_LIST', name: 'Packing List' },
-    { code: 'SHIP_BILL', name: 'Shipping Bill' },
-    { code: 'BOOKING_COPY', name: 'Booking Copy' },
   ];
 
   // Merge common with required if they don't overlap

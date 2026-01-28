@@ -287,7 +287,18 @@ const ContainerRow = ({
                       <Grid container spacing={1}>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">IMO No 1 *</Typography>
-                          <TextField fullWidth size="small" variant="standard" value={container.imoNo1} onChange={(e) => handleContainerChange("imoNo1", e.target.value)} error={!!validationErrors[`container_${index}_imoNo1`]} />
+                          <Select
+                            fullWidth
+                            size="small"
+                            variant="standard"
+                            value={container.imoNo1 || ""}
+                            onChange={(e) => handleContainerChange("imoNo1", e.target.value)}
+                            error={!!validationErrors[`container_${index}_imoNo1`]}
+                          >
+                            {masterData.imoNumbers.map((imo) => (
+                              <MenuItem key={imo.value} value={imo.value}>{imo.label}</MenuItem>
+                            ))}
+                          </Select>
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">UN No 1 *</Typography>
@@ -295,7 +306,17 @@ const ContainerRow = ({
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">IMO No 2</Typography>
-                          <TextField fullWidth size="small" variant="standard" value={container.imoNo2} onChange={(e) => handleContainerChange("imoNo2", e.target.value)} />
+                          <Select
+                            fullWidth
+                            size="small"
+                            variant="standard"
+                            value={container.imoNo2 || ""}
+                            onChange={(e) => handleContainerChange("imoNo2", e.target.value)}
+                          >
+                            {masterData.imoNumbers.map((imo) => (
+                              <MenuItem key={imo.value} value={imo.value}>{imo.label}</MenuItem>
+                            ))}
+                          </Select>
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">UN No 2</Typography>

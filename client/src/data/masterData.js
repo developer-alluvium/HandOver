@@ -207,21 +207,33 @@ export const masterData = {
   portIds: [
     { value: "INNSA1", label: "Nhava Sheva" },
     { value: "INMUN1", label: "Mundra" },
-    { value: "INNML1", label: "Mangalore" },
+    { value: "INNML1", label: "Namal" },
     { value: "INTUT1", label: "Tuticorin" },
     { value: "INCCU1", label: "Kolkata" },
     { value: "INPAV1", label: "Pipavav" },
     { value: "INHZA1", label: "Hazira" },
-    { value: "INMRM1", label: "Marmagoa" },
+    { value: "INMRM1", label: "Mormugao" },
     { value: "INCOK1", label: "Cochin" },
     { value: "INMAA1", label: "Chennai" },
-    { value: "INVTZ1", label: "Vishakapatnam" },
+    { value: "INVTZ1", label: "Visakhapatnam" },
     { value: "INHAL1", label: "Haldia" },
     { value: "INKRI1", label: "Krishnapatnam" },
     { value: "INKAT1", label: "Kattupalli" },
     { value: "INPRT1", label: "Paradip" },
-    { value: "INIXY1", label: "Kandla" },
+    { value: "INIXY1", label: "Siliguri" },
     { value: "INKAK1", label: "Kakinada" },
+    { value: "INPNV6", label: "Panvel" },
+    { value: "INAMG6", label: "Ahmedabad" },
+    { value: "INATQ4", label: "Amritsar" },
+    { value: "INBOM4", label: "Mumbai" },
+    { value: "INCJB4", label: "Coimbatore" },
+    { value: "INDEL4", label: "Delhi" },
+    { value: "INDR4", label: "Indore" },
+    { value: "INGHR6", label: "Ghaziabad" },
+    { value: "INGOI4", label: "Goa" },
+    { value: "INLDH6", label: "Ludhiana" },
+    { value: "INLON6", label: "Loni" },
+    { value: "INMDG6", label: "Madgaon" },
   ],
 
   // Special Stow Options
@@ -254,13 +266,13 @@ export const masterData = {
 
   // Origin Types
   originTypes: [
-    { value: "B", label: "B" },
-    { value: "C", label: "C" },
-    { value: "F", label: "F" },
-    { value: "R", label: "R" },
-    { value: "W", label: "W" },
-    { value: "F_CFS", label: "F_CFS" },
-    { value: "E_TANK", label: "E_TANK" },
+    { value: "B", label: "BUFFER" },
+    { value: "C", label: "DOCK STUFFED" },
+    { value: "F", label: "FACTORY STUFFED" },
+    { value: "R", label: "ICD BY ROAD" },
+    { value: "W", label: "ON WHEEL CONTAINER" },
+    { value: "F_CFS", label: "Factory Stuffed Via CFS" },
+    { value: "E_TANK", label: "Empty Tank" },
   ],
 
   // Container Statuses
@@ -293,11 +305,61 @@ export const masterData = {
     ],
     // Add other ports as needed
   },
+
+  // CFS Codes mapped by Port ID
+  cfsCodes: {
+    INPNV6: ["INPNV6"],
+    INAMG6: ["INAMG6CON1"],
+    INATQ4: ["INATQ4AAI1"],
+    INBOM4: ["INBOM4AAI1", "INBOM4MIA1", "INBOM4AIN1"],
+    INBOM1: ["INBOM1MUM1"],
+    INCCU1: ["INCCU1ALL1", "INCCU1BLC1", "INCCU1CPL1", "INCCU1CPL2", "INCCU1CWC1", "INCCU1HDC1", "INCCU1KKP1", "INCCU1PLP1", "INCCU1MSA1", "INCCU1AGL1", "INCCU1CON1"],
+    INCCU4: ["INCCU4AAI1"],
+    INCJB4: ["INCJB4AAI1"],
+    INCOK1: ["INCOK1AST1", "INCOK1CPT1", "INCOK1FAL1", "INCOK1IGT1", "INCOK1PET1", "INCOK1GDK1", "INCOK1CPC1", "INCOK1CON1", "INCOK1CIF1", "INCOK1GDL1", "INCOK1MLP1"],
+    INCOK4: ["INCOK4CAC1", "INCOK4CIA1"],
+    INDEL4: ["INDEL4DIA1"],
+    INDR4: ["INDR4GSE1"],
+    INGHR6: ["INGHR6GDL1"],
+    INGOI4: ["INGOI4CWC1"],
+    INIXY1: ["INIXY1ABG1", "INIXY1ACP1", "INIXY1AVJ1", "INIXY1CON1", "INIXY1CWC1", "INIXY1CWC2", "INIXY1CWC3", "INIXY1KPT1"],
+    INKAK1: ["INKAK1KSP1"],
+    INLDH6: ["INLDH6CON1", "INLDH6GRF1", "INLDH6KCM1", "INLDH6OWP1", "INLDH6PSW1"],
+    INLON6: ["INLON6CWC1"],
+    INMAA1: ["INMAA1AGL1", "INMAA1ASS1", "INMAA1BNL1", "INMAA1CCT1", "INMAA1CIT1", "INMAA1CON1", "INMAA1COW1", "INMAA1COW2", "INMAA1CTO1", "INMAA1CWC1", "INMAA1CWC2", "INMAA1CWC3", "INMAA1CWC4", "INMAA1DRL1", "INMAA1ECC1", "INMAA1GDL1", "INMAA1GES1", "INMAA1GLO1", "INMAA1ICB1", "INMAA1KSS1", "INMAA1MRK1", "INMAA1SDL1", "INMAA1SDL11", "INMAA1SGL1", "INMAA1SHC1", "INMAA1SLP1", "INMAA1STL1", "INMAA1TCF1", "INMAA1TRL1", "INMAA1VIK1", "INMAA1VLT1", "INMAA1OYC1", "INMAA1SPL1", "INMAA1CXC1", "INMAA1SUL1", "INMAA1STP1", "INMAA1NDR1", "INMAA1LNT1", "INMAA1AWC1", "INMAA1SCL1", "INMAA1SMR1"],
+    INMAA4: ["INMAA4AAI1"],
+    INMDG6: ["INMDG6CWC1"],
+    INMRM1: ["INMRM1MPT1"],
+    INMUN1: ["INMUN1ACS1", "INMUN1CGL1", "INMUN1FCL1", "INMUN1HCL1", "INMUN1MCC1", "INMUN1MCF1", "INMUN1MCT1", "INMUN1MSA1", "INMUN1MSE1", "INMUN1MSE2", "INMUN1MSA2", "INMUN1SMS1", "INMUN1AGL1", "INMUN1AEY1", "INMUN1HTP1", "INMUN1HTP2", "INMUN1HMT1", "INMUN1SCP1", "INMUN1LCP1", "INMUN1EMP1", "INMUN1CWC1", "INMUN1RCF1"],
+    INNML1: ["INNML1NMP1"],
+    INTUT1: ["INTUT1ASS1", "INTUT1ILP1", "INTUT1CON1", "INTUT1CWC1", "INTUT1DCP1", "INTUT1HAR1", "INTUT1KNP1", "INTUT1RAC1", "INTUT1SEC1", "INTUT1TPT1", "INTUT1VIL1", "INTUT1PTP1", "INTUT1ALT1", "INTUT1CLP1", "INTUT1SDL1", "INTUT1COW1", "INTUT1COC1", "INTUT1SAL1"],
+    INVTZ1: ["INVTZ1CON1", "INVTZ1CON2", "INVTZ1SSS1", "INVTZ1SSS2", "INVTZ1CWC1", "INVTZ1VCT1", "INVTZ1VCT2", "INVTZ1GEI1", "INVTZ1VPL1", "INVTZ1SMR1", "INVTZ1VCL1", "INVTZ1VLP1"],
+    INNSA1: [
+      "INNSA1JNPT", "INNSA1CON1", "INNSA1CWC1", "INNSA1CWC2", "INNSA1CWC3", "INNSA1CWC4", "INNSA1CWC5", "INNSA1GDL1", "INNSA1SMS1", "INNSA1MSW1", "INNSA1MRK1", "INNSA1MRK2", "INNSA1ASL1", "INNSA1NCL1", "INNSA1NCL2", "INNSA1NCL3", "INNSA1JLP1", "INNSA1ALS1", "INNSA1ILP1", "INNSA1OGC1", "INNSA1AGL1", "INNSA1JWL1", "INNSA1ELP1", "INNSA1SML1", "INNSA1JNP1", "INNSA1SBW1", "INNSA1TCL1", "INNSA1FCL1", "INNSA1ICT1"
+    ]
+  }
 };
 
 // Helper function to get terminal codes by port
 export const getTerminalCodes = (portId) => {
   return masterData.terminalCodes[portId] || [];
+};
+
+// Helper function to get CFS codes by port
+export const getCFSCodes = (portId) => {
+  // Check direct match
+  let codes = masterData.cfsCodes[portId] || [];
+
+  // Also check cross-prefix (e.g. INBOM1 vs INBOM4, INCCU1 vs INCCU4, INMAA1 vs INMAA4)
+  // This ensures a selection like "Chennai (INMAA1)" can show codes starting with INMAA4
+  const prefix = portId.substring(0, 5); // e.g. "INMAA"
+  Object.keys(masterData.cfsCodes).forEach(key => {
+    if (key.startsWith(prefix) && key !== portId) {
+      codes = [...codes, ...masterData.cfsCodes[key]];
+    }
+  });
+
+  return [...new Set(codes)].sort();
 };
 
 // Helper function to get ISO codes by container size

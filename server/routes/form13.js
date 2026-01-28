@@ -14,9 +14,9 @@ const ODEX_CONFIG = {
     vesselMaster: "/RS/iForm13Service/json/getForm13VesselInfo",
 
     podMaster: "/RS/iForm13Service/json/getForm13PODInfo",
-    submitForm13: "/DEMO/RS/iForm13Service/json/saveF13",
+    submitForm13: "/RS/iForm13Service/json/saveF13",
     getStatus: "/RS/iForm13Service/json/getForm13ReqInfo",
-    cancelForm13: "/DEMO/RS/iForm13Service/json/requestF13CancelPyr",
+    cancelForm13: "/RS/iForm13Service/json/requestF13CancelPyr",
   },
 };
 
