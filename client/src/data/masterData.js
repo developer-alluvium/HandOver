@@ -238,22 +238,22 @@ export const masterData = {
 
   // Special Stow Options
   specialStowOptions: [
-    { value: "UN", label: "UN" },
-    { value: "DO", label: "DO" },
-    { value: "AD", label: "AD" },
-    { value: "BD", label: "BD" },
-    { value: "AF", label: "AF" },
-    { value: "BF", label: "BF" },
-    { value: "AA", label: "AA" },
-    { value: "BA", label: "BA" },
-    { value: "WS", label: "WS" },
-    { value: "AH", label: "AH" },
-    { value: "AS", label: "AS" },
-    { value: "BH", label: "BH" },
-    { value: "AT", label: "AT" },
-    { value: "BT", label: "BT" },
-    { value: "BW", label: "BW" },
-    { value: "OD", label: "OD" },
+    { value: "UN", label: "UN - Under Deck Stowage" },
+    { value: "DO", label: "DO - Open Door" },
+    { value: "AD", label: "AD - Above Deck" },
+    { value: "BD", label: "BD - Below Deck" },
+    { value: "AF", label: "AF - Above Fore" },
+    { value: "BF", label: "BF - Below Fore" },
+    { value: "AA", label: "AA - Above Aft" },
+    { value: "BA", label: "BA - Below Aft" },
+    { value: "WS", label: "WS - Winter Storage" },
+    { value: "AH", label: "AH - Away From Heat/Boiler" },
+    { value: "AS", label: "AS - Above Deck Away From Heat/Boiler/Sunlight" },
+    { value: "BH", label: "BH - Below Deck Away From Heat/Boiler/Sunlight" },
+    { value: "AT", label: "AT - Above Deck Top Tier Stowage" },
+    { value: "BT", label: "BT - Below Deck Top Tier Stowage" },
+    { value: "BW", label: "BW - Below Water Line Stowage" },
+    { value: "OD", label: "OD - On Deck For One Door Open" },
   ],
 
   // ODC Units
@@ -286,6 +286,12 @@ export const masterData = {
     { value: "F13", label: "F13" },
     { value: "F11", label: "F11" },
     { value: "CIO", label: "CIO" },
+  ],
+
+  // Issue To Options (Blank for NSICT/NSIGT/CCTL/ICT terminals)
+  issueToOptions: [
+    { value: "Shipper", label: "Shipper" },
+    { value: "CHA Name", label: "CHA Name" },
   ],
 
   // Terminal Codes for different ports

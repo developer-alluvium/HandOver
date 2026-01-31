@@ -595,105 +595,174 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
  * @param {Object} formData - Complete form data
  * @returns {Array} - Array of required attachment objects
  */
+
 export const getRequiredAttachments = (formData) => {
-  const { locId, cargoTp, origin, cntnrStatus } = formData;
+  const { locId, cargoTp, origin, cntnrStatus, cntrList } = formData;
   const required = [];
 
-  // Always mandatory for all locations
-  ATTACHMENT_REQUIREMENTS.ALWAYS_REQUIRED.forEach((code) => {
-    required.push({
-      code,
-      name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-      required: true,
-    });
-  });
-
+  // ---------------------------
+  // NORMALIZATION
+  // ---------------------------
   const normCargoTp = (cargoTp || "").toUpperCase();
-  const normOrigin = (origin || "").toUpperCase();
   const normCntnrStatus = (cntnrStatus || "").toUpperCase();
 
-  // Port Lists from Images
-  const ListA = ["INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1", "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1", "INHAL1", "INKRI1", "INIXY1"];
-  const ListChennaiGroup = ["INMAA1", "INKAT1", "INENN1"];
-  const ListVGM = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
-  const ListInvoice = [...ListA, "INMAA1"];
-  const ListDG = [...ListA, "INMAA1", "INKAT1"];
+  // Origin normalization (VERY IMPORTANT)
+  const ORIGIN_MAP = {
+    DOCK: "C",
+    DOCK_STUFF: "C",
+    FACTORY: "F",
+    FACTORY_STUFF: "F",
+    ON_WHEEL: "W",
+    ON_WHELL: "W",
+    WHEEL: "W",
+    EMPTY_TANK: "E_TANK",
+    E_TANK: "E_TANK"
+  };
 
-  const addReq = (code, isMandatory = true) => {
-    if (!required.some(att => att.code === code)) {
+  const normOrigin = ORIGIN_MAP[(origin || "").toUpperCase()] || origin;
+
+  // ---------------------------
+  // VGM CHECK
+  // ---------------------------
+  const hasManualVgm = (cntrList || []).some(
+    (c) => (c.vgmViaODeX || "").toUpperCase() === "N"
+  );
+
+  // ---------------------------
+  // PORT GROUPS
+  // ---------------------------
+  const LIST_A = [
+    "INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1",
+    "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1",
+    "INHAL1", "INKRI1", "INKAN1"
+  ];
+
+  const CHENNAI_GROUP = ["INMAA1", "INKAT1", "INENN1"];
+
+  const VGM_PORTS = [
+    ...new Set([...LIST_A, ...CHENNAI_GROUP, "INPRT1", "INKAK1"])
+  ];
+
+  // ---------------------------
+  // HELPERS
+  // ---------------------------
+  const addReq = (code, mandatory = true) => {
+    if (!required.some((r) => r.code === code)) {
       required.push({
         code,
         name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code] || code,
-        required: isMandatory,
+        required: mandatory
       });
     }
   };
 
-  // 1. PRE_EGM (Mandatory: N, Chennai)
-  if (locId === "INMAA1") addReq("PRE_EGM", false);
+  const isListA = LIST_A.includes(locId);
+  const isChennaiGroup = CHENNAI_GROUP.includes(locId);
+  const isVizag = locId === "INVTZ1";
 
-  // 2. SHIP_BILL (Mandatory for ListA, Origin: C, F, W, E_TANK)
-  if (ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) addReq("SHIP_BILL");
+  // ======================================================
+  // ATTACHMENT RULES (AS PER OFFICIAL MATRIX)
+  // ======================================================
 
-  // 3. SHIPPING_INSTRUCTION (Mandatory for VTZ, Origin: C, F, W, E_TANK)
-  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) addReq("SHIPPING_INSTRUCTION");
+  // 1. Mandatory everywhere
+  addReq("BOOKING_COPY");
 
-  // 4. SURVY_RPRT (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-  if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("SURVY_RPRT");
+  // 2. Booking Confirmation Copy
+  if (
+    isChennaiGroup &&
+    ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)
+  ) {
+    addReq("BOOK_CNFRM_CPY");
+  }
 
-  // 5. VGM_ANXR1 (Mandatory for ListVGM, Origin: B, C, F, W, E_TANK)
-  if (ListVGM.includes(locId) && ["B", "C", "F", "W", "E_TANK"].includes(normOrigin)) addReq("VGM_ANXR1");
+  if (isVizag && ["C", "F"].includes(normOrigin)) {
+    addReq("BOOKING_CONF_COPY");
+  }
 
-  // 6. MSDS (Mandatory for ListVGM, Cargo: ODC HAZ)
-  if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("MSDS");
+  // 3. Check List
+  if (
+    isChennaiGroup &&
+    ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)
+  ) {
+    addReq("CHK_LIST");
+  }
 
-  // 7. MSDS_SHEET (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-  if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("MSDS_SHEET");
+  // 4. Cleaning Certificate (HAZ + EMPTY)
+  if (isListA && normCargoTp === "HAZ" && normCntnrStatus === "EMPTY") {
+    addReq("CLN_CRTFCT");
+  }
 
-  // 8. ODC_SURVEYOR_REPORT_PHOTOS (Mandatory for ListVGM, Cargo: ODC HAZ)
-  if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("ODC_SURVEYOR_REPORT_PHOTOS");
+  // 5. Container Load Plan (Dock Stuff)
+  if (isListA && normOrigin === "C") {
+    addReq("CNTNR_LOAD_PLAN");
+  }
 
-  // 9. PACK_LIST (Mandatory for ListA, Origin: Factory Stuff)
-  if (ListA.includes(locId) && normOrigin === "F") addReq("PACK_LIST");
+  // 6. Customs Exam Report (On Wheel)
+  if (isListA && normOrigin === "W") {
+    addReq("CUSTOMS_EXAM_REPORT");
+  }
 
-  // 10. HAZ_DG_DECLARATION (Mandatory for ListVGM, Cargo: ODC HAZ)
-  if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("HAZ_DG_DECLARATION");
+  // 7. HAZ / ODC Core Docs
+  if (["HAZ", "ODC"].includes(normCargoTp) && (isListA || isChennaiGroup)) {
+    addReq("DG_DCLRTION");
+    addReq("HAZ_DG_DECLARATION");
+    addReq("LASHING_CERTIFICATE");
+  }
 
-  // 11. INVOICE (Mandatory for ListInvoice, Origin: F, E_TANK)
-  if (ListInvoice.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) addReq("INVOICE");
+  // 8. ODC only
+  if (normCargoTp === "ODC" && (isListA || isChennaiGroup)) {
+    addReq("ODC_SURVEYOR_REPORT_PHOTOS");
+  }
 
-  // 12. LASHING_CERTIFICATE (Mandatory for ListVGM, Cargo: ODC & HAZ)
-  if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("LASHING_CERTIFICATE");
+  // 9. HAZ only
+  if (normCargoTp === "HAZ" && (isListA || isChennaiGroup)) {
+    addReq("MSDS");
+  }
 
-  // 13. MMD_APPRVL (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-  if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("MMD_APPRVL");
+  // 10. Chennai group extras
+  if (isChennaiGroup && normCargoTp === "HAZ") {
+    addReq("FIRE_OFC_CRTFCT");
+    addReq("MMD_APPRVL");
+    addReq("MSDS_SHEET");
+  }
 
-  // 14. CUSTOMS_EXAM_REPORT (Mandatory for ListA, Origin: ON WHEEL)
-  if (ListA.includes(locId) && normOrigin === "W") addReq("CUSTOMS_EXAM_REPORT");
+  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+    addReq("SURVY_RPRT");
+  }
 
-  // 15. DG_DCLRTION (Mandatory for ListDG, Cargo: HAZ ODC)
-  if (ListDG.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("DG_DCLRTION");
+  // 11. Delivery Order
+  if (isListA && ["F", "C", "E_TANK"].includes(normOrigin)) {
+    addReq("DLVRY_ORDER");
+  }
 
-  // 16. DLVRY_ORDER (Mandatory for ListInvoice, Origin: B, F, C, W, E_TANK)
-  if (ListInvoice.includes(locId) && ["B", "F", "C", "W", "E_TANK"].includes(normOrigin)) addReq("DLVRY_ORDER");
+  // 12. Invoice
+  if (isListA && ["F", "E_TANK"].includes(normOrigin)) {
+    addReq("INVOICE");
+  }
 
-  // 17. FIRE_OFC_CRTFCT (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-  if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) addReq("FIRE_OFC_CRTFCT");
+  // 13. Packing List
+  if (isListA && normOrigin === "F") {
+    addReq("PACK_LIST");
+  }
 
-  // 18. BOOK_CNFRM_CPY (Mandatory for Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
-  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF"].some(tp => normCargoTp.includes(tp))) addReq("BOOK_CNFRM_CPY");
+  // 14. Shipping Bill
+  if (isListA && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+    addReq("SHIP_BILL");
+  }
 
-  // 19. BOOKING_CONF_COPY (Mandatory for VTZ, Origin: C, F, W, E_TANK)
-  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) addReq("BOOKING_CONF_COPY");
+  // 15. Shipping Instruction (Vizag only)
+  if (isVizag && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+    addReq("SHIPPING_INSTRUCTION");
+  }
 
-  // 20. CHK_LIST (Mandatory for Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
-  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF"].some(tp => normCargoTp.includes(tp))) addReq("CHK_LIST");
-
-  // 21. CLN_CRTFCT (Mandatory for ListA, Cargo: HAZ, Container: Empty)
-  if (ListA.includes(locId) && normCargoTp.includes("HAZ") && normCntnrStatus === "EMPTY") addReq("CLN_CRTFCT");
-
-  // 22. CNTNR_LOAD_PLAN (Mandatory for ListA, Origin: B, C)
-  if (ListA.includes(locId) && ["B", "C"].includes(normOrigin)) addReq("CNTNR_LOAD_PLAN");
+  // 16. VGM Annexure-1 (only if manual VGM)
+  if (
+    VGM_PORTS.includes(locId) &&
+    ["C", "F", "W", "E_TANK"].includes(normOrigin) &&
+    hasManualVgm
+  ) {
+    addReq("VGM_ANXR1");
+  }
 
   return required;
 };
@@ -998,6 +1067,12 @@ export const isFieldVisible = (fieldName, formData) => {
   // CHA/FF/IE Code - Nhavasheva
   if (["CHACode", "FFCode", "IECode"].includes(fieldName)) {
     return locId === "INNSA1";
+  }
+
+  // Issue To - Hidden/Blank for NSICT/NSIGT/CCTL/ICT terminals
+  if (fieldName === "issueTo") {
+    const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+    return !hiddenTerminals.includes(terminalCode);
   }
 
   // Stakeholder details - Always visible to ensure mandatory fields are not hidden

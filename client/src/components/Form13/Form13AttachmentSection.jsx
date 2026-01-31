@@ -13,13 +13,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  CloudUpload as CloudUploadIcon,
   CheckCircle as CheckCircleIcon,
-  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 
 const Form13AttachmentSection = ({
@@ -27,7 +24,7 @@ const Form13AttachmentSection = ({
   onFormDataChange,
   requiredAttachments = [],
 }) => {
-  // Common document types to show as fixed rows (inspired by the image)
+  // Common document types to show as fixed rows
   const commonDocs = [
     { code: 'BOOKING_COPY', name: 'Booking Copy' },
     { code: 'SHIP_BILL', name: 'Shipping Bill' },
@@ -35,6 +32,7 @@ const Form13AttachmentSection = ({
     { code: 'DLVRY_ORDER', name: 'Delivery Order' },
     { code: 'INVOICE', name: 'Invoice' },
     { code: 'PACK_LIST', name: 'Packing List' },
+    { code: 'CNTNR_LOAD_PLAN', name: 'Container Load Plan' },
   ];
 
   // Merge common with required if they don't overlap
@@ -62,20 +60,46 @@ const Form13AttachmentSection = ({
     const fileWithTitle = new File([file], file.name, { type: file.type });
     fileWithTitle.title = docCode;
 
-    // Filter out existing attachment of same type if it exists, then add new one
-    const otherAttachments = formData.attachments.filter(att => att.title !== docCode);
-    onFormDataChange('attachments', '', [...otherAttachments, fileWithTitle]);
+    // IMPORTANT: Concept-aware replacement
+    // If we are uploading Packing List, we must remove ANY existing Packing List entry 
+    // even if it had a different code (like PACKING_LIST or PL) in the past.
+    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
+    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
 
+    const otherAttachments = formData.attachments.filter(att => {
+      const attTitle = att.title || att.attTitle;
+      if (isPackingList(docCode) && isPackingList(attTitle)) return false;
+      if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
+      return attTitle !== docCode;
+    });
+
+    onFormDataChange('attachments', '', [...otherAttachments, fileWithTitle]);
     event.target.value = '';
   };
 
   const handleRemoveFile = (docCode) => {
-    const newFiles = formData.attachments.filter(att => att.title !== docCode);
+    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
+    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
+
+    const newFiles = formData.attachments.filter(att => {
+      const attTitle = att.title || att.attTitle;
+      if (isPackingList(docCode) && isPackingList(attTitle)) return false;
+      if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
+      return attTitle !== docCode;
+    });
     onFormDataChange('attachments', '', newFiles);
   };
 
   const getUploadedFileForType = (docCode) => {
-    return formData.attachments.find(att => att.title === docCode);
+    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
+    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
+
+    return formData.attachments.find(att => {
+      const attTitle = att.title || att.attTitle;
+      if (isPackingList(docCode) && isPackingList(attTitle)) return true;
+      if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return true;
+      return attTitle === docCode;
+    });
   };
 
   const SectionHeader = ({ title, showRedBar }) => (
@@ -107,6 +131,7 @@ const Form13AttachmentSection = ({
             {displayDocs.map((doc) => {
               const uploadedFile = getUploadedFileForType(doc.code);
               const isRequired = requiredAttachments.find(r => r.code === doc.code)?.required;
+              const fileName = uploadedFile ? (uploadedFile.name || uploadedFile.attNm || "File Attached") : "";
 
               return (
                 <TableRow key={doc.code} hover>
@@ -125,7 +150,7 @@ const Form13AttachmentSection = ({
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#e8f5e9', py: 0.5, px: 2, borderRadius: '4px', border: '1px solid #c8e6c9' }}>
                           <CheckCircleIcon sx={{ color: '#4caf50', fontSize: 20 }} />
                           <Typography variant="body2" sx={{ color: '#2e7d32', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {uploadedFile.name}
+                            {fileName}
                           </Typography>
                         </Box>
                       ) : (

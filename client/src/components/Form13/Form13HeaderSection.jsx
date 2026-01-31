@@ -28,7 +28,8 @@ const Form13HeaderSection = ({
     originTypes,
     containerStatuses,
     formTypes,
-    portIds
+    portIds,
+    issueToOptions
   } = masterData;
 
   // --- CASCADING DROPDOWN LOGIC ---
@@ -209,6 +210,9 @@ const Form13HeaderSection = ({
         break;
       case "cfsCode":
         selectOptions = cfsOptions;
+        break;
+      case "issueTo":
+        selectOptions = issueToOptions || [];
         break;
       default:
         isSelect = false;

@@ -250,30 +250,63 @@ const Form13 = () => {
   };
 
   const prefillForm = (data) => {
+    console.log("📝 Prefilling form with data:", data);
+
     // Basic fields mapping
     const newFormData = { ...formData };
+
+    // Header fields mapping (Case-insensitive to handle DB vs State naming differences)
+    const stateKeys = Object.keys(newFormData);
     Object.keys(data).forEach((key) => {
+      // Find matching key in state (case-insensitive)
+      const matchingKey = stateKeys.find(sk => sk.toLowerCase() === key.toLowerCase());
+
       if (
-        key in newFormData &&
-        key !== "containers" &&
-        key !== "attachments"
+        matchingKey &&
+        !["containers", "attachments", "cntrlist", "attlist"].includes(matchingKey.toLowerCase())
       ) {
-        newFormData[key] = data[key] || "";
+        newFormData[matchingKey] = data[key] !== null && data[key] !== undefined ? data[key] : "";
+        console.log(`   - Mapped ${key} to ${matchingKey}: ${newFormData[matchingKey]}`);
       }
     });
 
-    // Special handling for containers if needed
-    if (data.containers && data.containers.length > 0) {
-      newFormData.containers = data.containers;
+    // Special handling for Container List (stored as cntrList in DB)
+    const sourceContainers = data.cntrList || data.containers || [];
+    if (sourceContainers.length > 0) {
+      console.log("📦 Found containers to prefill:", sourceContainers);
+      newFormData.containers = sourceContainers.map((c, idx) => {
+        console.log(`   - Pre-filling container ${idx}:`, c.cntnrNo);
+        return {
+          ...c,
+          // Ensure nesting for shipping bills is preserved
+          sbDtlsVo: c.sbDtlsVo || [{
+            shipBillInvNo: "", shipBillDt: "", leoNo: "", leoDt: "",
+            chaNm: "", chaPan: "", exporterNm: "", exporterIec: "", noOfPkg: 0
+          }]
+        };
+      });
+    } else {
+      console.warn("⚠️ No containers found in the data to prefill");
+    }
+
+    // Special handling for Attachment List (stored as attList in DB)
+    const sourceAttachments = data.attList || data.attachments || [];
+    if (sourceAttachments.length > 0) {
+      console.log("📎 Found attachments to prefill:", sourceAttachments.length);
+      newFormData.attachments = sourceAttachments;
     }
 
     setFormData(newFormData);
+    console.log("✅ Final Form State set:", newFormData);
     setSuccess("Form pre-filled with existing data");
   };
 
   // Feature: Copy Data from Previous Entry
   useEffect(() => {
     const checkPreviousEntry = async () => {
+      // Don't check for previous entries if we are in edit mode
+      if (isEditMode) return;
+
       // Only check if we have shipping line and booking no
       if (formData.bnfCode && formData.bookNo && formData.bookNo.length >= 3) {
         try {
@@ -297,11 +330,11 @@ const Form13 = () => {
     };
 
     // Only trigger if we aren't currently loading a previous entry
-    if (!loading && masterDataLoaded) {
+    if (!loading && masterDataLoaded && !isEditMode) {
       const timer = setTimeout(checkPreviousEntry, 1000);
       return () => clearTimeout(timer);
     }
-  }, [formData.bnfCode, formData.bookNo]);
+  }, [formData.bnfCode, formData.bookNo, isEditMode]);
 
   const handleCopyFromPrevious = () => {
     if (previousEntry) {
@@ -310,16 +343,74 @@ const Form13 = () => {
         _id, createdAt, updatedAt, __v, odexRefNo, status,
         vesselApiResponse, podApiResponse, form13ApiResponse,
         timestamp, hashKey,
+        cntrList, attList, // Destructure new names
         ...cleanData
       } = previousEntry;
+
+      // Determine container source
+      const sourceContainers = previousEntry.cntrList || previousEntry.containers || [];
+
+      // Deep copy containers with their sbDtlsVo (shipping bill details)
+      let copiedContainers = [];
+      if (sourceContainers.length > 0) {
+        copiedContainers = sourceContainers.map(container => {
+          // Remove MongoDB-specific fields from container
+          const { _id: cId, ...containerData } = container;
+
+          // Deep copy sbDtlsVo if it exists
+          let copiedSbDtls = [];
+          if (container.sbDtlsVo && container.sbDtlsVo.length > 0) {
+            copiedSbDtls = container.sbDtlsVo.map(sb => {
+              const { _id: sbId, ...sbData } = sb;
+              return { ...sbData };
+            });
+          } else {
+            // Provide default shipping bill structure if missing
+            copiedSbDtls = [{
+              shipBillInvNo: "",
+              shipBillDt: "",
+              leoNo: "",
+              leoDt: "",
+              chaNm: "",
+              chaPan: "",
+              exporterNm: "",
+              exporterIec: "",
+              noOfPkg: 0,
+            }];
+          }
+
+          return {
+            ...containerData,
+            sbDtlsVo: copiedSbDtls,
+            // Reset status for new entry
+            status: "REQUESTED",
+            cntnrReqId: "",
+          };
+        });
+      }
+
+      // Determine attachment source
+      const sourceAttachments = previousEntry.attList || previousEntry.attachments || [];
+
+      // Deep copy attachments (without file data for now, just metadata)
+      let copiedAttachments = [];
+      if (sourceAttachments.length > 0) {
+        copiedAttachments = sourceAttachments.map(att => {
+          const { _id: attId, ...attData } = att;
+          return { ...attData };
+        });
+      }
 
       setFormData(prev => ({
         ...prev,
         ...cleanData,
         // Keep current pyrCode
         pyrCode: prev.pyrCode,
+        // Explicitly set containers and attachments
+        containers: copiedContainers.length > 0 ? copiedContainers : prev.containers,
+        attachments: copiedAttachments,
       }));
-      setSuccess("Previous entry data copied successfully");
+      setSuccess("Previous entry data copied successfully (containers, shipping details & attachments included)");
     }
     setShowCopyPopup(false);
     setPreviousEntry(null);
@@ -603,7 +694,7 @@ const Form13 = () => {
     const requiredAttachments = getRequiredAttachments();
     requiredAttachments.forEach((reqAtt) => {
       const hasAttachment = formData.attachments.some(
-        (att) => att.title === reqAtt.code
+        (att) => (att.title === reqAtt.code || att.attTitle === reqAtt.code)
       );
       if (reqAtt.required && !hasAttachment) {
         errors[`attachment_${reqAtt.code}`] = `${reqAtt.name} is required`;
@@ -618,7 +709,7 @@ const Form13 = () => {
   // Get Required Attachments based on location, cargo type, and origin as per images
   const getRequiredAttachments = () => {
     const required = [];
-    const { locId, cargoTp, origin, cntnrStatus } = formData;
+    const { locId, cargoTp, origin, cntnrStatus, containers } = formData;
 
     // 0. BOOKING_COPY (Mandatory For All Locations)
     required.push({ code: "BOOKING_COPY", name: "Booking Copy", required: true });
@@ -627,6 +718,11 @@ const Form13 = () => {
     const normOrigin = (origin || "").toUpperCase();
     const normCntnrStatus = (cntnrStatus || "").toUpperCase();
 
+    // Check if any container has manual VGM
+    const hasManualVgm = (containers || []).some(c =>
+      (c.vgmViaODeX || "").toUpperCase() === "N"
+    );
+
     // Port Lists from Images
     // ListA: Major Ports excluding Chennai group, Paradip, Kakinada
     const ListA = ["INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1", "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1", "INHAL1", "INKRI1", "INIXY1"];
@@ -634,10 +730,15 @@ const Form13 = () => {
     const ListChennaiGroup = ["INMAA1", "INKAT1", "INENN1"];
     // ListVGM: All ports mentioned for VGM/MSDS/HAZ/LASHING
     const ListVGM = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
-    // ListInvoice: All major ports + Chennai
-    const ListInvoice = [...ListA, "INMAA1"];
+    // ListInvoiceAndDO: All major ports + Chennai
+    const ListInvoiceAndDO = [...ListA, "INMAA1"];
     // ListDG: All major ports + Chennai + Kattupalli
     const ListDG = [...ListA, "INMAA1", "INKAT1"];
+
+    // Helper to check cargo types
+    const isHazCargo = normCargoTp.includes("HAZ");
+    const isOdcCargo = normCargoTp.includes("ODC");
+    const isHazOrOdc = isHazCargo || isOdcCargo;
 
     // 1. PRE_EGM (Mandatory: N, Chennai)
     if (locId === "INMAA1") {
@@ -654,28 +755,28 @@ const Form13 = () => {
       required.push({ code: "SHIPPING_INSTRUCTION", name: "Shipping instruction (SI)", required: true });
     }
 
-    // 4. SURVY_RPRT (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-    if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 4. SURVY_RPRT (Mandatory for Chennai Group, Cargo: HAZ or ODC)
+    if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
       required.push({ code: "SURVY_RPRT", name: "Survey Report", required: true });
     }
 
-    // 5. VGM_ANXR1 (Mandatory for ListVGM, Origin: C, F, W, E_TANK)
-    if (ListVGM.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+    // 5. VGM_ANXR1 (Mandatory for ListVGM, Origin: B, C, F, W, E_TANK, has manual VGM)
+    if (ListVGM.includes(locId) && ["B", "C", "F", "W", "E_TANK"].includes(normOrigin) && hasManualVgm) {
       required.push({ code: "VGM_ANXR1", name: "VGM-Annexure 1", required: true });
     }
 
-    // 6. MSDS (Mandatory for ListVGM, Cargo: ODC HAZ)
-    if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 6. MSDS (Mandatory for ListVGM, Cargo: HAZ only)
+    if (ListVGM.includes(locId) && isHazCargo) {
       required.push({ code: "MSDS", name: "MSDS", required: true });
     }
 
-    // 7. MSDS_SHEET (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-    if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 7. MSDS_SHEET (Mandatory for Chennai Group, Cargo: HAZ only)
+    if (ListChennaiGroup.includes(locId) && isHazCargo) {
       required.push({ code: "MSDS_SHEET", name: "MSDS Sheet", required: true });
     }
 
-    // 8. ODC_SURVEYOR_REPORT_PHOTOS (Mandatory for ListVGM, Cargo: ODC HAZ)
-    if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 8. ODC_SURVEYOR_REPORT_PHOTOS (Mandatory for ListVGM, Cargo: ODC only)
+    if (ListVGM.includes(locId) && isOdcCargo) {
       required.push({ code: "ODC_SURVEYOR_REPORT_PHOTOS", name: "ODC SURVEYOR REPORT + PHOTOS", required: true });
     }
 
@@ -684,23 +785,23 @@ const Form13 = () => {
       required.push({ code: "PACK_LIST", name: "Packing List", required: true });
     }
 
-    // 10. HAZ_DG_DECLARATION (Mandatory for ListVGM, Cargo: ODC HAZ)
-    if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 10. HAZ_DG_DECLARATION (Mandatory for ListVGM, Cargo: HAZ only)
+    if (ListVGM.includes(locId) && isHazCargo) {
       required.push({ code: "HAZ_DG_DECLARATION", name: "HAZ DG DECLARATION", required: true });
     }
 
-    // 11. INVOICE (Mandatory for ListInvoice, Origin: F, E_TANK)
-    if (ListInvoice.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
+    // 11. INVOICE (Mandatory for ListInvoiceAndDO, Origin: F, E_TANK)
+    if (ListInvoiceAndDO.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
       required.push({ code: "INVOICE", name: "Invoice", required: true });
     }
 
-    // 12. LASHING_CERTIFICATE (Mandatory for ListVGM, Cargo: ODC & HAZ)
-    if (ListVGM.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 12. LASHING_CERTIFICATE (Mandatory for ListVGM, Cargo: HAZ or ODC)
+    if (ListVGM.includes(locId) && isHazOrOdc) {
       required.push({ code: "LASHING_CERTIFICATE", name: "LASHING CERTIFICATE", required: true });
     }
 
-    // 13. MMD_APPRVL (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-    if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 13. MMD_APPRVL (Mandatory for Chennai Group, Cargo: HAZ only)
+    if (ListChennaiGroup.includes(locId) && isHazCargo) {
       required.push({ code: "MMD_APPRVL", name: "MMD Approval", required: true });
     }
 
@@ -709,18 +810,18 @@ const Form13 = () => {
       required.push({ code: "CUSTOMS_EXAM_REPORT", name: "Customs Examination Report", required: true });
     }
 
-    // 15. DG_DCLRTION (Mandatory for ListDG, Cargo: HAZ ODC)
-    if (ListDG.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 15. DG_DCLRTION (Mandatory for ListDG, Cargo: HAZ only)
+    if (ListDG.includes(locId) && isHazCargo) {
       required.push({ code: "DG_DCLRTION", name: "DG Declaration", required: true });
     }
 
-    // 16. DLVRY_ORDER (Mandatory for ListInvoice, Origin: F, C, E_TANK)
-    if (ListInvoice.includes(locId) && ["F", "C", "E_TANK"].includes(normOrigin)) {
+    // 16. DLVRY_ORDER (Mandatory for ListInvoiceAndDO, Origin: B, F, C, W, E_TANK)
+    if (ListInvoiceAndDO.includes(locId) && ["B", "F", "C", "W", "E_TANK"].includes(normOrigin)) {
       required.push({ code: "DLVRY_ORDER", name: "Delivery Order", required: true });
     }
 
-    // 17. FIRE_OFC_CRTFCT (Mandatory for Chennai Group, Cargo: HAZ & ODC)
-    if (ListChennaiGroup.includes(locId) && (normCargoTp.includes("HAZ") || normCargoTp.includes("ODC"))) {
+    // 17. FIRE_OFC_CRTFCT (Mandatory for Chennai Group, Cargo: HAZ only)
+    if (ListChennaiGroup.includes(locId) && isHazCargo) {
       required.push({ code: "FIRE_OFC_CRTFCT", name: "Fire Office Certificate", required: true });
     }
 
@@ -740,12 +841,12 @@ const Form13 = () => {
     }
 
     // 21. CLN_CRTFCT (Mandatory for ListA, Cargo: HAZ, Container: Empty)
-    if (ListA.includes(locId) && normCargoTp.includes("HAZ") && normCntnrStatus === "EMPTY") {
+    if (ListA.includes(locId) && isHazCargo && normCntnrStatus === "EMPTY") {
       required.push({ code: "CLN_CRTFCT", name: "Cleaning certificate", required: true });
     }
 
-    // 22. CNTNR_LOAD_PLAN (Mandatory for ListA, Origin: Dock Stuff)
-    if (ListA.includes(locId) && normOrigin === "C") {
+    // 22. CNTNR_LOAD_PLAN (Mandatory for ListA, Origin: Buffer or Dock Stuff)
+    if (ListA.includes(locId) && ["B", "C"].includes(normOrigin)) {
       required.push({ code: "CNTNR_LOAD_PLAN", name: "Container Load Plan", required: true });
     }
 
@@ -1014,9 +1115,19 @@ const Form13 = () => {
       // Prepare attachments with base64 encoding
       const attList = await Promise.all(
         formData.attachments.map(async (file) => {
-          // Default naming based on type
-          const attName = (file.title || "BOOKING_COPY").toLowerCase() + ".pdf";
+          // If it's already from the DB, it will have attData and no name property (likely)
+          // or it will be an object with attData.
+          if (file.attData) {
+            return {
+              attReqId: file.attReqId || "",
+              attNm: file.attNm,
+              attData: file.attData,
+              attTitle: file.attTitle,
+            };
+          }
 
+          // It's a new File object from the frontend
+          const attName = (file.title || "BOOKING_COPY").toLowerCase() + ".pdf";
           return {
             attReqId: "",
             attNm: attName,
