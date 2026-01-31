@@ -26,6 +26,8 @@ import "../styles/VGM.scss";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import ImagePreview from "../gallery/ImagePreview.jsx";
+import VGMDownload from "./VGMDownload.jsx";
+import { generateVGMPdf, EXPORTERS } from "../utils/VGMPdfGenerator.js";
 
 
 // --- Helper Components ---
@@ -110,6 +112,10 @@ const VGMForm = ({
   const [isEditMode, setIsEditMode] = useState(editMode);
   const [requestData, setRequestData] = useState(existingRequest);
   const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
+  const [showVGMDownload, setShowVGMDownload] = useState(false);
+  const [submittedVGMData, setSubmittedVGMData] = useState(null);
+  const [selectedExporter, setSelectedExporter] = useState("");
+  const [generatingExporterPdf, setGeneratingExporterPdf] = useState(false);
   const checkingBookingRef = useRef(false);
   const lastCheckedBookingRef = useRef({ bookNo: "", linerId: "" });
   const bookingCheckTimerRef = useRef(null);
@@ -250,12 +256,11 @@ const VGMForm = ({
               { variant: "success" }
             );
 
-            // if (!isEditMode) {
-            //   formik.resetForm();
-            //   setAttachments([]);
-            // } else {
-            //   navigate("/vgm-status");
-            // }
+            // Store VGM data and show download modal for new submissions
+            if (!isEditMode) {
+              setSubmittedVGMData(values);
+              setShowVGMDownload(true);
+            }
           }
         }
       } catch (error) {
@@ -689,6 +694,32 @@ const VGMForm = ({
     });
   };
 
+  // Handle exporter-specific PDF download
+  const handleExporterPdfDownload = async (exporterKey) => {
+    if (!exporterKey) return;
+
+    const exporter = EXPORTERS.find((e) => e.key === exporterKey);
+    if (!exporter) {
+      enqueueSnackbar("Invalid exporter selected", { variant: "error" });
+      return;
+    }
+
+    setSelectedExporter(exporterKey);
+    setGeneratingExporterPdf(true);
+
+    try {
+      const filename = await generateVGMPdf(formik.values, exporter);
+      enqueueSnackbar(`PDF generated: ${filename}`, { variant: "success" });
+      setIsPdfDownloaded(true);
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      enqueueSnackbar("Failed to generate PDF. Please try again.", { variant: "error" });
+    } finally {
+      setGeneratingExporterPdf(false);
+      setSelectedExporter("");
+    }
+  };
+
   return (
     <FormikProvider value={formik}>
       <div className="vgm-container">
@@ -1079,14 +1110,52 @@ const VGMForm = ({
 
           {/* Actions */}
           <div className="panel">
-            {/* Added explicit gap via style just in case class fails, removed gap-4 class */}
+            {/* Exporter Dropdown for VGM Letter Download */}
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "10px", color: "#374151" }}>
+                Download VGM Letter for Exporter
+              </h4>
+              <div style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
+                <select
+                  className="form-control"
+                  style={{
+                    maxWidth: "300px",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "2px solid #e5e7eb",
+                    fontSize: "0.95rem",
+                    cursor: "pointer"
+                  }}
+                  value={selectedExporter}
+                  onChange={(e) => handleExporterPdfDownload(e.target.value)}
+                  disabled={generatingExporterPdf || loading}
+                >
+                  <option value="">-- Select Exporter --</option>
+                  {EXPORTERS.map((exporter) => (
+                    <option key={exporter.key} value={exporter.key}>
+                      {exporter.label}
+                    </option>
+                  ))}
+                </select>
+                {generatingExporterPdf && (
+                  <span style={{ color: "#10b981", fontSize: "0.9rem" }}>
+                    ⏳ Generating PDF...
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "8px" }}>
+                Select an exporter to download VGM letter with their company letterhead
+              </p>
+            </div>
+
+            {/* Action Buttons */}
             <div
               className="d-flex"
-              style={{ justifyContent: "center", gap: "15px" }}
+              style={{ justifyContent: "center", gap: "15px", borderTop: "1px solid #e5e7eb", paddingTop: "20px" }}
             >
               <button
                 type="button"
-                className="btn btn-outline" // Removed me-2 since we added gap:15px above, but you can add me-2 here if you prefer
+                className="btn btn-outline"
                 onClick={handleCancel}
                 disabled={loading}
               >
@@ -1117,6 +1186,20 @@ const VGMForm = ({
           </div>
         </form>
       </div>
+
+      {/* VGM Download Modal for Individual Exporters */}
+      {showVGMDownload && submittedVGMData && (
+        <VGMDownload
+          vgmData={submittedVGMData}
+          onClose={() => {
+            setShowVGMDownload(false);
+            setSubmittedVGMData(null);
+            formik.resetForm();
+            setAttachments([]);
+            setIsPdfDownloaded(false);
+          }}
+        />
+      )}
     </FormikProvider>
   );
 };
