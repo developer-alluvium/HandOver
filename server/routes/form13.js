@@ -14,9 +14,9 @@ const ODEX_CONFIG = {
     vesselMaster: "/RS/iForm13Service/json/getForm13VesselInfo",
 
     podMaster: "/RS/iForm13Service/json/getForm13PODInfo",
-    submitForm13: "/DEMO/RS/iForm13Service/json/saveF13",
+    submitForm13: "/RS/iForm13Service/json/saveF13",
     getStatus: "/RS/iForm13Service/json/getForm13ReqInfo",
-    cancelForm13: "/DEMO/RS/iForm13Service/json/requestF13CancelPyr",
+    cancelForm13: "/RS/iForm13Service/json/requestF13CancelPyr",
   },
 };
 
@@ -246,9 +246,16 @@ router.post("/submit", async (req, res) => {
       });
     }
 
-    // Save to database
+    console.log("📥 Received Form 13 Submission:");
+    console.log("   - cntrList length:", formData.cntrList?.length);
+    console.log("   - attList length:", formData.attList?.length);
+    console.log("   - Full payload keys:", Object.keys(formData));
+
+    // Save the EXACT payload as-is - no transformation
     const form13 = new Form13(formData);
     await form13.save();
+
+    console.log("💾 Saved document ID:", form13._id);
 
     // Call ODeX API
     const odexResponse = await callOdexAPI(

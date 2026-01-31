@@ -512,147 +512,31 @@ export const ATTACHMENT_REQUIREMENTS = {
   // Always mandatory for all locations
   ALWAYS_REQUIRED: ["BOOKING_COPY"],
 
-  // Location-specific attachment groups
-  LOCATION_GROUPS: {
-    // Chennai, Kattupalli, Ennore group
-    CHENNAI_KATTUPALLI_ENNORE: {
-      locations: ["INMAA1", "INKAT1", "INENN1"],
-      cargoTypes: ["HAZ", "ODC", "GEN", "ONION", "REF"],
-      mandatory: ["BOOK_CNFRM_CPY", "CHK_LIST"],
-      conditional: {
-        HAZ: ["FIRE_OFC_CRTFCT", "MMD_APPRVL", "MSDS_SHEET", "SURVY_RPRT"],
-        ODC: ["FIRE_OFC_CRTFCT", "MMD_APPRVL", "MSDS_SHEET", "SURVY_RPRT"],
-      },
-    },
-
-    // Major ports group (Nhava Sheva, Mundra, Mangalore, etc.)
-    MAJOR_PORTS: {
-      locations: [
-        "INNSA1",
-        "INMUN1",
-        "INNML1",
-        "INTUT1",
-        "INCCU1",
-        "INPAV1",
-        "INHZA1",
-        "INMRM1",
-        "INCOK1",
-        "INMAA1",
-        "INVTZ1",
-        "INHAL1",
-        "INKRI1",
-        "INKAT1",
-        "INPRT1",
-        "INIXY1",
-        "INKAK1",
-        "INENN1",
-      ],
-      mandatory: [],
-      conditional: {
-        // HAZ + Empty container
-        HAZ_EMPTY: {
-          condition: (cargoTp, cntnrStatus) =>
-            cargoTp === "HAZ" && cntnrStatus === "EMPTY",
-          attachments: ["CLN_CRTFCT"],
-        },
-
-        // Origin-based
-        DOCK_STUFF: {
-          condition: (origin) => ["C", "D"].includes(origin),
-          attachments: ["CNTNR_LOAD_PLAN"],
-        },
-
-        ON_WHEEL: {
-          condition: (origin) => origin === "W",
-          attachments: ["CUSTOMS_EXAM_REPORT"],
-        },
-
-        // Cargo type based
-        HAZ_ODC: {
-          condition: (cargoTp) =>
-            ["HAZ", "ODC", "ODC(HAZ)", "REF(HAZ)", "FLT(HAZ)"].includes(
-              cargoTp
-            ),
-          attachments: [
-            "DG_DCLRTION",
-            "HAZ_DG_DECLARATION",
-            "LASHING_CERTIFICATE",
-            "MSDS",
-            "ODC_SURVEYOR_REPORT_PHOTOS",
-          ],
-        },
-
-        // Origin-based attachments
-        FACTORY_DOCK_EMPTY: {
-          condition: (origin) => ["F", "C", "E_TANK"].includes(origin),
-          attachments: ["DLVRY_ORDER"],
-        },
-
-        FACTORY_EMPTY: {
-          condition: (origin) => ["F", "E_TANK"].includes(origin),
-          attachments: ["INVOICE"],
-        },
-
-        FACTORY_ONLY: {
-          condition: (origin) => origin === "F",
-          attachments: ["PACK_LIST"],
-        },
-
-        ALL_EXCEPT_BUFFER: {
-          condition: (origin) => ["C", "F", "W", "E_TANK"].includes(origin),
-          attachments: ["SHIP_BILL", "VGM_ANXR1"],
-        },
-      },
-    },
-
-    // Vishakapatnam specific
-    VISHAKAPATNAM: {
-      locations: ["INVTZ1"],
-      mandatory: [],
-      conditional: {
-        DOCK_FACTORY_WHEEL: {
-          condition: (origin) => ["C", "F", "W"].includes(origin),
-          attachments: ["BOOKING_CONF_COPY"],
-        },
-        ALL_VISHAKAPATNAM: {
-          condition: (origin) => ["C", "F", "W", "E_TANK"].includes(origin),
-          attachments: ["SHIPPING_INSTRUCTION"],
-        },
-      },
-    },
-
-    // Chennai specific (optional)
-    CHENNAI_OPTIONAL: {
-      locations: ["INMAA1"],
-      optional: ["PRE_EGM"],
-    },
-  },
-
-  // Attachment titles mapping
+  // Attachment titles mapping from images
   ATTACHMENT_TITLES: {
     BOOKING_COPY: "Booking Copy",
-    BOOK_CNFRM_CPY: "Booking Confirmation Copy",
-    BOOKING_CONF_COPY: "Booking Confirmation Copy",
-    CHK_LIST: "Check List",
-    CLN_CRTFCT: "Cleaning Certificate",
-    CNTNR_LOAD_PLAN: "Container Load Plan",
+    PRE_EGM: "Pre-EGM",
+    SHIP_BILL: "Shipping Bill",
+    SHIPPING_INSTRUCTION: "Shipping instruction (SI)",
+    SURVY_RPRT: "Survey Report",
+    VGM_ANXR1: "VGM-Annexure 1",
+    MSDS: "MSDS",
+    MSDS_SHEET: "MSDS Sheet",
+    ODC_SURVEYOR_REPORT_PHOTOS: "ODC SURVEYOR REPORT + PHOTOS",
+    PACK_LIST: "Packing List",
+    HAZ_DG_DECLARATION: "HAZ DG DECLARATION",
+    INVOICE: "Invoice",
+    LASHING_CERTIFICATE: "LASHING CERTIFICATE",
+    MMD_APPRVL: "MMD Approval",
     CUSTOMS_EXAM_REPORT: "Customs Examination Report",
     DG_DCLRTION: "DG Declaration",
     DLVRY_ORDER: "Delivery Order",
     FIRE_OFC_CRTFCT: "Fire Office Certificate",
-    HAZ_DG_DECLARATION: "HAZ DG Declaration",
-    INVOICE: "Invoice",
-    LASHING_CERTIFICATE: "Lashing Certificate",
-    MMD_APPRVL: "MMD Approval",
-    MSDS: "MSDS",
-    MSDS_SHEET: "MSDS Sheet",
-    ODC_SURVEYOR_REPORT_PHOTOS: "ODC Surveyor Report + Photos",
-    PACK_LIST: "Packing List",
-    PRE_EGM: "Pre-EGM",
-    SHIP_BILL: "Shipping Bill",
-    SHIPPING_INSTRUCTION: "Shipping Instruction (SI)",
-    SURVY_RPRT: "Survey Report",
-    VGM_ANXR1: "VGM-Annexure 1",
+    BOOK_CNFRM_CPY: "Booking Confirmation Copy",
+    BOOKING_CONF_COPY: "Booking confirmation copy",
+    CHK_LIST: "Check List",
+    CLN_CRTFCT: "Cleaning certificate",
+    CNTNR_LOAD_PLAN: "Container Load Plan",
   },
 };
 
@@ -698,6 +582,9 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
     case 'leoDt':
       return !!formData.containers?.[containerIndex]?.sbDtlsVo?.[0]?.leoNo;
 
+    case 'cfsCode':
+      return ['B', 'C', 'F_CFS'].includes(formData.origin);
+
     default:
       return false;
   }
@@ -708,173 +595,173 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
  * @param {Object} formData - Complete form data
  * @returns {Array} - Array of required attachment objects
  */
+
 export const getRequiredAttachments = (formData) => {
-  const { locId, cargoTp, origin, cntnrStatus } = formData;
+  const { locId, cargoTp, origin, cntnrStatus, cntrList } = formData;
   const required = [];
 
-  // Always required
-  ATTACHMENT_REQUIREMENTS.ALWAYS_REQUIRED.forEach((code) => {
-    required.push({
-      code,
-      name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-      required: true,
-    });
-  });
+  // ---------------------------
+  // NORMALIZATION
+  // ---------------------------
+  const normCargoTp = (cargoTp || "").toUpperCase();
+  const normCntnrStatus = (cntnrStatus || "").toUpperCase();
 
-  // Check each location group
-  Object.values(ATTACHMENT_REQUIREMENTS.LOCATION_GROUPS).forEach((group) => {
-    // Check if location is in this group
-    if (group.locations && group.locations.includes(locId)) {
-      // Add mandatory attachments for this group
-      if (group.mandatory) {
-        group.mandatory.forEach((code) => {
-          if (!required.some((att) => att.code === code)) {
-            required.push({
-              code,
-              name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-              required: true,
-            });
-          }
-        });
-      }
+  // Origin normalization (VERY IMPORTANT)
+  const ORIGIN_MAP = {
+    DOCK: "C",
+    DOCK_STUFF: "C",
+    FACTORY: "F",
+    FACTORY_STUFF: "F",
+    ON_WHEEL: "W",
+    ON_WHELL: "W",
+    WHEEL: "W",
+    EMPTY_TANK: "E_TANK",
+    E_TANK: "E_TANK"
+  };
 
-      // Check conditional attachments
-      if (group.conditional) {
-        Object.entries(group.conditional).forEach(
-          ([conditionKey, conditionData]) => {
-            let shouldInclude = false;
+  const normOrigin = ORIGIN_MAP[(origin || "").toUpperCase()] || origin;
 
-            switch (conditionKey) {
-              case "HAZ_EMPTY":
-                shouldInclude = cargoTp === "HAZ" && cntnrStatus === "EMPTY";
-                break;
+  // ---------------------------
+  // VGM CHECK
+  // ---------------------------
+  const hasManualVgm = (cntrList || []).some(
+    (c) => (c.vgmViaODeX || "").toUpperCase() === "N"
+  );
 
-              case "DOCK_STUFF":
-                shouldInclude = ["C", "D"].includes(origin);
-                break;
+  // ---------------------------
+  // PORT GROUPS
+  // ---------------------------
+  const LIST_A = [
+    "INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1",
+    "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1",
+    "INHAL1", "INKRI1", "INKAN1"
+  ];
 
-              case "ON_WHEEL":
-                shouldInclude = origin === "W";
-                break;
+  const CHENNAI_GROUP = ["INMAA1", "INKAT1", "INENN1"];
 
-              case "HAZ_ODC":
-                shouldInclude = [
-                  "HAZ",
-                  "ODC",
-                  "ODC(HAZ)",
-                  "REF(HAZ)",
-                  "FLT(HAZ)",
-                ].includes(cargoTp);
-                break;
+  const VGM_PORTS = [
+    ...new Set([...LIST_A, ...CHENNAI_GROUP, "INPRT1", "INKAK1"])
+  ];
 
-              case "FACTORY_DOCK_EMPTY":
-                shouldInclude = ["F", "C", "E_TANK"].includes(origin);
-                break;
-
-              case "FACTORY_EMPTY":
-                shouldInclude = ["F", "E_TANK"].includes(origin);
-                break;
-
-              case "FACTORY_ONLY":
-                shouldInclude = origin === "F";
-                break;
-
-              case "ALL_EXCEPT_BUFFER":
-                shouldInclude = ["C", "F", "W", "E_TANK"].includes(origin);
-                break;
-
-              case "DOCK_FACTORY_WHEEL":
-                shouldInclude = ["C", "F", "W"].includes(origin);
-                break;
-
-              case "ALL_VISHAKAPATNAM":
-                shouldInclude = ["C", "F", "W", "E_TANK"].includes(origin);
-                break;
-
-              default:
-                // Check if conditionData has a condition function
-                if (
-                  conditionData.condition &&
-                  typeof conditionData.condition === "function"
-                ) {
-                  shouldInclude = conditionData.condition(
-                    cargoTp,
-                    origin,
-                    cntnrStatus
-                  );
-                }
-            }
-
-            if (shouldInclude && conditionData.attachments) {
-              conditionData.attachments.forEach((code) => {
-                if (!required.some((att) => att.code === code)) {
-                  required.push({
-                    code,
-                    name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-                    required: true,
-                  });
-                }
-              });
-            }
-          }
-        );
-      }
-
-      // Add optional attachments
-      if (group.optional) {
-        group.optional.forEach((code) => {
-          if (!required.some((att) => att.code === code)) {
-            required.push({
-              code,
-              name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-              required: false,
-            });
-          }
-        });
-      }
-    }
-  });
-
-  // Cargo type specific mandatory attachments
-  if (
-    cargoTp &&
-    CARGO_TYPE_RULES[cargoTp] &&
-    CARGO_TYPE_RULES[cargoTp].attachmentRequirements
-  ) {
-    const cargoAttachments = CARGO_TYPE_RULES[cargoTp].attachmentRequirements;
-
-    if (cargoAttachments.mandatory) {
-      cargoAttachments.mandatory.forEach((code) => {
-        if (!required.some((att) => att.code === code)) {
-          required.push({
-            code,
-            name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-            required: true,
-          });
-        }
+  // ---------------------------
+  // HELPERS
+  // ---------------------------
+  const addReq = (code, mandatory = true) => {
+    if (!required.some((r) => r.code === code)) {
+      required.push({
+        code,
+        name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code] || code,
+        required: mandatory
       });
     }
+  };
+
+  const isListA = LIST_A.includes(locId);
+  const isChennaiGroup = CHENNAI_GROUP.includes(locId);
+  const isVizag = locId === "INVTZ1";
+
+  // ======================================================
+  // ATTACHMENT RULES (AS PER OFFICIAL MATRIX)
+  // ======================================================
+
+  // 1. Mandatory everywhere
+  addReq("BOOKING_COPY");
+
+  // 2. Booking Confirmation Copy
+  if (
+    isChennaiGroup &&
+    ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)
+  ) {
+    addReq("BOOK_CNFRM_CPY");
   }
 
-  // Origin specific mandatory attachments
-  if (
-    origin &&
-    ORIGIN_RULES[origin] &&
-    ORIGIN_RULES[origin].attachmentRequirements
-  ) {
-    const originAttachments = ORIGIN_RULES[origin].attachmentRequirements;
+  if (isVizag && ["C", "F"].includes(normOrigin)) {
+    addReq("BOOKING_CONF_COPY");
+  }
 
-    if (originAttachments.mandatory) {
-      originAttachments.mandatory.forEach((code) => {
-        if (!required.some((att) => att.code === code)) {
-          required.push({
-            code,
-            name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES[code],
-            required: true,
-          });
-        }
-      });
-    }
+  // 3. Check List
+  if (
+    isChennaiGroup &&
+    ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)
+  ) {
+    addReq("CHK_LIST");
+  }
+
+  // 4. Cleaning Certificate (HAZ + EMPTY)
+  if (isListA && normCargoTp === "HAZ" && normCntnrStatus === "EMPTY") {
+    addReq("CLN_CRTFCT");
+  }
+
+  // 5. Container Load Plan (Dock Stuff)
+  if (isListA && normOrigin === "C") {
+    addReq("CNTNR_LOAD_PLAN");
+  }
+
+  // 6. Customs Exam Report (On Wheel)
+  if (isListA && normOrigin === "W") {
+    addReq("CUSTOMS_EXAM_REPORT");
+  }
+
+  // 7. HAZ / ODC Core Docs
+  if (["HAZ", "ODC"].includes(normCargoTp) && (isListA || isChennaiGroup)) {
+    addReq("DG_DCLRTION");
+    addReq("HAZ_DG_DECLARATION");
+    addReq("LASHING_CERTIFICATE");
+  }
+
+  // 8. ODC only
+  if (normCargoTp === "ODC" && (isListA || isChennaiGroup)) {
+    addReq("ODC_SURVEYOR_REPORT_PHOTOS");
+  }
+
+  // 9. HAZ only
+  if (normCargoTp === "HAZ" && (isListA || isChennaiGroup)) {
+    addReq("MSDS");
+  }
+
+  // 10. Chennai group extras
+  if (isChennaiGroup && normCargoTp === "HAZ") {
+    addReq("FIRE_OFC_CRTFCT");
+    addReq("MMD_APPRVL");
+    addReq("MSDS_SHEET");
+  }
+
+  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+    addReq("SURVY_RPRT");
+  }
+
+  // 11. Delivery Order
+  if (isListA && ["F", "C", "E_TANK"].includes(normOrigin)) {
+    addReq("DLVRY_ORDER");
+  }
+
+  // 12. Invoice
+  if (isListA && ["F", "E_TANK"].includes(normOrigin)) {
+    addReq("INVOICE");
+  }
+
+  // 13. Packing List
+  if (isListA && normOrigin === "F") {
+    addReq("PACK_LIST");
+  }
+
+  // 14. Shipping Bill
+  if (isListA && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+    addReq("SHIP_BILL");
+  }
+
+  // 15. Shipping Instruction (Vizag only)
+  if (isVizag && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+    addReq("SHIPPING_INSTRUCTION");
+  }
+
+  // 16. VGM Annexure-1 (only if manual VGM)
+  if (
+    VGM_PORTS.includes(locId) &&
+    ["C", "F", "W", "E_TANK"].includes(normOrigin) &&
+    hasManualVgm
+  ) {
+    addReq("VGM_ANXR1");
   }
 
   return required;
@@ -1147,9 +1034,9 @@ export const isFieldVisible = (fieldName, formData) => {
     return ["INMAA1", "INPRT1", "INKAT1", "INCCU1", "INENN1"].includes(locId);
   }
 
-  // CFS Code - Only for Dock Destuff origin
+  // CFS Code - Visible for Buffer and Dock Stuff/CFS origins
   if (fieldName === "cfsCode") {
-    return origin === "C";
+    return ["B", "C", "F_CFS"].includes(origin);
   }
 
   // Shipping Instruction No - Only for MSC
@@ -1180,6 +1067,12 @@ export const isFieldVisible = (fieldName, formData) => {
   // CHA/FF/IE Code - Nhavasheva
   if (["CHACode", "FFCode", "IECode"].includes(fieldName)) {
     return locId === "INNSA1";
+  }
+
+  // Issue To - Hidden/Blank for NSICT/NSIGT/CCTL/ICT terminals
+  if (fieldName === "issueTo") {
+    const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+    return !hiddenTerminals.includes(terminalCode);
   }
 
   // Stakeholder details - Always visible to ensure mandatory fields are not hidden

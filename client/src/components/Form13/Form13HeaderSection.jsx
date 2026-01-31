@@ -11,7 +11,7 @@ import {
   Box,
   Paper,
 } from "@mui/material";
-import { masterData } from "../../data/masterData";
+import { masterData, getCFSCodes } from "../../data/masterData";
 import { isFieldRequired, isFieldVisible } from "../../utils/form13Validations";
 
 const Form13HeaderSection = ({
@@ -28,7 +28,8 @@ const Form13HeaderSection = ({
     originTypes,
     containerStatuses,
     formTypes,
-    portIds
+    portIds,
+    issueToOptions
   } = masterData;
 
   // --- CASCADING DROPDOWN LOGIC ---
@@ -134,6 +135,12 @@ const Form13HeaderSection = ({
       .sort((a, b) => a.podNm.localeCompare(b.podNm));
   }, [pods, formData.locId, formData.terminalCode, formData.service]);
 
+  // 9. CFS Options (Filtered by Location)
+  const cfsOptions = React.useMemo(() => {
+    if (!formData.locId) return [];
+    return getCFSCodes(formData.locId).map(code => ({ value: code, label: code }));
+  }, [formData.locId]);
+
   // --- RENDERING HELPERS ---
 
   const SectionHeader = ({ title, showRedBar }) => (
@@ -192,12 +199,6 @@ const Form13HeaderSection = ({
       case "cargoTp":
         selectOptions = cargoTypes;
         break;
-      case "cfsCode":
-        selectOptions = [
-          { value: "CFS1", label: "CFS 1" },
-          { value: "CFS2", label: "CFS 2" }
-        ];
-        break;
       case "cntnrStatus":
         selectOptions = containerStatuses;
         break;
@@ -206,6 +207,12 @@ const Form13HeaderSection = ({
           { value: "Y", label: "Yes" },
           { value: "N", label: "No" }
         ];
+        break;
+      case "cfsCode":
+        selectOptions = cfsOptions;
+        break;
+      case "issueTo":
+        selectOptions = issueToOptions || [];
         break;
       default:
         isSelect = false;
@@ -217,7 +224,8 @@ const Form13HeaderSection = ({
       (fieldName === "viaNo" && !formData.vesselNm) ||
       (fieldName === "terminalCode" && !formData.vesselNm) ||
       (fieldName === "service" && !formData.terminalCode) ||
-      ((fieldName === "pod" || fieldName === "fpod") && !formData.locId)
+      ((fieldName === "pod" || fieldName === "fpod") && !formData.locId) ||
+      (fieldName === "cfsCode" && !formData.locId)
     );
 
     if (isSelect) {
@@ -275,13 +283,15 @@ const Form13HeaderSection = ({
           {renderField("pod", "POD")}
           {renderField("fpod", "FPOD")}
           {renderField("cargoTp", "Cargo Type")}
-          {renderField("cfsCode", "CFS Code")}
-
           {renderField("bookNo", "Booking No")}
           {renderField("shpInstructNo", "Shipping Instruction No")}
           {renderField("cntnrStatus", "Container Status")}
           {renderField("bookCopyBlNo", "Booking/BL No")}
+
           {renderField("mobileNo", "Mobile No")}
+          {renderField("email_Id", "Email IDs")}
+          {renderField("issueTo", "Issue To")}
+          {renderField("IsEarlyGateIn", "Early Gate In")}
         </Grid>
       </Paper>
 
@@ -301,8 +311,7 @@ const Form13HeaderSection = ({
           {renderField("Notify_TO", "Notify To", 6)}
 
           {renderField("ShipperCity", "Shipper City", 4)}
-          {renderField("email_Id", "Email IDs", 4)}
-          {renderField("IsEarlyGateIn", "Early Gate In", 4)}
+          {renderField("cfsCode", "CFS Code", 4)}
         </Grid>
       </Paper>
     </Box>
