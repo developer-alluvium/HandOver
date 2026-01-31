@@ -1,4 +1,3 @@
-// server/src/controllers/apiLogController.js
 import { ApiLogger } from "../services/apiLogger.js";
 import ApiLog from "../models/ApiLog.js";
 import config from "../config.js";
@@ -81,6 +80,25 @@ export const getVGMStatus = async (req, res) => {
 
 export const getAuthorization = async (req, res) => {
   try {
+    const requestBody = { ...req.body };
+
+    // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    const fromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    
+    requestBody.fromTs = fromTs;
+
+    // Pass secret key automatically
+    if (!requestBody.hashKey) {
+      if (config.odex.secretKey) {
+        requestBody.hashKey = config.odex.secretKey;
+     
+      } else {
+        console.warn("ODeX Secret Key is missing in server config");
+      }
+    }
+
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/getVGMAccessInfo`,
       method: "POST",
@@ -88,7 +106,7 @@ export const getAuthorization = async (req, res) => {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: req.body,
+      body: requestBody,
     };
 
     const result = await ApiLogger.logAndForward("AUTHORIZATION", requestData);

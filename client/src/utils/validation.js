@@ -316,10 +316,4 @@ export const loginValidationSchema = Yup.object({
   pyrCode: Yup.string()
     .required("CHA Name is required")
     .max(200, "Max 200 characters allowed"),
-  fromTs: Yup.string().required("Time Stamp is required"),
-  hashKey: Yup.string().when("$useEncryption", {
-    is: true,
-    then: (schema) =>
-      schema.required("Hash Key is required when encryption is enabled"),
-  }),
 });
