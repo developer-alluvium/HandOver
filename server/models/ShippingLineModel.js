@@ -9,4 +9,4 @@ const shippingLineSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-export default mongoose.model("ShippingLine", shippingLineSchema);
+export default mongoose.model("ShippingLineModel", shippingLineSchema);
