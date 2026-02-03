@@ -108,6 +108,7 @@ const VGMForm = ({
   const { userData, shippers } = useAuth();
   const [loading, setLoading] = useState(false);
   const [shippingLines, setShippingLines] = useState([]);
+ 
   const [attachments, setAttachments] = useState([]);
   const [isEditMode, setIsEditMode] = useState(editMode);
   const [requestData, setRequestData] = useState(existingRequest);
@@ -278,7 +279,9 @@ const VGMForm = ({
     const fetchShippingLines = async () => {
       try {
         const response = await masterAPI.getShippingLines();
-        setShippingLines(response.data || []);
+        // API returns { success: true, data: [...] }, so access response.data.data
+        const lines = response.data?.data || [];
+        setShippingLines(lines.length > 0 ? lines : LINERS);
       } catch (error) {
         console.error("Error fetching shipping lines:", error);
         // Fallback to static LINERS on error
