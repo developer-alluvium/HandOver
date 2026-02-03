@@ -124,16 +124,34 @@ export const vgmValidationSchema = Yup.object({
     .max(100, "Max 100 characters allowed"),
   weighBridgeWtTs: Yup.string()
     .required("Weigh Bridge Time Stamp is required")
-    .matches(
-      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-      "Timestamp must be in format: YYYY-MM-DD HH:MM:SS"
+    .test(
+      "format",
+      "Timestamp must be in format: YYYY-MM-DD HH:MM or DD-MM-YYYY HH:MM",
+      (value) => {
+        if (!value) return false;
+        // Allows YYYY-MM-DD HH:mm(:ss) or DD-MM-YYYY HH:mm(:ss)
+        const yyyyMMdd = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/;
+        const ddMMyyyy = /^\d{2}-\d{2}-\d{4} \d{2}:\d{2}(:\d{2})?$/;
+        return yyyyMMdd.test(value) || ddMMyyyy.test(value);
+      }
     )
     .test(
       "date-not-future",
       "Weighing date cannot be in the future",
       function (value) {
         if (!value) return false;
-        const inputDate = new Date(value);
+
+        let inputDate;
+        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
+        const match = value.match(ddMMyyyyPattern);
+
+        if (match) {
+          const [, day, month, year, hour, minute, second] = match;
+          inputDate = new Date(year, month - 1, day, hour, minute, second || 0);
+        } else {
+          inputDate = new Date(value);
+        }
+
         const now = new Date();
         return inputDate <= now;
       }
@@ -143,7 +161,18 @@ export const vgmValidationSchema = Yup.object({
       "Weighing date cannot be older than 2 months",
       function (value) {
         if (!value) return false;
-        const inputDate = new Date(value);
+
+        let inputDate;
+        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
+        const match = value.match(ddMMyyyyPattern);
+
+        if (match) {
+          const [, day, month, year, hour, minute, second] = match;
+          inputDate = new Date(year, month - 1, day, hour, minute, second || 0);
+        } else {
+          inputDate = new Date(value);
+        }
+
         const twoMonthsAgo = new Date();
         twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
         return inputDate >= twoMonthsAgo;
@@ -256,8 +285,8 @@ export const vgmValidationSchema = Yup.object({
       "third-party-shipper-name",
       "Shipper Name is required for third party without Shipper ID",
       function (value) {
-        const {shipId } = this.parent;
-        if ( !shipId) {
+        const { shipId } = this.parent;
+        if (!shipId) {
           return value && value.length > 0;
         }
         return true;
@@ -295,7 +324,7 @@ export const vgmValidationSchema = Yup.object({
       function (value) {
         const { shipId, shipRegTP } = this.parent;
 
-        if ( !shipId) {
+        if (!shipId) {
           if (!value || value.length === 0) return false;
 
           // PAN number validation

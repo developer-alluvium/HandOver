@@ -199,14 +199,15 @@ const VGMForm = ({
           payload.shipRegNo = values.shipRegNo;
         }
 
-        // Convert DD-MM-YYYY HH:MM:SS to YYYY-MM-DD HH:MM:SS for backend
+        // Convert DD-MM-YYYY HH:mm(:ss) to YYYY-MM-DD HH:mm:ss for backend
         if (values.weighBridgeWtTs) {
-          const ddmmyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;
+          const ddmmyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
           const match = values.weighBridgeWtTs.match(ddmmyyyyPattern);
 
           if (match) {
             const [, day, month, year, hour, minute, second] = match;
-            payload.weighBridgeWtTs = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+            const paddedSecond = second || "00";
+            payload.weighBridgeWtTs = `${year}-${month}-${day} ${hour}:${minute}:${paddedSecond}`;
             console.log('Date converted for backend:', payload.weighBridgeWtTs);
           } else {
             // If already in YYYY-MM-DD format or other format, keep as-is
