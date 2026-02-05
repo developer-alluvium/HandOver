@@ -355,13 +355,31 @@ export const generateVGMPdf = async (vgmData, exporter) => {
         ? `${values.unNo1 || ""} / ${values.imoNo1 || ""}`
         : "...N. A...";
 
+    // Container Size Display Logic
+    const getContainerSizeDisplay = (size, type) => {
+        if (!size) return "-";
+        const is20 = size.includes("20");
+        const is40 = size.includes("40") || size.includes("45");
+        const typeStr = (type || "").toUpperCase();
+
+        if (typeStr.includes("OPEN TOP") || typeStr.includes("OTP") || typeStr.includes("22U") || typeStr.includes("42U") || typeStr.includes("48U")) {
+            return `${size} OT`;
+        }
+        if (typeStr.includes("FLAT RACK") || typeStr.includes("FRC") || typeStr.includes("22P") || typeStr.includes("42P") || typeStr.includes("28P") || typeStr.includes("48P")) {
+            return `${size} FR`;
+        }
+        if (is20) return `${size} TEU`;
+        if (is40) return `${size} FEU`;
+        return `${size} TEU`;
+    };
+
     const tableData = [
         ["1*", "Name of the shipper", values.shipperNm || "-"],
         ["2*", "Shipper Registration /License no.( IEC No/CIN No)**", `IEC Code No : ${values.shipRegNo || "-"}`],
         ["3*", "Name and designation of official of the shipper authorized\nto sign document", `${values.authPrsnNm || ""}\nDesignation : ${values.authDesignation || ""}`],
         ["4*", "24 x 7 contact details of authorized official of shipper", values.authMobNo ? `+91 ${values.authMobNo}` : "-"],
         ["5*", "Container No. (If container more than one then Provide\nVGM Details Container wise)", values.cntnrNo || "-"],
-        ["6*", "Container Size ( TEU/FEU/other)", `${values.cntnrSize || ""} TEU`],
+        ["6*", "Container Size ( TEU/FEU/other)", getContainerSizeDisplay(values.cntnrSize, values.cntnrTp)],
         ["7*", "Maximum permissible weight of container as per the CSC\nplate", `${values.cscPlateMaxWtLimit || ""} ${values.cscPlateMaxWtUom || "KGS"}`],
         ["8*", "Weighbridge registration no. & Address of Weighbridge", weighBridgeInfo],
         ["9*", "Verified gross mass of container (method-1/method-2)", vgmInfo],

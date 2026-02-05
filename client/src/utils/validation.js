@@ -45,8 +45,7 @@ export const vgmValidationSchema = Yup.object({
     .oneOf(["1X20", "1X40", "1X45"], "Must be 1X20, 1X40, or 1X45"),
   cargoTp: Yup.string()
     .required("Cargo Type is required")
-    .max(3, "Max 3 characters allowed")
-    .oneOf(["GEN", "HAZ"], "Must be GEN or HAZ"),
+    .max(3, "Max 3 characters allowed"),
   cscPlateMaxWtLimit: Yup.mixed()
     .required("CSC Plate Max Weight Limit is required")
     .test("is-number", "Must be a valid number", (value) => {

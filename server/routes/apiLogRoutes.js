@@ -2,6 +2,7 @@
 import express from "express";
 import {
   submitVGM,
+  saveVGM,
   getVGMStatus,
   getAuthorization,
   editApiLog,
@@ -19,6 +20,7 @@ const router = express.Router();
 
 // Third-party API endpoints
 router.post("/vgm/submit", submitVGM);
+router.post("/vgm/save", saveVGM);
 router.get("/status/:vgmId", getVGMStatus);
 router.post("/auth/login", getAuthorization);
 router.post("/auth/logout", logout);

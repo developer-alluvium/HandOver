@@ -39,6 +39,46 @@ export const submitVGM = async (req, res) => {
   }
 };
 
+export const saveVGM = async (req, res) => {
+  try {
+    const requestData = {
+      url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`, // URL it WOULD have gone to
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: req.body,
+      timestamp: new Date()
+    };
+
+    const newLog = new ApiLog({
+      moduleName: "VGM_SUBMISSION",
+      request: requestData,
+      response: {
+        data: { message: "Saved as draft" },
+        timestamp: new Date()
+      },
+      status: "saved",
+      remarks: "Saved by user as draft"
+    });
+
+    await newLog.save();
+
+    res.json({
+      success: true,
+      data: { message: "Draft saved successfully" },
+      logId: newLog._id,
+    });
+  } catch (error) {
+    console.error("Save VGM Error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 export const getVGMStatus = async (req, res) => {
   try {
     const { vgmId } = req.params;
@@ -86,14 +126,14 @@ export const getAuthorization = async (req, res) => {
     const now = new Date();
     const pad = (n) => n.toString().padStart(2, '0');
     const fromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    
+
     requestBody.fromTs = fromTs;
 
     // Pass secret key automatically
     if (!requestBody.hashKey) {
       if (config.odex.secretKey) {
         requestBody.hashKey = config.odex.secretKey;
-     
+
       } else {
         console.warn("ODeX Secret Key is missing in server config");
       }

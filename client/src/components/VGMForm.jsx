@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Autocomplete, TextField } from "@mui/material";
 import { useFormik, FormikProvider, useFormikContext } from "formik";
 import { useSnackbar } from "notistack";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -63,30 +64,51 @@ const InputField = ({
 
 const SelectField = ({ label, name, options, required = false, ...props }) => {
   const formik = useFormikContext();
+
+  // Normalize options to ensure consistent label/value structure
+  const normalizedOptions = (options || []).map((opt) => ({
+    label: opt.label || opt.shipperNm || opt.name || String(opt),
+    value: opt.value || opt.shipperId || opt.code || String(opt),
+  }));
+
+  // Find the currently selected option object
+  const selectedOption =
+    normalizedOptions.find(
+      (opt) => String(opt.value) === String(formik.values[name])
+    ) || null;
+
   return (
     <div className="form-group">
       <label>
         {label} {required && <span className="required">*</span>}
       </label>
-      <select
-        name={name}
-        className={`form-control ${formik.touched[name] && formik.errors[name] ? "error" : ""
-          }`}
-        value={formik.values[name]}
-        onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
+      <Autocomplete
+        id={name}
+        options={normalizedOptions}
+        getOptionLabel={(option) => option.label || ""}
+        value={selectedOption}
+        onChange={(event, newValue) => {
+          formik.setFieldValue(name, newValue ? newValue.value : "");
+        }}
+        isOptionEqualToValue={(option, value) => option.value === value.value}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder={`Select ${label}`}
+            error={formik.touched[name] && Boolean(formik.errors[name])}
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                padding: "4px !important",
+                backgroundColor: "#fff",
+              },
+              bgcolor: "white",
+              width: "100%",
+            }}
+          />
+        )}
         {...props}
-      >
-        <option value="">Select {label}</option>
-        {options.map((opt) => (
-          <option
-            key={opt.value || opt.shipperId}
-            value={opt.value || opt.shipperId}
-          >
-            {opt.label || opt.shipperNm}
-          </option>
-        ))}
-      </select>
+      />
       {formik.touched[name] && formik.errors[name] && (
         <span className="error-text">{formik.errors[name]}</span>
       )}
@@ -108,7 +130,7 @@ const VGMForm = ({
   const { userData, shippers } = useAuth();
   const [loading, setLoading] = useState(false);
   const [shippingLines, setShippingLines] = useState([]);
- 
+
   const [attachments, setAttachments] = useState([]);
   const [isEditMode, setIsEditMode] = useState(editMode);
   const [requestData, setRequestData] = useState(existingRequest);
@@ -623,7 +645,27 @@ const VGMForm = ({
         values.authMobNo || "-",
       ],
       ["5", "Container No.", values.cntnrNo || "-"],
-      ["6", "Container Size (TEU/FEU/Other)", values.cntnrSize || "-"],
+      [
+        "6",
+        "Container Size (TEU/FEU/Other)",
+        (() => {
+          if (!values.cntnrSize) return "-";
+          const size = values.cntnrSize;
+          const type = (values.cntnrTp || "").toUpperCase();
+          const is20 = size.includes("20");
+          const is40 = size.includes("40") || size.includes("45");
+
+          if (type.includes("OPEN TOP") || type.includes("OTP") || type.includes("22U") || type.includes("42U") || type.includes("48U")) {
+            return `${size} OT`;
+          }
+          if (type.includes("FLAT RACK") || type.includes("FRC") || type.includes("22P") || type.includes("42P") || type.includes("28P") || type.includes("48P")) {
+            return `${size} FR`;
+          }
+          if (is20) return `${size} TEU`;
+          if (is40) return `${size} FEU`;
+          return `${size} TEU`;
+        })()
+      ],
       [
         "7",
         "Maximum permissible weight of container as per the CSC plate",
@@ -721,6 +763,65 @@ const VGMForm = ({
     } finally {
       setGeneratingExporterPdf(false);
       setSelectedExporter("");
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const values = formik.values;
+      const payload = { ...values };
+
+      // Manual Transformations
+      payload.cscPlateMaxWtLimit = values.cscPlateMaxWtLimit?.toString();
+      payload.totWt = values.totWt?.toString();
+
+      if (values.cargoTp === "HAZ") {
+        payload.imoNo1 = values.imoNo1;
+        payload.unNo1 = values.unNo1;
+      }
+
+      if (values.vgmEvalMethod === "M2") {
+        payload.cargoWt = values.cargoWt?.toString();
+        payload.tareWt = values.tareWt?.toString();
+      }
+
+      if (values.shipId) payload.shipId = values.shipId;
+      else {
+        payload.shipperNm = values.shipperNm;
+        payload.shipRegTP = values.shipRegTP;
+        payload.shipRegNo = values.shipRegNo;
+      }
+
+      // Convert DD-MM-YYYY HH:mm(:ss) to YYYY-MM-DD HH:mm:ss for backend
+      if (values.weighBridgeWtTs) {
+        const ddmmyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
+        const match = values.weighBridgeWtTs.match(ddmmyyyyPattern);
+
+        if (match) {
+          const [, day, month, year, hour, minute, second] = match;
+          const paddedSecond = second || "00";
+          payload.weighBridgeWtTs = `${year}-${month}-${day} ${hour}:${minute}:${paddedSecond}`;
+        } else {
+          // If already in YYYY-MM-DD format or other format, keep as-is
+          payload.weighBridgeWtTs = values.weighBridgeWtTs;
+        }
+      }
+
+      if (attachments.length > 0) payload.vgmWbAttList = attachments;
+
+      const response = await vgmAPI.save(payload);
+
+      if (response && (response.success || response.data?.success)) {
+        enqueueSnackbar("VGM Saved as Draft", { variant: "success" });
+      } else {
+        throw new Error("Failed to save draft.");
+      }
+    } catch (error) {
+      console.error("Save Draft Error:", error);
+      enqueueSnackbar("Failed to save draft", { variant: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1164,6 +1265,16 @@ const VGMForm = ({
                 disabled={loading}
               >
                 Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={loading}
+                style={{ backgroundColor: "#0d6efd", borderColor: "#0d6efd" }}
+              >
+                Save
               </button>
 
               <button

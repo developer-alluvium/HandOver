@@ -19,6 +19,7 @@ export const authAPI = {
 
 export const vgmAPI = {
   submit: (vgmData) => api.post("/vgm/submit", vgmData),
+  save: (vgmData) => api.post("/vgm/save", vgmData),
   getStatus: (statusData) => api.post("/vgm/status", statusData),
   getRequests: (filters) => api.get("/vgm/requests", { params: filters }),
   updateRequest: (vgmId, updateData) =>
