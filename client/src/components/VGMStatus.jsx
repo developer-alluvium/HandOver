@@ -119,7 +119,7 @@ const VGMStatus = () => {
   const [containerSearch, setContainerSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState(getTodayDate());
-  const [dateTo, setDateTo] = useState("");
+  const [dateTo, setDateTo] = useState(getTodayDate());
   const debounceTimerRef = useRef(null);
 
   const fetchVGMRequests = useCallback(async (page = 1, containerNo = "", status = "", fromDate = "", toDate = "") => {
@@ -202,12 +202,12 @@ const VGMStatus = () => {
     setContainerSearch("");
     setStatusFilter("");
     setDateFrom(getTodayDate()); // Reset to today
-    setDateTo("");
+    setDateTo(getTodayDate()); // Reset to today
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1, "", "", getTodayDate(), "");
+    fetchVGMRequests(1, "", "", getTodayDate(), getTodayDate());
   };
 
   // --- Logic 1: Determine Display Status ---
@@ -274,9 +274,9 @@ const VGMStatus = () => {
     return PORT_MAP[portCode] || portCode || "N/A";
   };
 
-  // Initial load - with today's date as From Date
+  // Initial load - with today's date as From Date and To Date
   useEffect(() => {
-    fetchVGMRequests(1, "", "", getTodayDate(), "");
+    fetchVGMRequests(1, "", "", getTodayDate(), getTodayDate());
   }, []);
 
   // Cleanup timer on unmount

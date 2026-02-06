@@ -410,6 +410,13 @@ const VGMForm = ({
       targetBody.cscPlateMaxWtLimit = "";
       targetBody.tareWt = "";
       targetBody.totWt = "";
+      // Clear additional fields when copying
+      targetBody.weighBridgeSlipNo = "";
+      targetBody.weighBridgeWtTs = "";
+      targetBody.vgmWbAttList = []; // Clear attachments
+
+      // Clear attachments state
+      setAttachments([]);
 
       prefillForm(responseData);
       enqueueSnackbar("Form data copied from existing booking.", {
@@ -615,7 +622,13 @@ const VGMForm = ({
     doc.setFontSize(14);
     doc.text("INFORMATION ABOUT VERIFIED GROSS MASS OF CONTAINER", 105, 20, { align: "center" });
     doc.setFontSize(10);
-    doc.text("To HAPAG LLOYD INDIA PVT LTD,", 14, 30);
+    // Find the selected shipping line name
+    const selectedLiner = shippingLines.find(line =>
+      String(line.value || line.code) === String(values.linerId)
+    );
+    const linerName = selectedLiner?.label || selectedLiner?.name || "SHIPPING LINE";
+
+    doc.text(`To ${linerName},`, 14, 30);
     doc.text("Annexure-1", 180, 15, { align: "right" });
 
     const tableData = [
@@ -803,9 +816,12 @@ const VGMForm = ({
 
       const response = await vgmAPI.save(payload);
 
-      if (response && (response.success || response.data?.success)) {
+      // Interceptor handles extracting .data from { success: true, data: ... }
+      // So if we get here without error, and have response.data, it's successful.
+      if (response && response.status === 200) {
         enqueueSnackbar("VGM Saved as Draft", { variant: "success" });
       } else {
+        // Fallback for unexpected status codes
         throw new Error("Failed to save draft.");
       }
     } catch (error) {
