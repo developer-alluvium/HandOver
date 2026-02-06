@@ -150,7 +150,7 @@ const VGMForm = ({
     bookNo: "",
     locId: "",
     handoverLoc: "",
-    shipperTp: "S",
+    shipperTp: "O",
     authPrsnNm: "",
     authDesignation: "",
     authMobNo: "",
@@ -188,15 +188,6 @@ const VGMForm = ({
     enableReinitialize: true,
     validationSchema: vgmValidationSchema,
     onSubmit: async (values) => {
-      const currentPayload = JSON.stringify(values);
-      const initialPayload = JSON.stringify(formValues);
-
-      if (isEditMode && currentPayload === initialPayload) {
-        enqueueSnackbar("No changes detected. Update cancelled.", {
-          variant: "info",
-        });
-        return;
-      }
       setLoading(true);
       try {
         const payload = { ...values };
@@ -362,7 +353,7 @@ const VGMForm = ({
       bookNo: requestBody.bookNo || "",
       locId: requestBody.locId || "",
       handoverLoc: requestBody.handoverLoc || "",
-      shipperTp: requestBody.shipperTp || "S",
+      shipperTp: requestBody.shipperTp || "O",
       authPrsnNm: requestBody.authPrsnNm || "",
       authDesignation: requestBody.authDesignation || "",
       authMobNo: requestBody.authMobNo || "",
@@ -607,8 +598,8 @@ const VGMForm = ({
     }
   };
 
-  const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  const removeAttachment = (attTitle) => {
+    setAttachments((prev) => prev.filter((att) => att.attTitle !== attTitle));
   };
 
   const handleCancel = () => {
@@ -947,7 +938,7 @@ const VGMForm = ({
               <InputField
                 label="Container No"
                 name="cntnrNo"
-                placeholder="ABCD1234567"
+                placeholder=""
                 required
               />
               <SelectField
@@ -1198,13 +1189,7 @@ const VGMForm = ({
                             ).attNm,
                           },
                         ]}
-                        onDeleteImage={() =>
-                          removeAttachment(
-                            attachments.findIndex(
-                              (a) => a.attTitle === type.value
-                            )
-                          )
-                        }
+                        onDeleteImage={() => removeAttachment(type.value)}
                       />
                     </div>
                   )}

@@ -42,13 +42,13 @@ export const ATTACHMENT_TITLES = [
 ];
 
 export const PORTS = [
-  { value: "INNSA1", label: "Nhava Sheva" },
   { value: "INMUN1", label: "Mundra" },
+  { value: "INPAV1", label: "Pipavav" },
+  { value: "INHZA1", label: "Hazira" },
+  { value: "INNSA1", label: "Nhava Sheva" },
   { value: "INNML1", label: "Mangalore" },
   { value: "INTUT1", label: "Tuticorin" },
   { value: "INCCU1", label: "Kolkata" },
-  { value: "INPAV1", label: "Pipavav" },
-  { value: "INHZA1", label: "Hazira" },
   { value: "INMRM1", label: "Marmagoa" },
   { value: "INCOK1", label: "Cochin" },
   { value: "INMAA1", label: "Chennai" },

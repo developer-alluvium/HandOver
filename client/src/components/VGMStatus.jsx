@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSnackbar } from "notistack";
 import { vgmAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -61,6 +61,45 @@ const Icons = {
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   ),
+  Search: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.35-4.35" />
+    </svg>
+  ),
+};
+
+// Port mapping for display
+const PORT_MAP = {
+  "INMUN1": "Mundra",
+  "INPAV1": "Pipavav",
+  "INHZA1": "Hazira",
+  "INNSA1": "Nhava Sheva",
+  "INNML1": "Mangalore",
+  "INTUT1": "Tuticorin",
+  "INCCU1": "Kolkata",
+  "INMRM1": "Marmagoa",
+  "INCOK1": "Cochin",
+  "INMAA1": "Chennai",
+  "INVTZ1": "Vishakapatnam",
+  "INHAL1": "Haldia",
+  "INKRI1": "Krishnapatnam",
+  "INKAT1": "Kattupalli",
+  "INPRT1": "Paradip",
+  "INIXY1": "Kandla",
+  "INKAK1": "Kakinada",
+};
+
+// Get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  return dayjs().format("YYYY-MM-DD");
 };
 
 const VGMStatus = () => {
@@ -76,21 +115,21 @@ const VGMStatus = () => {
     pages: 0,
   });
 
-  const [filters, setFilters] = useState({
-    status: "",
-    containerNo: "",
-    bookingNo: "",
-    dateFrom: "",
-    dateTo: "",
-  });
+  // Filters with date defaults - From Date defaults to today
+  const [containerSearch, setContainerSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState(getTodayDate());
+  const [dateTo, setDateTo] = useState("");
+  const debounceTimerRef = useRef(null);
 
-  const fetchVGMRequests = async (page = 1) => {
+  const fetchVGMRequests = useCallback(async (page = 1, containerNo = "", status = "", fromDate = "", toDate = "") => {
     setLoading(true);
     try {
-      const filterParams = { page, limit: pagination.limit, ...filters };
-      Object.keys(filterParams).forEach(
-        (k) => !filterParams[k] && delete filterParams[k]
-      );
+      const filterParams = { page, limit: pagination.limit };
+      if (containerNo) filterParams.containerNo = containerNo;
+      if (status) filterParams.status = status;
+      if (fromDate) filterParams.dateFrom = fromDate;
+      if (toDate) filterParams.dateTo = toDate;
 
       const response = await vgmAPI.getRequests(filterParams);
       const { requests: data, pagination: meta } = response.data;
@@ -106,33 +145,71 @@ const VGMStatus = () => {
     } finally {
       setLoading(false);
     }
+  }, [pagination.limit, enqueueSnackbar]);
+
+  // Debounced search handler - 2 seconds delay
+  const handleContainerSearchChange = (value) => {
+    setContainerSearch(value);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer with 2 second delay
+    debounceTimerRef.current = setTimeout(() => {
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      fetchVGMRequests(1, value, statusFilter, dateFrom, dateTo);
+    }, 2000);
+  };
+
+  // Status filter change - immediate search
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchVGMRequests(1, containerSearch, value, dateFrom, dateTo);
+  };
+
+  // Date filter change - immediate search
+  const handleDateFromChange = (value) => {
+    setDateFrom(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchVGMRequests(1, containerSearch, statusFilter, value, dateTo);
+  };
+
+  const handleDateToChange = (value) => {
+    setDateTo(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchVGMRequests(1, containerSearch, statusFilter, dateFrom, value);
+  };
+
+  // Check if request is verified - disable edit if verified
+  const isVerified = (req) => {
+    const displayStatus = getDisplayStatus(req);
+    return displayStatus === "Verified";
   };
 
   const handleEditRequest = (request) => {
+    if (isVerified(request)) {
+      enqueueSnackbar("Cannot edit a verified request", { variant: "warning" });
+      return;
+    }
     navigate("/vgm", { state: { editMode: true, vgmId: request.vgmId } });
   };
 
-  // ✅ FIXED: Clear filters handler - works on FIRST click
+  // Clear filters handler
   const handleClearFilters = () => {
-    const clearedFilters = {
-      status: "",
-      containerNo: "",
-      bookingNo: "",
-      dateFrom: "",
-      dateTo: "",
-    };
-    setFilters(clearedFilters);
+    setContainerSearch("");
+    setStatusFilter("");
+    setDateFrom(getTodayDate()); // Reset to today
+    setDateTo("");
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1);
+    fetchVGMRequests(1, "", "", getTodayDate(), "");
   };
 
-  // ✅ FIXED: Apply filters handler - resets to page 1
-  const handleApplyFilters = () => {
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1);
-  };
-
-  // --- Logic 1: Determine Display Status ---
   // --- Logic 1: Determine Display Status ---
   const getDisplayStatus = (req) => {
     // Handle string responses (errors)
@@ -163,6 +240,7 @@ const VGMStatus = () => {
 
     return "Pending";
   };
+
   const getStatusBadgeClass = (displayStatus) => {
     return displayStatus === "Verified" ? "badge-success" : "badge-warning";
   };
@@ -191,9 +269,23 @@ const VGMStatus = () => {
     return "Processing / Awaiting Confirmation";
   };
 
-  // Initial load
+  // Get port name from port code
+  const getPortName = (portCode) => {
+    return PORT_MAP[portCode] || portCode || "N/A";
+  };
+
+  // Initial load - with today's date as From Date
   useEffect(() => {
-    fetchVGMRequests(1);
+    fetchVGMRequests(1, "", "", getTodayDate(), "");
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -211,17 +303,15 @@ const VGMStatus = () => {
         <div
           className="form-grid"
           style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
           }}
         >
           <div className="form-group">
             <label>Status</label>
             <select
               className="form-control"
-              value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
+              value={statusFilter}
+              onChange={(e) => handleStatusChange(e.target.value)}
             >
               <option value="">All</option>
               <option value="Verified">Verified</option>
@@ -230,35 +320,37 @@ const VGMStatus = () => {
           </div>
           <div className="form-group">
             <label>Container No</label>
-            <input
-              className="form-control"
-              placeholder="ABCD1234567"
-              value={filters.containerNo}
-              onChange={(e) =>
-                setFilters({ ...filters, containerNo: e.target.value })
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label>Booking No</label>
-            <input
-              className="form-control"
-              placeholder="BK001"
-              value={filters.bookingNo}
-              onChange={(e) =>
-                setFilters({ ...filters, bookingNo: e.target.value })
-              }
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="form-control"
+                placeholder="Search Container No..."
+                value={containerSearch}
+                onChange={(e) => handleContainerSearchChange(e.target.value)}
+                style={{ paddingRight: "35px" }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#9ca3af",
+                }}
+              >
+                <Icons.Search />
+              </span>
+            </div>
+            <small style={{ color: "#6b7280", fontSize: "0.75rem" }}>
+              Auto-searches after 2 seconds
+            </small>
           </div>
           <div className="form-group">
             <label>From Date</label>
             <input
               type="date"
               className="form-control"
-              value={filters.dateFrom}
-              onChange={(e) =>
-                setFilters({ ...filters, dateFrom: e.target.value })
-              }
+              value={dateFrom}
+              onChange={(e) => handleDateFromChange(e.target.value)}
             />
           </div>
           <div className="form-group">
@@ -266,24 +358,14 @@ const VGMStatus = () => {
             <input
               type="date"
               className="form-control"
-              value={filters.dateTo}
-              onChange={(e) =>
-                setFilters({ ...filters, dateTo: e.target.value })
-              }
+              value={dateTo}
+              onChange={(e) => handleDateToChange(e.target.value)}
             />
           </div>
           <div
             className="form-group"
             style={{ display: "flex", alignItems: "flex-end", gap: "0.5rem" }}
           >
-            {/* ✅ FIXED: Apply button */}
-            <button
-              className="btn btn-primary w-full"
-              onClick={handleApplyFilters}
-            >
-              Apply
-            </button>
-            {/* ✅ FIXED: Clear button - works on FIRST click */}
             <button
               className="btn btn-outline w-full"
               onClick={handleClearFilters}
@@ -307,7 +389,7 @@ const VGMStatus = () => {
             </button>
             <button
               className="btn btn-outline"
-              onClick={() => fetchVGMRequests(pagination.page)}
+              onClick={() => fetchVGMRequests(pagination.page, containerSearch, statusFilter, dateFrom, dateTo)}
             >
               <Icons.Refresh /> Refresh
             </button>
@@ -325,11 +407,12 @@ const VGMStatus = () => {
                 <thead>
                   <tr>
                     <th>Actions</th>
+                    <th>Shipping Line</th>
                     <th>Container</th>
                     <th>Booking</th>
                     <th>Status</th>
-                    <th>Remarks</th>
-                    <th>Weight</th>
+                    <th>Port</th>
+                    <th>VGM Weight</th>
                     <th>Date</th>
                   </tr>
                 </thead>
@@ -337,6 +420,7 @@ const VGMStatus = () => {
                   {requests.map((req, i) => {
                     const displayStatus = getDisplayStatus(req);
                     const remarks = getRemarks(req);
+                    const verified = isVerified(req);
 
                     return (
                       <tr key={i}>
@@ -350,14 +434,17 @@ const VGMStatus = () => {
                               <Icons.Eye />
                             </button>
                             <button
-                              className="btn btn-sm btn-outline"
-                              title="Edit"
+                              className={`btn btn-sm btn-outline ${verified ? "btn-disabled" : ""}`}
+                              title={verified ? "Cannot edit verified request" : "Edit"}
                               onClick={() => handleEditRequest(req)}
+                              disabled={verified}
+                              style={verified ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                             >
                               <Icons.Edit />
                             </button>
                           </div>
                         </td>
+                        <td>{req.linerId || "N/A"}</td>
                         <td>{req.cntnrNo}</td>
                         <td>{req.bookNo}</td>
                         <td>
@@ -369,23 +456,7 @@ const VGMStatus = () => {
                             {displayStatus}
                           </span>
                         </td>
-                        <td
-                          style={{
-                            maxWidth: "250px",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            color: remarks.toString().startsWith("ERROR")
-                              ? "#dc2626"
-                              : "inherit",
-                            fontWeight: remarks.toString().startsWith("ERROR")
-                              ? "600"
-                              : "normal",
-                          }}
-                          title={remarks}
-                        >
-                          {remarks}
-                        </td>
+                        <td>{getPortName(req.locId)}</td>
                         <td>
                           {req.totWt ? `${req.totWt} ${req.totWtUom}` : "N/A"}
                         </td>
@@ -409,14 +480,14 @@ const VGMStatus = () => {
                   <button
                     className="btn btn-sm btn-outline"
                     disabled={pagination.page === 1}
-                    onClick={() => fetchVGMRequests(pagination.page - 1)}
+                    onClick={() => fetchVGMRequests(pagination.page - 1, containerSearch, statusFilter, dateFrom, dateTo)}
                   >
                     Previous
                   </button>
                   <button
                     className="btn btn-sm btn-outline"
                     disabled={pagination.page === pagination.pages}
-                    onClick={() => fetchVGMRequests(pagination.page + 1)}
+                    onClick={() => fetchVGMRequests(pagination.page + 1, containerSearch, statusFilter, dateFrom, dateTo)}
                   >
                     Next
                   </button>
@@ -443,22 +514,30 @@ const VGMStatus = () => {
             <div className="modal-body">
               <div className="form-grid">
                 <div>
-                  <label className="text-muted">Status</label>
-                  <div>{getDisplayStatus(selectedRequest)}</div>
+                  <label className="text-muted">Shipping Line</label>
+                  <div>{selectedRequest.linerId || "N/A"}</div>
                 </div>
                 <div>
                   <label className="text-muted">Container</label>
                   <div>{selectedRequest.cntnrNo}</div>
                 </div>
                 <div>
-                  <label className="text-muted">Booking</label>
-                  <div>{selectedRequest.bookNo}</div>
+                  <label className="text-muted">Status</label>
+                  <div>{getDisplayStatus(selectedRequest)}</div>
                 </div>
                 <div>
-                  <label className="text-muted">Total Weight</label>
+                  <label className="text-muted">Port</label>
+                  <div>{getPortName(selectedRequest.locId)}</div>
+                </div>
+                <div>
+                  <label className="text-muted">VGM Weight</label>
                   <div>
                     {selectedRequest.totWt} {selectedRequest.totWtUom}
                   </div>
+                </div>
+                <div>
+                  <label className="text-muted">Booking</label>
+                  <div>{selectedRequest.bookNo}</div>
                 </div>
                 <div>
                   <label className="text-muted">Remarks</label>
@@ -489,7 +568,6 @@ const VGMStatus = () => {
                 </pre>
               </div>
             </div>
-            setUploads
             <div className="modal-footer">
               <button
                 className="btn btn-primary"
