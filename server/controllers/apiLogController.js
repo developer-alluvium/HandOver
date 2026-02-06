@@ -392,60 +392,82 @@ export const getVGMRequests = async (req, res) => {
       status,
       containerNo,
       bookingNo,
+      search,
       dateFrom,
       dateTo,
       page = 1,
       limit = 10,
     } = req.query;
 
+    console.log("getVGMRequests query params:", req.query);
+
     // Build filter query for VGM submissions
     const filterQuery = { moduleName: "VGM_SUBMISSION" };
+    const andConditions = [];
 
     // Status filter - check both status field and response data
     if (status) {
-      filterQuery.$or = [
-        { status: { $regex: status, $options: "i" } },
-        { "response.data.cntnrStatus": { $regex: status, $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { status: { $regex: status, $options: "i" } },
+          { "response.data.cntnrStatus": { $regex: status, $options: "i" } },
+        ],
+      });
     }
 
-    // Container number filter
+    // Generic Search (Container OR Booking)
+    if (search) {
+      andConditions.push({
+        $or: [
+          { "request.body.cntnrNo": { $regex: search, $options: "i" } },
+          { "request.body.bookNo": { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    // Container number filter (specific)
     if (containerNo) {
-      filterQuery["request.body.cntnrNo"] = {
-        $regex: containerNo,
-        $options: "i",
-      };
+      andConditions.push({
+        "request.body.cntnrNo": { $regex: containerNo, $options: "i" },
+      });
     }
 
-    // Booking number filter
+    // Booking number filter (specific)
     if (bookingNo) {
       if (req.query.exactMatch === "true") {
-        filterQuery["request.body.bookNo"] = bookingNo;
+        andConditions.push({ "request.body.bookNo": bookingNo });
       } else {
-        filterQuery["request.body.bookNo"] = {
-          $regex: bookingNo,
-          $options: "i",
-        };
+        andConditions.push({
+          "request.body.bookNo": { $regex: bookingNo, $options: "i" },
+        });
       }
     }
 
     // Liner/Shipping Line filter
     if (req.query.linerId) {
-      filterQuery["request.body.linerId"] = req.query.linerId;
+      andConditions.push({ "request.body.linerId": req.query.linerId });
     }
 
     // Date range filter
     if (dateFrom || dateTo) {
-      filterQuery.createdAt = {};
+      const dateQuery = {};
       if (dateFrom) {
-        filterQuery.createdAt.$gte = new Date(dateFrom);
+        dateQuery.$gte = new Date(dateFrom);
       }
       if (dateTo) {
         const endOfDay = new Date(dateTo);
         endOfDay.setHours(23, 59, 59, 999);
-        filterQuery.createdAt.$lte = endOfDay;
+        dateQuery.$lte = endOfDay;
       }
+      andConditions.push({ createdAt: dateQuery });
     }
+
+    // Combine all conditions
+    if (andConditions.length > 0) {
+      filterQuery.$and = andConditions;
+    }
+
+    console.log("MongoDB Filter Query:", JSON.stringify(filterQuery, null, 2));
 
     const skip = (page - 1) * parseInt(limit);
 
@@ -457,6 +479,11 @@ export const getVGMRequests = async (req, res) => {
       .lean();
 
     const total = await ApiLog.countDocuments(filterQuery);
+    console.log(`Found ${requests.length} records. Total matching: ${total}`);
+    if (requests.length > 0) {
+      console.log("Sample Booking No from DB:", requests[0].request?.body?.bookNo);
+      console.log("Sample Container No from DB:", requests[0].request?.body?.cntnrNo);
+    }
 
     // Transform data for frontend display
     const transformedRequests = requests.map((log) => {

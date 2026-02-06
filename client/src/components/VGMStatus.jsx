@@ -126,7 +126,7 @@ const VGMStatus = () => {
     setLoading(true);
     try {
       const filterParams = { page, limit: pagination.limit };
-      if (containerNo) filterParams.containerNo = containerNo;
+      if (containerNo) filterParams.search = containerNo; // Use 'search' param for generic container/booking search
       if (status) filterParams.status = status;
       if (fromDate) filterParams.dateFrom = fromDate;
       if (toDate) filterParams.dateTo = toDate;
@@ -141,6 +141,7 @@ const VGMStatus = () => {
         pages: meta.pages,
       }));
     } catch (error) {
+      setRequests([]); // Clear data on error to avoid showing stale results
       enqueueSnackbar("Failed to load requests", { variant: "error" });
     } finally {
       setLoading(false);
@@ -319,11 +320,11 @@ const VGMStatus = () => {
             </select>
           </div>
           <div className="form-group">
-            <label>Container No</label>
+            <label>Container / Booking</label>
             <div style={{ position: "relative" }}>
               <input
                 className="form-control"
-                placeholder="Search Container No..."
+                placeholder="Search Container or Booking..."
                 value={containerSearch}
                 onChange={(e) => handleContainerSearchChange(e.target.value)}
                 style={{ paddingRight: "35px" }}
