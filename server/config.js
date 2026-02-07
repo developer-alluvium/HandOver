@@ -18,6 +18,9 @@ export const config = {
         hashKey: isProduction
             ? process.env.PROD_HASHKEY
             : process.env.DEV_HASHKEY,
+        pyrCode: isProduction
+            ? process.env.PROD_PYRCODE
+            : process.env.DEV_PYRCODE,
         // Default production pyrCode provided by user
         productionPyrCode: "ODeX/IN/SHP/2510/00001",
         secretKey: process.env.ODEX_SECRET_KEY

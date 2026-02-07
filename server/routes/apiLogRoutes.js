@@ -5,6 +5,7 @@ import {
   saveVGM,
   getVGMStatus,
   getAuthorization,
+  autoLogin,
   editApiLog,
   updateApiLog,
   getLogById,
@@ -23,6 +24,7 @@ router.post("/vgm/submit", submitVGM);
 router.post("/vgm/save", saveVGM);
 router.get("/status/:vgmId", getVGMStatus);
 router.post("/auth/login", getAuthorization);
+router.get("/auth/auto-login", autoLogin);  // Auto-login using env credentials
 router.post("/auth/logout", logout);
 router.get("/auth/me", getCurrentUser);
 

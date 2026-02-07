@@ -459,3 +459,114 @@ export const QUICK_RESPONSE_OPTIONS = [
   },
   { value: "N", label: "No - Wait for weighment details" },
 ];
+
+export const AUTHORIZED_PERSONS = [
+  {
+    exporter: "AB TRADELINK PRIVATE LIMITED",
+    authPerson: "Mr. ABHILASH KAMALKUMAR S",
+    designation: "DIRECTOR",
+    contactNo: "079-26409085/23",
+  },
+  {
+    exporter: "AIA ENGINEERING LTD.",
+    authPerson: "Mr. Nandkishore Reddy",
+    designation: "Logistic Manager",
+    contactNo: "9824031007",
+  },
+  {
+    exporter: "SHRI ALKA INDUSTRIES",
+    authPerson: "Mr. TANMAY PATEL",
+    designation: "MANAGING PARTNER",
+    contactNo: "9712928989",
+  },
+  {
+    exporter: "AMMANN INDIA PVT. LTD",
+    authPerson: "Mr. VIJISH KUMAR",
+    designation: "Assistant General Manager - EXIM",
+    contactNo: "9099045858",
+  },
+  {
+    exporter: "ANEETA TECHNOPACK PVT. LTD.",
+    authPerson: "Mr. Parthesh Trivedi",
+    designation: "Export Executive",
+    contactNo: "9904807483",
+  },
+  {
+    exporter: "ANEETA PLASTPACK LLP.",
+    authPerson: "Mr. MITIN JAIN",
+    designation: "MANAGER",
+    contactNo: "7940009302",
+  },
+  {
+    exporter: "ANEETA PACKAGING PRIVATE LIMITED",
+    authPerson: "Mr. Parthesh Trivedi",
+    designation: "Export Executive",
+    contactNo: "9904807483",
+  },
+  {
+    exporter: "ARA SCRAP RECYCLERS LLP",
+    authPerson: "Mr. MANISH SHAH",
+    designation: "Director",
+    contactNo: "9998472003",
+  },
+  {
+    exporter: "BAHETI RECYCLING INDUSTRIES LIMITED.",
+    authPerson: "Mr. SHANKERLAL B. SHAH",
+    designation: "DIRECTOR",
+    contactNo: "9879106332",
+  },
+  {
+    exporter: "BHAVYA MACHINE TOOLS LLP",
+    authPerson: "HINAL PANCHAL",
+    designation: "Assit. Manager",
+    contactNo: "6353700614",
+  },
+  {
+    exporter: "G.R. METALLOYS PRIVATE LIMITED",
+    authPerson: "Mr. Ronak Patel",
+    designation: "AGM- Business Development",
+    contactNo: "7925624681",
+  },
+  {
+    exporter: "GURU RAJENDRA METALLOYS INDIA PVT. LTD.",
+    authPerson: "Mr. SHAILESH JAIN",
+    designation: "DIRECTOR",
+    contactNo: "9879222432",
+  },
+  {
+    exporter: "GEMCORP RECYCLING & TECHNOLOGIES PVT LTD.",
+    authPerson: "Mr. HARISH YADAV",
+    designation: "MANAGER",
+    contactNo: "9510550907",
+  },
+  {
+    exporter: "LAXCON STEELS LIMITED",
+    authPerson: "Mr. DEEPAK AGRAWAL",
+    designation: "ACCOUNTS MANAGER",
+    contactNo: "9327142410",
+  },
+  {
+    exporter: "MODERN INSULATORS LIMITED",
+    authPerson: "Mr. PRASANNA KUMAR",
+    designation: "MANAGER",
+    contactNo: "9799716448",
+  },
+  {
+    exporter: "NANDESHWARI STEEL LIMITED",
+    authPerson: "Mr. LALITBHAI NATVERBHAI PATEL",
+    designation: "Director",
+    contactNo: "271626944",
+  },
+  {
+    exporter: "SAKAR INDUSTRIES PVT LIMITED",
+    authPerson: "Mr. Ramesh R Shah",
+    designation: "Director",
+    contactNo: "7925624681",
+  },
+  {
+    exporter: "SHREE HANS ALLOYS LIMITED",
+    authPerson: "KAJAL THAKKAR",
+    designation: "ACCOUNTANT",
+    contactNo: "9824250056",
+  },
+];

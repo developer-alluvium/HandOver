@@ -45,7 +45,28 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return isAuthenticated ? children : <Navigate to="/vgm-status" replace />;
+};
+
+// PublicRoute - redirects authenticated users away from login
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // If authenticated, redirect to vgm-status
+  return isAuthenticated ? <Navigate to="/vgm-status" replace /> : children;
 };
 
 function App() {
@@ -56,7 +77,8 @@ function App() {
         <AuthProvider>
           <Router>
             <Routes>
-              <Route path="/login" element={<Login />} />
+              {/* Login is now optional - redirect to vgm-status if authenticated */}
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route
                 path="/dashboard"
                 element={
@@ -94,8 +116,9 @@ function App() {
                   <TrackF13 />
                 </ProtectedRoute>
               } />
-              <Route path="/" element={<Navigate to="/login" />} />
-              
+              {/* Default route - go directly to VGM status */}
+              <Route path="/" element={<Navigate to="/vgm-status" />} />
+
             </Routes>
           </Router>
         </AuthProvider>

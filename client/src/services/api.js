@@ -13,6 +13,7 @@ const api = axios.create({
 
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
+  autoLogin: () => api.get("/auth/auto-login"),  // Auto-login using backend env credentials
   logout: () => api.post("/auth/logout"),
   me: () => api.get("/auth/me"),
 };

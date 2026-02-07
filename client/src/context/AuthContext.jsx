@@ -18,23 +18,45 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const initializeAuth = async () => {
       try {
-        const response = await authAPI.me();
-        if (response.data) {
+        // First check if already authenticated
+        const meResponse = await authAPI.me();
+        if (meResponse.data) {
           setIsAuthenticated(true);
-          setUserData(response.data.userData);
-          setShippers(response.data.shippers || []);
+          setUserData(meResponse.data.userData);
+          setShippers(meResponse.data.shippers || []);
+          console.log("[AUTH] Already authenticated");
+          setLoading(false);
+          return;
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        // Not authenticated, try auto-login
+        console.log("[AUTH] Not authenticated, attempting auto-login...");
+      }
+
+      try {
+        // Auto-login using backend env credentials
+        const autoLoginResponse = await authAPI.autoLogin();
+        if (autoLoginResponse.data || autoLoginResponse.status === 200) {
+          // Fetch user data after auto-login
+          const meResponse = await authAPI.me();
+          if (meResponse.data) {
+            setIsAuthenticated(true);
+            setUserData(meResponse.data.userData);
+            setShippers(meResponse.data.shippers || []);
+            console.log("[AUTH] Auto-login successful");
+          }
+        }
+      } catch (error) {
+        console.error("[AUTH] Auto-login failed:", error);
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuthStatus();
+    initializeAuth();
   }, []);
 
   const login = (userData, shippersData) => {

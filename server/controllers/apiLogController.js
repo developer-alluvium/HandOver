@@ -41,8 +41,18 @@ export const submitVGM = async (req, res) => {
 
 export const saveVGM = async (req, res) => {
   try {
+    const { bookNo, cntnrNo } = req.body;
+
+    // Check if a draft already exists for this booking + container combination
+    const existingDraft = await ApiLog.findOne({
+      moduleName: "VGM_SUBMISSION",
+      "request.body.bookNo": bookNo,
+      "request.body.cntnrNo": cntnrNo,
+      status: { $in: ["saved", "pending", "failed"] } // Only match drafts, not successful submissions
+    });
+
     const requestData = {
-      url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`, // URL it WOULD have gone to
+      url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,23 +62,47 @@ export const saveVGM = async (req, res) => {
       timestamp: new Date()
     };
 
-    const newLog = new ApiLog({
-      moduleName: "VGM_SUBMISSION",
-      request: requestData,
-      response: {
-        data: { message: "Saved as draft" },
-        timestamp: new Date()
-      },
-      status: "saved",
-      remarks: "Saved by user as draft"
-    });
+    let savedLog;
 
-    await newLog.save();
+    if (existingDraft) {
+      // Update existing draft
+      savedLog = await ApiLog.findByIdAndUpdate(
+        existingDraft._id,
+        {
+          request: requestData,
+          response: {
+            data: { message: "Draft updated" },
+            timestamp: new Date()
+          },
+          status: "saved",
+          remarks: `Draft updated on ${new Date().toISOString()}`
+        },
+        { new: true }
+      );
+      console.log(`Updated existing draft: ${savedLog._id}`);
+    } else {
+      // Create new draft
+      savedLog = new ApiLog({
+        moduleName: "VGM_SUBMISSION",
+        request: requestData,
+        response: {
+          data: { message: "Saved as draft" },
+          timestamp: new Date()
+        },
+        status: "saved",
+        remarks: "Saved by user as draft"
+      });
+      await savedLog.save();
+      console.log(`Created new draft: ${savedLog._id}`);
+    }
 
     res.json({
       success: true,
-      data: { message: "Draft saved successfully" },
-      logId: newLog._id,
+      data: {
+        message: existingDraft ? "Draft updated successfully" : "Draft saved successfully",
+        isUpdate: !!existingDraft
+      },
+      logId: savedLog._id,
     });
   } catch (error) {
     console.error("Save VGM Error:", error);
@@ -206,6 +240,85 @@ export const getCurrentUser = async (req, res) => {
     });
   } catch (error) {
     res.status(401).json({ success: false, message: "Invalid session" });
+  }
+};
+
+// Auto-login using credentials from environment variables
+export const autoLogin = async (req, res) => {
+  try {
+    // Get credentials from environment config
+    const pyrCode = config.odex.pyrCode;
+    const hashKey = config.odex.hashKey;
+
+    if (!pyrCode || !hashKey) {
+      return res.status(500).json({
+        success: false,
+        error: "Auto-login credentials not configured in environment",
+      });
+    }
+
+    console.log("[AUTO-LOGIN] Attempting auto-login with pyrCode:", pyrCode);
+
+    // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    const fromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    const requestBody = {
+      pyrCode,
+      hashKey,
+      fromTs,
+    };
+
+    const requestData = {
+      url: `${config.odex.baseUrl}/RS/iVGMService/json/getVGMAccessInfo`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: requestBody,
+    };
+
+    const result = await ApiLogger.logAndForward("AUTHORIZATION", requestData);
+
+    if (result.success) {
+      // Set authentication cookie
+      const authData = {
+        userData: { pyrCode },
+        shippers: result.data,
+        timestamp: new Date().toISOString(),
+      };
+
+      res.cookie("odex_auth", JSON.stringify(authData), {
+        httpOnly: true,
+        secure: config.isProduction,
+        sameSite: config.isProduction ? "None" : "Lax",
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      });
+
+      console.log("[AUTO-LOGIN] Success! Authenticated as:", pyrCode);
+
+      res.json({
+        success: true,
+        data: result.data,
+        logId: result.logId,
+        message: "Auto-login successful",
+      });
+    } else {
+      console.error("[AUTO-LOGIN] Failed:", result.error);
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        logId: result.logId,
+      });
+    }
+  } catch (error) {
+    console.error("Auto-Login Error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
@@ -497,6 +610,8 @@ export const getVGMRequests = async (req, res) => {
         vgmId: log._id,
         cntnrNo: requestBody.cntnrNo,
         bookNo: requestBody.bookNo,
+        linerId: requestBody.linerId, // Shipping Line
+        locId: requestBody.locId, // Port
         status: log.status, // Original status
         cntnrStatus: displayStatus, // Display status for UI
         totWt: requestBody.totWt,

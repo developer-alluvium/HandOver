@@ -97,6 +97,38 @@ const PORT_MAP = {
   "INKAK1": "Kakinada",
 };
 
+// Shipping Line mapping for display
+const LINER_MAP = {
+  "MAEU": "Maersk",
+  "MSCU": "MSC",
+  "CMDU": "CMA CGM",
+  "EISU": "Evergreen",
+  "YMLU": "Yang Ming",
+  "OOLU": "OOCL",
+  "HLCU": "Hapag-Lloyd",
+  "ONEY": "ONE",
+  "COSU": "COSCO",
+  "ZIMU": "ZIM",
+  "APLU": "APL",
+  "EGLV": "Evergreen",
+  "HDMU": "HMM",
+  "WHLC": "Wan Hai",
+  "SITU": "Sinokor",
+  "PABV": "Pan Asia",
+  "BENU": "Bengal Tiger Line",
+  "DYTM": "Dytm Shipping",
+  "AVML": "Avana",
+  "CHNJ": "China Navigation",
+  "ADMU": "Admiral Container Line",
+  "REEL": "Reel Shipping",
+  "SEGU": "Seago Line",
+  "TRLU": "Triton Container Line",
+  "SAFM": "Safmarine",
+  "MSKU": "Maersk",
+  "MLIE": "Maersk",
+  "MSC": "MSC",
+};
+
 // Get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
   return dayjs().format("YYYY-MM-DD");
@@ -275,6 +307,11 @@ const VGMStatus = () => {
     return PORT_MAP[portCode] || portCode || "N/A";
   };
 
+  // Get liner name from liner code
+  const getLinerName = (linerCode) => {
+    return LINER_MAP[linerCode] || linerCode || "N/A";
+  };
+
   // Initial load - with today's date as From Date and To Date
   useEffect(() => {
     fetchVGMRequests(1, "", "", getTodayDate(), getTodayDate());
@@ -445,7 +482,7 @@ const VGMStatus = () => {
                             </button>
                           </div>
                         </td>
-                        <td>{req.linerId || "N/A"}</td>
+                        <td>{getLinerName(req.linerId)}</td>
                         <td>{req.cntnrNo}</td>
                         <td>{req.bookNo}</td>
                         <td>
@@ -516,7 +553,7 @@ const VGMStatus = () => {
               <div className="form-grid">
                 <div>
                   <label className="text-muted">Shipping Line</label>
-                  <div>{selectedRequest.linerId || "N/A"}</div>
+                  <div>{getLinerName(selectedRequest.linerId)}</div>
                 </div>
                 <div>
                   <label className="text-muted">Container</label>
