@@ -2,7 +2,7 @@ import React from "react";
 import { Box, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const TopNavDropdown = () => {
+const TopNavDropdown = ({ sx = {} }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,21 +26,34 @@ const TopNavDropdown = () => {
   };
 
   return (
-    <Box sx={{ mb: 2, display: "flex", alignItems: "center" }}>
+    <Box sx={{ display: "flex", alignItems: "center", ...sx }}>
       <FormControl size="small" sx={{ minWidth: 220 }}>
-        <InputLabel id="top-nav-select-label">Navigate</InputLabel>
         <Select
-          labelId="top-nav-select-label"
           id="top-nav-select"
           value={value}
-          label="Navigate"
           onChange={handleChange}
+          displayEmpty
+          sx={{
+            height: "38px",
+            backgroundColor: "#fff",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: "rgba(0,0,0,0.1)",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: "rgba(0,0,0,0.2)",
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: "#2563eb",
+            },
+            fontSize: "0.9rem",
+            fontWeight: 500
+          }}
         >
           <MenuItem value="dashboard">Dashboard</MenuItem>
           <MenuItem value="submission">VGM Submission</MenuItem>
           <MenuItem value="status">VGM Status</MenuItem>
           <MenuItem value="form13">Form 13</MenuItem>
-          <MenuItem value="trackf13">Track F13 request </MenuItem>
+          <MenuItem value="trackf13">Track F13 request</MenuItem>
         </Select>
       </FormControl>
     </Box>

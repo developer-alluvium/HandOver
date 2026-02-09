@@ -3,7 +3,7 @@ import { useSnackbar } from "notistack";
 import { vgmAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import dayjs from "dayjs";
-import TopNavDropdown from "./TopNavDropdown";
+import AppbarComponent from "./AppbarComponent";
 import { useNavigate } from "react-router-dom";
 import "../styles/VGM.scss";
 
@@ -328,7 +328,7 @@ const VGMStatus = () => {
 
   return (
     <div className="vgm-container">
-      <TopNavDropdown />
+      <AppbarComponent />
       <div className="page-header">
         <h2>VGM Management</h2>
       </div>
@@ -450,6 +450,7 @@ const VGMStatus = () => {
                     <th>Booking</th>
                     <th>Status</th>
                     <th>Port</th>
+                    <th>Remarks</th>
                     <th>VGM Weight</th>
                     <th>Date</th>
                   </tr>
@@ -472,7 +473,7 @@ const VGMStatus = () => {
                               <Icons.Eye />
                             </button>
                             <button
-                              className={`btn btn-sm btn-outline ${verified ? "btn-disabled" : ""}`}
+                              className={`btn btn - sm btn - outline ${verified ? "btn-disabled" : ""} `}
                               title={verified ? "Cannot edit verified request" : "Edit"}
                               onClick={() => handleEditRequest(req)}
                               disabled={verified}
@@ -489,14 +490,20 @@ const VGMStatus = () => {
                           <span
                             className={`badge ${getStatusBadgeClass(
                               displayStatus
-                            )}`}
+                            )
+                              } `}
                           >
                             {displayStatus}
                           </span>
                         </td>
                         <td>{getPortName(req.locId)}</td>
                         <td>
-                          {req.totWt ? `${req.totWt} ${req.totWtUom}` : "N/A"}
+                          <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={remarks}>
+                            {remarks}
+                          </div>
+                        </td>
+                        <td>
+                          {req.totWt ? `${req.totWt} ${req.totWtUom} ` : "N/A"}
                         </td>
                         <td>
                           {dayjs(req.createdAt).format("DD/MM/YYYY HH:mm")}

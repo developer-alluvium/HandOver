@@ -25,6 +25,7 @@ $spacing-base: 0.75rem;
 // --- Layout ---
 .form13-container {
   padding: 1rem;
+  padding-top: 80px; // Added for fixed header
   max-width: 100%;
   margin: 0 auto;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -96,6 +97,7 @@ $spacing-base: 0.75rem;
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
   }
+
   @media (min-width: 1024px) {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -143,6 +145,7 @@ $spacing-base: 0.75rem;
       border-color: $danger;
       background-color: #fef2f2;
     }
+
     &:disabled {
       background-color: #f8fafc;
       color: $text-muted;
@@ -227,6 +230,7 @@ $spacing-base: 0.75rem;
   &.btn-primary {
     background-color: $primary;
     color: white;
+
     &:hover:not(:disabled) {
       background-color: $primary-hover;
     }
@@ -236,6 +240,7 @@ $spacing-base: 0.75rem;
     background-color: white;
     border-color: $border;
     color: $text-main;
+
     &:hover {
       background-color: #f8fafc;
       border-color: color.adjust($border, $lightness: -10%);
@@ -245,6 +250,7 @@ $spacing-base: 0.75rem;
   &.btn-danger {
     background-color: $danger;
     color: white;
+
     &:hover:not(:disabled) {
       background-color: color.adjust($danger, $lightness: -10%);
     }
@@ -277,16 +283,19 @@ $spacing-base: 0.75rem;
     color: #1e40af;
     border-color: #dbeafe;
   }
+
   &.alert-warning {
     background: #fffbeb;
     color: #92400e;
     border-color: #fcd34d;
   }
+
   &.alert-success {
     background: #f0fdf4;
     color: #166534;
     border-color: #bbf7d0;
   }
+
   &.alert-error {
     background: #fef2f2;
     color: #991b1b;
@@ -310,16 +319,19 @@ $spacing-base: 0.75rem;
     color: #166534;
     border: 1px solid #bbf7d0;
   }
+
   &.badge-warning {
     background: #fef3c7;
     color: #92400e;
     border: 1px solid #fde68a;
   }
+
   &.badge-info {
     background: #dbeafe;
     color: #1e40af;
     border: 1px solid #bfdbfe;
   }
+
   &.badge-error {
     background: #fee2e2;
     color: #991b1b;
@@ -420,48 +432,63 @@ $spacing-base: 0.75rem;
   display: flex;
   align-items: center;
 }
+
 .justify-between {
   justify-content: space-between;
 }
+
 .justify-end {
   justify-content: flex-end;
 }
+
 .gap-1 {
   gap: 0.25rem;
 }
+
 .gap-2 {
   gap: 0.5rem;
 }
+
 .gap-3 {
   gap: 1rem;
 }
+
 .text-right {
   text-align: right;
 }
+
 .w-full {
   width: 100%;
 }
+
 .mt-1 {
   margin-top: 0.25rem;
 }
+
 .mt-2 {
   margin-top: 0.5rem;
 }
+
 .mt-3 {
   margin-top: 1rem;
 }
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
+
 .mb-3 {
   margin-bottom: 1rem;
 }
+
 .ml-1 {
   margin-left: 0.25rem;
 }
+
 .ml-2 {
   margin-left: 0.5rem;
 }

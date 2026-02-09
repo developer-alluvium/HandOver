@@ -9,7 +9,7 @@ $color-bg: #f8fafc; // Slate 50
 $color-surface: #ffffff;
 $color-text-main: #1e293b; // Slate 800
 $color-text-muted: #64748b; // Slate 500
-$color-border:  #bfc1c4; // Slate 200
+$color-border: #bfc1c4; // Slate 200
 
 // Status Colors
 $color-success: #10b981;
@@ -44,6 +44,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 80px; // Added for fixed header
 }
 
 .main-content {
@@ -98,6 +99,7 @@ body {
         font-weight: 700;
         line-height: 1.2;
       }
+
       span {
         font-size: 0.75rem;
         color: $color-text-muted;
@@ -124,6 +126,7 @@ body {
         font-weight: 600;
         font-size: 0.9rem;
       }
+
       .user-role {
         font-size: 0.75rem;
         color: $color-text-muted;
@@ -180,6 +183,7 @@ body {
       margin: 0 0 $spacing-sm 0;
       font-size: 1.75rem;
     }
+
     p {
       margin: 0 0 $spacing-lg 0;
       color: #94a3b8;
@@ -216,11 +220,9 @@ body {
     right: 0;
     width: 200px;
     height: 100%;
-    background: radial-gradient(
-      circle at center,
-      rgba($color-primary, 0.2) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle at center,
+        rgba($color-primary, 0.2) 0%,
+        transparent 70%);
     z-index: 1;
   }
 }
@@ -268,14 +270,17 @@ body {
     background: color.adjust($color-primary, $lightness: 40%);
     color: $color-primary;
   }
+
   &.variant-cyan .stat-icon-wrapper {
     background: color.adjust($color-info, $lightness: 40%);
     color: $color-info;
   }
+
   &.variant-orange .stat-icon-wrapper {
     background: color.adjust($color-warning, $lightness: 40%);
     color: $color-warning;
   }
+
   &.variant-green .stat-icon-wrapper {
     background: color.adjust($color-success, $lightness: 40%);
     color: $color-success;
@@ -291,6 +296,7 @@ body {
       color: $color-text-main;
       line-height: 1;
     }
+
     .stat-label {
       font-size: 0.875rem;
       color: $color-text-muted;
@@ -517,6 +523,7 @@ body {
 
       &:hover {
         background: #f8fafc;
+
         span {
           opacity: 1;
           transform: translateX(0);
@@ -566,10 +573,12 @@ body {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba($color-success, 0.7);
   }
+
   70% {
     transform: scale(1);
     box-shadow: 0 0 0 6px rgba($color-success, 0);
   }
+
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba($color-success, 0);

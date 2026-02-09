@@ -93,7 +93,6 @@ export const saveVGM = async (req, res) => {
         remarks: "Saved by user as draft"
       });
       await savedLog.save();
-      console.log(`Created new draft: ${savedLog._id}`);
     }
 
     res.json({
@@ -580,8 +579,6 @@ export const getVGMRequests = async (req, res) => {
       filterQuery.$and = andConditions;
     }
 
-    console.log("MongoDB Filter Query:", JSON.stringify(filterQuery, null, 2));
-
     const skip = (page - 1) * parseInt(limit);
 
     // Fetch paginated results
@@ -592,11 +589,6 @@ export const getVGMRequests = async (req, res) => {
       .lean();
 
     const total = await ApiLog.countDocuments(filterQuery);
-    console.log(`Found ${requests.length} records. Total matching: ${total}`);
-    if (requests.length > 0) {
-      console.log("Sample Booking No from DB:", requests[0].request?.body?.bookNo);
-      console.log("Sample Container No from DB:", requests[0].request?.body?.cntnrNo);
-    }
 
     // Transform data for frontend display
     const transformedRequests = requests.map((log) => {
@@ -690,8 +682,6 @@ export const updateVGMRequest = async (req, res) => {
     const { vgmId } = req.params;
     const updateData = req.body;
 
-    console.log(`Updating VGM request ${vgmId} with data:`, updateData);
-
     // Get the original VGM request
     const originalLog = await ApiLog.findById(vgmId);
     if (!originalLog) {
@@ -707,11 +697,6 @@ export const updateVGMRequest = async (req, res) => {
       },
     };
 
-    console.log(
-      "Updated request data for resubmission:",
-      JSON.stringify(updatedRequestData.body, null, 2)
-    );
-
     // Update the existing log with pending status
     await ApiLog.findByIdAndUpdate(vgmId, {
       request: updatedRequestData,
@@ -725,13 +710,6 @@ export const updateVGMRequest = async (req, res) => {
       "VGM_SUBMISSION",
       updatedRequestData
     );
-
-    console.log("Resubmission result structure:", {
-      success: result.success,
-      errorType: typeof result.error,
-      errorValue: result.error,
-      hasLogId: !!result.logId,
-    });
 
     // Update the log with the response
     if (result.success) {
@@ -747,17 +725,6 @@ export const updateVGMRequest = async (req, res) => {
         vgmId: vgmId,
       });
     } else {
-      // DEBUG: Log the exact structure of result.error
-      console.log("DEBUG - result.error structure:", {
-        type: typeof result.error,
-        value: result.error,
-        isObject: result.error && typeof result.error === "object",
-        isString: typeof result.error === "string",
-        keys:
-          result.error && typeof result.error === "object"
-            ? Object.keys(result.error)
-            : "N/A",
-      });
 
       // Safely handle the error - always ensure it's an object
       let errorData;
@@ -776,8 +743,6 @@ export const updateVGMRequest = async (req, res) => {
           originalValue: String(result.error),
         };
       }
-
-      console.log("DEBUG - Final errorData to store:", errorData);
 
       // Update database with error
       await ApiLog.findByIdAndUpdate(vgmId, {

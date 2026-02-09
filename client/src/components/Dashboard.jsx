@@ -2,6 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AppbarComponent from "./AppbarComponent";
 import "../styles/Dashboard.scss";
 
 // --- Inline SVG Icons ---
@@ -171,31 +172,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-layout">
-      {/* Top Navbar */}
-      <header className="top-nav">
-        <div className="nav-container">
-          <div className="nav-brand">
-            <div className="brand-logo">OD</div>
-            <div className="brand-text">
-              <h1>ODeX Portal</h1>
-              <span>Enterprise Logistics</span>
-            </div>
-          </div>
-
-          <div className="nav-actions">
-            <div className="user-info">
-              <span className="user-name">
-                {userData?.pyrName || userData?.pyrCode || "User"}
-              </span>
-              <span className="user-role">{userData?.pyrType || "User"}</span>
-            </div>
-            <button onClick={handleLogout} className="btn-logout">
-              <Icons.Logout />
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppbarComponent />
 
       <main className="main-content">
         {/* Welcome Section */}

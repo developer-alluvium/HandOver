@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, InputAdornment, Button, Box, Typography } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import axios from "axios";
 import { useFormik, FormikProvider, useFormikContext } from "formik";
 import { useSnackbar } from "notistack";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import TopNavDropdown from "./TopNavDropdown";
+import AppbarComponent from "./AppbarComponent";
 import { vgmAPI, masterAPI } from "../services/api.js";
 import { vgmValidationSchema } from "../utils/validation.js";
 import { validateFile, fileToBase64 } from "../utils/fileUtils.js";
@@ -986,8 +988,8 @@ const VGMForm = ({
 
           // CSC Max Weight = grossWeight (from container details)
           updates.cscPlateMaxWtLimit = container.grossWeight || "";
-          // VGM Total Weight = maxPayloadKgs
-          updates.totWt = container.maxPayloadKgs || "";
+          // VGM Total Weight = tareWeight from weighment details
+          updates.totWt = (job.operations?.[0]?.weighmentDetails?.[0]?.tareWeight) || "";
           updates.cargoTp = container.cargoType === "Gen" ? "GEN" : "GEN";
         }
 
@@ -997,6 +999,7 @@ const VGMForm = ({
           updates.weighBridgeRegNo = wb.weighBridgeName || "";
           updates.weighBridgeSlipNo = wb.slipNo || wb.regNo || "";
           updates.weighBridgeAddrLn1 = wb.address || "";
+          updates.tareWt = wb.tareWeight || "";
         }
 
         // --- 3. Booking / Liner / Port ---
@@ -1098,7 +1101,7 @@ const VGMForm = ({
       // Update container-specific fields
       updates.cntnrNo = container.containerNo || "";
       updates.cscPlateMaxWtLimit = container.grossWeight || "";
-      updates.totWt = container.maxPayloadKgs || "";
+      updates.totWt = wb.tareWeight || "";
 
       // Size mapping
       if (container.containerSize) {
@@ -1122,6 +1125,7 @@ const VGMForm = ({
       updates.weighBridgeRegNo = wb.weighBridgeName || "";
       updates.weighBridgeSlipNo = wb.slipNo || wb.regNo || "";
       updates.weighBridgeAddrLn1 = wb.address || "";
+      updates.tareWt = wb.tareWeight || "";
 
       formik.setValues(updates);
       setFormValues(updates);
@@ -1132,80 +1136,111 @@ const VGMForm = ({
   return (
     <FormikProvider value={formik}>
       <div className="vgm-container">
-        <TopNavDropdown />
+        <AppbarComponent />
 
-        {/* Job No Search Panel */}
-        <div className="panel" style={{
+        {/* Job No Search Panel - Redesigned for better UI */}
+        <Box sx={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "center",
           alignItems: "center",
-          padding: "10px 15px",
-          marginBottom: "15px",
-          backgroundColor: "#f8f9fa"
+          p: 3,
+          mb: 2,
+          backgroundColor: "#fff",
+          borderRadius: "8px",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <label style={{ fontWeight: 600, color: "#4b5563", marginBottom: 0 }}>Job No:</label>
-            <div style={{ display: "flex", gap: "5px" }}>
-              <input
-                type="text"
-                className="form-control"
-                style={{ width: "220px", height: "38px" }}
-                placeholder="Enter Job No (e.g. GIM/00003...)"
-                value={jobNoSearch}
-                onChange={(e) => setJobNoSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleJobSearch();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleJobSearch}
-                disabled={loadingJob}
-                style={{
-                  height: "38px",
-                  padding: "0 15px",
-                  display: "flex",
-                  alignItems: "center",
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {loadingJob ? "Fetching..." : "Fetch Data"}
-              </button>
-            </div>
-          </div>
-        </div>
+          <Box sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            maxWidth: "600px",
+            width: "100%"
+          }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Auto-fill from Job No (e.g. GIM/00003...)"
+              value={jobNoSearch}
+              onChange={(e) => setJobNoSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleJobSearch();
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "#94a3b8" }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  borderRadius: "6px",
+                  bgcolor: "#f8fafc",
+                  "& fieldset": { borderColor: "#cbd5e1" },
+                  "&:hover fieldset": { borderColor: "#94a3b8" },
+                  "&.Mui-focused fieldset": { borderColor: "#2563eb" },
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleJobSearch}
+              disabled={loadingJob}
+              startIcon={loadingJob ? null : <CloudDownloadIcon />}
+              sx={{
+                height: "40px",
+                whiteSpace: "nowrap",
+                px: 3,
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: "6px",
+                bgcolor: "#2563eb",
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#1d4ed8", boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)" }
+              }}
+            >
+              {loadingJob ? "Fetching..." : "Fetch Data"}
+            </Button>
+          </Box>
+        </Box>
 
         {/* Container Selection Dropdown (only if multiple containers) */}
         {containersList.length > 1 && (
-          <div className="panel" style={{
+          <Box sx={{
             display: "flex",
             alignItems: "center",
-            padding: "12px 15px",
-            marginBottom: "15px",
-            backgroundColor: "#fff3cd",
-            border: "1px solid #ffc107",
-            borderRadius: "8px"
+            p: 2,
+            mb: 2,
+            backgroundColor: "#fffbeb",
+            border: "1px solid #fcd34d",
+            borderRadius: "8px",
+            gap: 2
           }}>
-            <span style={{ marginRight: "10px", fontWeight: 600, color: "#856404" }}>
-              ⚠️ Multiple containers found. Select container:
-            </span>
-            <select
-              className="form-control"
-              style={{ width: "250px", height: "38px" }}
-              value={selectedContainerNo}
-              onChange={(e) => handleContainerSelect(e.target.value)}
-            >
-              {containersList.map((c) => (
-                <option key={c.containerNo} value={c.containerNo}>
-                  {c.containerNo} ({c.containerSize || "N/A"})
-                </option>
-              ))}
-            </select>
-          </div>
+            <Typography sx={{ fontWeight: 600, color: "#92400e", display: "flex", alignItems: "center", gap: 1 }}>
+              <span style={{ fontSize: "1.2rem" }}>⚠️</span> Multiple containers found. Select container:
+            </Typography>
+            <Box sx={{ minWidth: 200 }}>
+              <select
+                className="form-control"
+                style={{
+                  height: "38px",
+                  borderRadius: "6px",
+                  borderColor: "#fcd34d",
+                  backgroundColor: "#fff"
+                }}
+                value={selectedContainerNo}
+                onChange={(e) => handleContainerSelect(e.target.value)}
+              >
+                {containersList.map((c) => (
+                  <option key={c.containerNo} value={c.containerNo}>
+                    {c.containerNo} ({c.containerSize})
+                  </option>
+                ))}
+              </select>
+            </Box>
+          </Box>
         )}
 
         <form onSubmit={formik.handleSubmit}>
