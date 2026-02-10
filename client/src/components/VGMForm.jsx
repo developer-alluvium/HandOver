@@ -71,7 +71,7 @@ const SelectField = ({ label, name, options, required = false, ...props }) => {
 
   // Normalize options to ensure consistent label/value structure
   const normalizedOptions = (options || []).map((opt) => ({
-    label: opt.label || opt.shipperNm || opt.name || String(opt),
+    label: opt.label || opt.lable || opt.shipperNm || opt.name || String(opt),
     value: opt.value || opt.shipperId || opt.code || String(opt),
   }));
 
@@ -322,13 +322,34 @@ const VGMForm = ({
     const fetchShippingLines = async () => {
       try {
         const response = await masterAPI.getShippingLines();
-        // API returns { success: true, data: [...] }, so access response.data.data
-        const lines = response.data?.data || [];
-        setShippingLines(lines.length > 0 ? lines : LINERS);
+        // API returns { success: true, data: [...] }, and interceptor extracts data
+        const rawData = response.data;
+        let lines = [];
+
+        // Robust extraction logic
+        if (Array.isArray(rawData)) {
+          lines = rawData;
+        } else if (rawData?.data && Array.isArray(rawData.data)) {
+          lines = rawData.data;
+        } else if (rawData?.success && Array.isArray(rawData.data)) {
+          lines = rawData.data;
+        }
+
+        console.log("[VGM] Fetched shipping lines:", lines.length);
+
+        if (lines.length > 0) {
+          setShippingLines(lines);
+        } else {
+          console.warn("[VGM] API returned 0 lines. Response:", rawData);
+          enqueueSnackbar("No shipping lines found in API response", { variant: "warning" });
+          // FORCE API USAGE: Do not fallback to LINERS
+          // setShippingLines(LINERS); 
+        }
       } catch (error) {
         console.error("Error fetching shipping lines:", error);
-        // Fallback to static LINERS on error
-        setShippingLines(LINERS);
+        enqueueSnackbar("Failed to fetch shipping lines from API", { variant: "error" });
+        // FORCE API USAGE: Do not fallback to LINERS
+        // setShippingLines(LINERS);
       }
     };
     fetchShippingLines();
