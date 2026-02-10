@@ -45,7 +45,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 // PublicRoute - redirects authenticated users away from login

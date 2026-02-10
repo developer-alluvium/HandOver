@@ -7,9 +7,13 @@ import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Box, Typography } from "@mui/material";
 import TopNavDropdown from "./TopNavDropdown";
+import { useAuth } from "../context/AuthContext";
+import LogoutIcon from "@mui/icons-material/Logout";
+import Tooltip from "@mui/material/Tooltip";
 
 const AppbarComponent = (props) => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     return (
         <AppBar
@@ -89,6 +93,22 @@ const AppbarComponent = (props) => {
                         Version: {import.meta.env.VITE_VERSION || "01.00.00"}
                     </Typography>
                 </Box>
+
+                <Tooltip title="Logout">
+                    <IconButton
+                        onClick={() => {
+                            logout();
+                            navigate("/login");
+                        }}
+                        sx={{
+                            ml: 2,
+                            color: '#ef4444',
+                            "&:hover": { backgroundColor: "#fee2e2" }
+                        }}
+                    >
+                        <LogoutIcon />
+                    </IconButton>
+                </Tooltip>
             </Toolbar>
         </AppBar>
     );
