@@ -555,7 +555,8 @@ export const ATTACHMENT_REQUIREMENTS = {
 export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
   const alwaysRequired = [
     'locId', 'bnfCode', 'vesselNm', 'viaNo', 'terminalCode', 'service', 'pod', 'cargoTp', 'origin',
-    'bookNo', 'cntnrStatus', 'mobileNo', 'shipperNm', 'consigneeNm', 'cntnrNo', 'cntnrSize', 'vgmWt'
+    'bookNo', 'cntnrStatus', 'mobileNo', 'shipperNm', 'consigneeNm', 'cntnrNo', 'cntnrSize', 'vgmWt',
+    'cargoDesc', 'terminalLoginId'
   ];
 
   if (alwaysRequired.includes(fieldName)) {
@@ -564,6 +565,12 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
 
   // Conditional requirements
   switch (fieldName) {
+    case 'ShipperCity':
+      return formData.locId === "INTUT1" && formData.terminalCode === "DBGT";
+
+    case 'IsEarlyGateIn':
+      return formData.locId === "INMUN1" && formData.bnfCode?.toUpperCase() === "CMA";
+
     case 'driverNm':
       return formData.origin === 'CFS';
 
@@ -584,6 +591,10 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
 
     case 'cfsCode':
       return ['B', 'C', 'F_CFS'].includes(formData.origin);
+
+    case 'issueTo':
+      const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+      return !hiddenTerminals.includes(formData.terminalCode);
 
     default:
       return false;
@@ -788,6 +799,29 @@ export const validateFormData = (formData) => {
   if (!formData.mobileNo?.trim()) errors.mobileNo = "Mobile No is required";
   if (!formData.consigneeNm?.trim())
     errors.consigneeNm = "Consignee Name is required";
+  if (!formData.cargoDesc?.trim())
+    errors.cargoDesc = "Cargo Description is required";
+  if (!formData.terminalLoginId?.trim())
+    errors.terminalLoginId = "Terminal Login ID is required";
+
+  // Conditional Header Field Validations
+  if (isFieldRequired('ShipperCity', formData) && !formData.ShipperCity?.trim()) {
+    errors.ShipperCity = "Shipper City is required";
+  }
+
+  if (isFieldRequired('IsEarlyGateIn', formData) && !formData.IsEarlyGateIn?.trim()) {
+    errors.IsEarlyGateIn = "Early Gate In selection is required";
+  }
+
+
+  // Conditional Header Field Validations
+  if (isFieldRequired('cfsCode', formData) && !formData.cfsCode?.trim()) {
+    errors.cfsCode = "CFS Code is required";
+  }
+
+  if (isFieldRequired('issueTo', formData) && !formData.issueTo?.trim()) {
+    errors.issueTo = "Issue To is required";
+  }
 
   // Validate each container
   formData.containers.forEach((container, index) => {

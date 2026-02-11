@@ -148,10 +148,15 @@ const VGMStatus = () => {
   });
 
   // Filters with date defaults - From Date defaults to today
+  // Filters with date defaults - Default to current month
   const [containerSearch, setContainerSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFrom, setDateFrom] = useState(getTodayDate());
-  const [dateTo, setDateTo] = useState(getTodayDate());
+
+  // Initialize with current month's start and end dates
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().format("MM"));
+  const [dateFrom, setDateFrom] = useState(dayjs().startOf("month").format("YYYY-MM-DD"));
+  const [dateTo, setDateTo] = useState(dayjs().endOf("month").format("YYYY-MM-DD"));
+
   const debounceTimerRef = useRef(null);
 
   const fetchVGMRequests = useCallback(async (page = 1, containerNo = "", status = "", fromDate = "", toDate = "") => {
@@ -203,17 +208,19 @@ const VGMStatus = () => {
     fetchVGMRequests(1, containerSearch, value, dateFrom, dateTo);
   };
 
-  // Date filter change - immediate search
-  const handleDateFromChange = (value) => {
-    setDateFrom(value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1, containerSearch, statusFilter, value, dateTo);
-  };
+  // Month filter change
+  const handleMonthChange = (month) => {
+    const currentYear = dayjs().year();
+    // month is "01", "02", etc.
+    const start = dayjs(`${currentYear}-${month}-01`).startOf("month").format("YYYY-MM-DD");
+    const end = dayjs(`${currentYear}-${month}-01`).endOf("month").format("YYYY-MM-DD");
 
-  const handleDateToChange = (value) => {
-    setDateTo(value);
+    setSelectedMonth(month);
+    setDateFrom(start);
+    setDateTo(end);
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1, containerSearch, statusFilter, dateFrom, value);
+
+    fetchVGMRequests(1, containerSearch, statusFilter, start, end);
   };
 
   // Check if request is verified - disable edit if verified
@@ -234,14 +241,37 @@ const VGMStatus = () => {
   const handleClearFilters = () => {
     setContainerSearch("");
     setStatusFilter("");
-    setDateFrom(getTodayDate()); // Reset to today
-    setDateTo(getTodayDate()); // Reset to today
+
+    // Reset to current month
+    const currentMonth = dayjs().format("MM");
+    const start = dayjs().startOf("month").format("YYYY-MM-DD");
+    const end = dayjs().endOf("month").format("YYYY-MM-DD");
+
+    setSelectedMonth(currentMonth);
+    setDateFrom(start);
+    setDateTo(end);
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchVGMRequests(1, "", "", getTodayDate(), getTodayDate());
+    fetchVGMRequests(1, "", "", start, end);
   };
+
+  const MONTHS = [
+    { value: "01", label: "January" },
+    { value: "02", label: "February" },
+    { value: "03", label: "March" },
+    { value: "04", label: "April" },
+    { value: "05", label: "May" },
+    { value: "06", label: "June" },
+    { value: "07", label: "July" },
+    { value: "08", label: "August" },
+    { value: "09", label: "September" },
+    { value: "10", label: "October" },
+    { value: "11", label: "November" },
+    { value: "12", label: "December" },
+  ];
 
   // --- Logic 1: Determine Display Status ---
   const getDisplayStatus = (req) => {
@@ -312,10 +342,15 @@ const VGMStatus = () => {
     return LINER_MAP[linerCode] || linerCode || "N/A";
   };
 
-  // Initial load - with today's date as From Date and To Date
+  // Initial load - with current month dates
   useEffect(() => {
-    fetchVGMRequests(1, "", "", getTodayDate(), getTodayDate());
-  }, []);
+    fetchVGMRequests(1, "", "", dateFrom, dateTo);
+  }, []); // dateFrom and dateTo are stable on mount (initial values), but explicit dependency might cause double fetch? 
+  // Standard pattern: useEffect with empty array behaves as componentDidMount. 
+  // However, dateFrom/dateTo state is initialized synchronously.
+
+  // Ensure we use the values we initialized with.
+  // The fetchVGMRequests is wrapped in useCallback, but it depends on pagination.limit.
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -383,22 +418,18 @@ const VGMStatus = () => {
             </small>
           </div>
           <div className="form-group">
-            <label>From Date</label>
-            <input
-              type="date"
+            <label>Filter Month</label>
+            <select
               className="form-control"
-              value={dateFrom}
-              onChange={(e) => handleDateFromChange(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>To Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={dateTo}
-              onChange={(e) => handleDateToChange(e.target.value)}
-            />
+              value={selectedMonth}
+              onChange={(e) => handleMonthChange(e.target.value)}
+            >
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div
             className="form-group"
