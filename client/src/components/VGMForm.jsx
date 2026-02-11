@@ -20,7 +20,6 @@ import {
   REGISTRATION_TYPES,
   ATTACHMENT_TITLES,
   PORTS,
-  LINERS,
   IMO_NUMBERS,
   CONTAINER_TYPES,
   HANDOVER_LOCATIONS,
@@ -342,14 +341,10 @@ const VGMForm = ({
         } else {
           console.warn("[VGM] API returned 0 lines. Response:", rawData);
           enqueueSnackbar("No shipping lines found in API response", { variant: "warning" });
-          // FORCE API USAGE: Do not fallback to LINERS
-          // setShippingLines(LINERS); 
         }
       } catch (error) {
         console.error("Error fetching shipping lines:", error);
         enqueueSnackbar("Failed to fetch shipping lines from API", { variant: "error" });
-        // FORCE API USAGE: Do not fallback to LINERS
-        // setShippingLines(LINERS);
       }
     };
     fetchShippingLines();

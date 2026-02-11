@@ -39,7 +39,6 @@ const getHashKey = () => {
 
 export const callOdexAPI = async (endpoint, requestData) => {
   const url = `${ODEX_CONFIG.baseURL}${endpoint}`;
-  console.log("📤 ODeX Request →", url);
   // console.log("📤 Payload:", JSON.stringify(requestData, null, 2));
 
   try {
