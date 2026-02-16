@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Autocomplete, TextField, InputAdornment, Button, Box, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
@@ -65,14 +65,34 @@ const InputField = ({
   );
 };
 
+const filterOptions = (options, { inputValue }) => {
+  const query = (inputValue || "").toLowerCase().trim();
+  if (!query) return options;
+
+  return options.filter((option) => {
+    // strict prefix matching using pre-calculated lowercase values
+    return (
+      (option.searchLabel && option.searchLabel.startsWith(query)) ||
+      (option.searchValue && option.searchValue.startsWith(query))
+    );
+  });
+};
+
 const SelectField = ({ label, name, options, required = false, ...props }) => {
   const formik = useFormikContext();
 
   // Normalize options to ensure consistent label/value structure
-  const normalizedOptions = (options || []).map((opt) => ({
-    label: opt.label || opt.lable || opt.shipperNm || opt.name || String(opt),
-    value: opt.value || opt.shipperId || opt.code || String(opt),
-  }));
+  const normalizedOptions = useMemo(() => (options || []).map((opt) => {
+    const label = String(opt.label || opt.lable || opt.shipperNm || opt.name || String(opt)).trim();
+    const value = String(opt.value || opt.shipperId || opt.code || String(opt)).trim();
+    return {
+      label,
+      value,
+      // Pre-compute lowercase values for efficient filtering
+      searchLabel: label.toLowerCase(),
+      searchValue: value.toLowerCase(),
+    };
+  }), [options]);
 
   // Find the currently selected option object
   const selectedOption =
@@ -88,6 +108,8 @@ const SelectField = ({ label, name, options, required = false, ...props }) => {
       <Autocomplete
         id={name}
         options={normalizedOptions}
+        filterOptions={filterOptions}
+        autoHighlight
         getOptionLabel={(option) => option.label || ""}
         value={selectedOption}
         onChange={(event, newValue) => {
