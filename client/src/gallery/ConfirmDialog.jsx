@@ -15,7 +15,7 @@ const ConfirmDialog = ({
   message,
   isEdit = false, // Flag to determine edit mode
   editValues = {},
-  onEditChange = () => {},
+  onEditChange = () => { },
   readOnly = false, // New prop to make it read-only
 }) => (
   <Dialog
@@ -58,10 +58,11 @@ const ConfirmDialog = ({
       )}
     </DialogContent>
     <DialogActions>
-      <Button onClick={handleClose} color="primary">
+      <Button type="button" onClick={handleClose} color="primary">
         Cancel
       </Button>
       <Button
+        type="button"
         onClick={handleConfirm}
         color="primary"
         autoFocus

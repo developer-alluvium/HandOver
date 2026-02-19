@@ -504,7 +504,7 @@ const VGMStatus = () => {
                               <Icons.Eye />
                             </button>
                             <button
-                              className={`btn btn - sm btn - outline ${verified ? "btn-disabled" : ""} `}
+                              className={`btn btn-sm btn-outline ${verified ? "btn-disabled" : ""} `}
                               title={verified ? "Cannot edit verified request" : "Edit"}
                               onClick={() => handleEditRequest(req)}
                               disabled={verified}

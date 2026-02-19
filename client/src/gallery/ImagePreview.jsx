@@ -201,6 +201,7 @@ const ImagePreview = ({
                     {!readOnly && (
                       <td style={tableStyles.td}>
                         <button
+                          type="button"
                           style={tableStyles.deleteBtn}
                           onClick={() => handleDeleteClick(index)}
                           disabled={isDeleting}

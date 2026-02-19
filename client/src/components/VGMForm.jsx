@@ -305,6 +305,11 @@ const VGMForm = ({
             typeof innerResponse === "string" &&
             innerResponse.trim().toUpperCase().startsWith("ERROR");
 
+          if (responseBody.logId) {
+            setIsEditMode(true);
+            setRequestData({ _id: responseBody.logId, vgmId: responseBody.logId, ...payload });
+          }
+
           if (isLogicalError) {
             // Case: Server accepted (200 OK) but business logic failed (Pending/Error)
             // ACTION: Show warning, DO NOT CLEAR FORM
@@ -594,6 +599,7 @@ const VGMForm = ({
                   <div style={{ flex: 1 }}>{message}</div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
+                      type="button"
                       onClick={() => {
                         closeSnackbar(key);
                         loadExistingBooking(match.vgmId);
@@ -611,6 +617,7 @@ const VGMForm = ({
                       Yes
                     </button>
                     <button
+                      type="button"
                       onClick={() => closeSnackbar(key)}
                       style={{
                         background: 'transparent',
@@ -904,6 +911,13 @@ const VGMForm = ({
       // So if we get here without error, and have response.data, it's successful.
       if (response && response.status === 200) {
         enqueueSnackbar("VGM Saved as Draft", { variant: "success" });
+
+        // transition to edit mode so subsequent "Submission" updates THIS record
+        // response.data contains the extracted 'data' field from the server JSON
+        if (response.data?.logId) {
+          setIsEditMode(true);
+          setRequestData({ _id: response.data.logId, vgmId: response.data.logId, ...payload });
+        }
       } else {
         // Fallback for unexpected status codes
         throw new Error("Failed to save draft.");

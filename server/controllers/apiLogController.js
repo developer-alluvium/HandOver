@@ -4,7 +4,27 @@ import config from "../config.js";
 
 export const submitVGM = async (req, res) => {
   try {
-    // Don't forward all headers from client - create clean headers
+    // Sanitize input
+    req.body.bookNo = req.body.bookNo?.toString().trim();
+    req.body.cntnrNo = req.body.cntnrNo?.toString().trim();
+
+    const bookNo = req.body.bookNo;
+    const cntnrNo = req.body.cntnrNo;
+
+    console.log(`[submitVGM] Checking for existing log: "${bookNo}" / "${cntnrNo}"`);
+
+    // Check if a request already exists for this booking + container combination
+    // Use whitespace-tolerant regex just in case
+    const existingLog = await ApiLog.findOne({
+      moduleName: "VGM_SUBMISSION",
+      "request.body.bookNo": { $regex: new RegExp(`^\\s*${bookNo}\\s*$`, "i") },
+      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
+    }).sort({ createdAt: -1 });
+
+    if (existingLog) {
+      console.log(`[submitVGM] Found existing log: ${existingLog._id}`);
+    }
+
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
       method: "POST",
@@ -15,12 +35,16 @@ export const submitVGM = async (req, res) => {
       body: req.body,
     };
 
-    const result = await ApiLogger.logAndForward("VGM_SUBMISSION", requestData);
+    const result = await ApiLogger.logAndForward(
+      "VGM_SUBMISSION",
+      requestData,
+      existingLog?._id
+    );
 
     if (result.success) {
       res.json({
         success: true,
-        data: result.data,
+        data: { ...result.data, logId: result.logId },
         logId: result.logId,
       });
     } else {
@@ -41,15 +65,25 @@ export const submitVGM = async (req, res) => {
 
 export const saveVGM = async (req, res) => {
   try {
-    const { bookNo, cntnrNo } = req.body;
+    // Sanitize input
+    req.body.bookNo = req.body.bookNo?.toString().trim();
+    req.body.cntnrNo = req.body.cntnrNo?.toString().trim();
 
-    // Check if a draft already exists for this booking + container combination
+    const bookNo = req.body.bookNo;
+    const cntnrNo = req.body.cntnrNo;
+
+    console.log(`[saveVGM] Checking for existing draft: "${bookNo}" / "${cntnrNo}"`);
+
+    // Check if a draft or request already exists for this booking + container combination
     const existingDraft = await ApiLog.findOne({
       moduleName: "VGM_SUBMISSION",
-      "request.body.bookNo": bookNo,
-      "request.body.cntnrNo": cntnrNo,
-      status: { $in: ["saved", "pending", "failed"] } // Only match drafts, not successful submissions
-    });
+      "request.body.bookNo": { $regex: new RegExp(`^\\s*${bookNo}\\s*$`, "i") },
+      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
+    }).sort({ createdAt: -1 });
+
+    if (existingDraft) {
+      console.log(`[saveVGM] Found existing draft: ${existingDraft._id}`);
+    }
 
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
@@ -99,7 +133,8 @@ export const saveVGM = async (req, res) => {
       success: true,
       data: {
         message: existingDraft ? "Draft updated successfully" : "Draft saved successfully",
-        isUpdate: !!existingDraft
+        isUpdate: !!existingDraft,
+        logId: savedLog._id
       },
       logId: savedLog._id,
     });
@@ -127,6 +162,7 @@ export const getVGMStatus = async (req, res) => {
 
     const transformedRequest = {
       vgmId: log._id,
+      _id: log._id,
       cntnrNo: requestBody.cntnrNo,
       bookNo: requestBody.bookNo,
       status: log.status,
@@ -361,13 +397,14 @@ export const editApiLog = async (req, res) => {
     // Retrigger API call with updated data
     const result = await ApiLogger.logAndForward(
       newLog.moduleName,
-      updatedRequest
+      updatedRequest,
+      newLog._id
     );
 
     if (result.success) {
       res.json({
         success: true,
-        data: result.data,
+        data: { ...result.data, logId: result.logId },
         originalLogId: logId,
         newLogId: result.logId,
         message: "API retriggered successfully with updated data",
@@ -425,13 +462,14 @@ export const updateApiLog = async (req, res) => {
     // Retrigger API call
     const result = await ApiLogger.logAndForward(
       newLog.moduleName,
-      newLog.request
+      newLog.request,
+      newLog._id
     );
 
     if (result.success) {
       res.json({
         success: true,
-        data: result.data,
+        data: { ...result.data, logId: result.logId },
         originalLogId: logId,
         newLogId: result.logId,
         message: "API retriggered successfully with new data",
@@ -682,9 +720,16 @@ export const updateVGMRequest = async (req, res) => {
     const { vgmId } = req.params;
     const updateData = req.body;
 
+    // Sanitize input
+    if (updateData.bookNo) updateData.bookNo = updateData.bookNo.toString().trim();
+    if (updateData.cntnrNo) updateData.cntnrNo = updateData.cntnrNo.toString().trim();
+
+    console.log(`[updateVGMRequest] Received update for vgmId: ${vgmId}, BookNo: ${updateData.bookNo}, CntnrNo: ${updateData.cntnrNo}`);
+
     // Get the original VGM request
     const originalLog = await ApiLog.findById(vgmId);
     if (!originalLog) {
+      console.log(`[updateVGMRequest] CRITICAL: Log not found for ID ${vgmId}`);
       return res.status(404).json({ error: "VGM request not found" });
     }
 
@@ -708,7 +753,8 @@ export const updateVGMRequest = async (req, res) => {
     // Retrigger API call to third party with updated data
     const result = await ApiLogger.logAndForward(
       "VGM_SUBMISSION",
-      updatedRequestData
+      updatedRequestData,
+      vgmId
     );
 
     // Update the log with the response
@@ -720,7 +766,7 @@ export const updateVGMRequest = async (req, res) => {
 
       res.json({
         success: true,
-        data: result.data,
+        data: { ...result.data, logId: result.logId },
         message: "VGM request updated and resubmitted successfully",
         vgmId: vgmId,
       });

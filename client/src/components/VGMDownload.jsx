@@ -80,6 +80,7 @@ const VGMDownload = ({ vgmData, onClose }) => {
                         <div className="exporter-grid">
                             {EXPORTERS.map((exporter) => (
                                 <button
+                                    type="button"
                                     key={exporter.key}
                                     className="exporter-btn"
                                     onClick={() => handleExporterSelect(exporter.key)}
@@ -95,7 +96,7 @@ const VGMDownload = ({ vgmData, onClose }) => {
                 </div>
 
                 <div className="vgm-download-footer">
-                    <button className="btn-close" onClick={onClose}>
+                    <button type="button" className="btn-close" onClick={onClose}>
                         Close
                     </button>
                 </div>
