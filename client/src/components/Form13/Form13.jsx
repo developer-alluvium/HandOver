@@ -76,7 +76,7 @@ const Form13 = () => {
     consigneeAddr: "",
     cargoDesc: "",
     terminalLoginId: "",
-    email_Id: "",
+    emailId: "",
     bookCopyBlNo: "",
     cntnrStatus: "",
     formType: "F13",
@@ -1016,7 +1016,7 @@ const Form13 = () => {
       }
 
       if (trimmedLine.includes("Enter valid Email Id")) {
-        errors.email_Id = "Please enter a valid email address";
+        errors.emailId = "Please enter a valid email address";
       }
 
       if (trimmedLine.includes("invalid CHA code")) {
@@ -1136,7 +1136,17 @@ const Form13 = () => {
         })
       );
 
-      const hardcodedHashKey = "5XRMN8PVXKQT";
+      let backendHashKey = "";
+      try {
+        const hashKeyRes = await form13API.getHashKey({});
+        if (hashKeyRes?.data?.data?.hashKey) {
+          backendHashKey = hashKeyRes.data.data.hashKey;
+        } else if (hashKeyRes?.data?.hashKey) {
+          backendHashKey = hashKeyRes.data.hashKey;
+        }
+      } catch (err) {
+        console.error("Failed to fetch hashKey from backend:", err);
+      }
 
       // Helper function to remove empty fields from payload and trim strings
       const cleanPayload = (obj) => {
@@ -1167,8 +1177,8 @@ const Form13 = () => {
 
       // Prepare API payload
       const rawPayload = {
+        hashKey: backendHashKey,
         formType: "F13",
-        hashKey: hardcodedHashKey,
         odexRefNo: formData.odexRefNo,
         reqId: formData.reqId,
         bookNo: formData.bookNo,
@@ -1209,7 +1219,7 @@ const Form13 = () => {
         contactPerson: formData.contactPerson,
         outsideWindowIssue: formData.outsideWindowIssue,
         cfsCode: formData.cfsCode,
-        email_Id: formData.email_Id,
+        emailId: formData.emailId,
         cntrList: formData.containers.map((container) => {
           // vgmWt formatting: if no decimal then add two decimal from frontend
           let formattedVgmWt = container.vgmWt;

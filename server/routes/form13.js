@@ -234,7 +234,6 @@ router.post("/submit", async (req, res) => {
       "vesselNm",
       "pod",
       "formType",
-      "hashKey",
     ];
     const missingFields = requiredFields.filter((field) => !formData[field]);
 
@@ -244,6 +243,9 @@ router.post("/submit", async (req, res) => {
         error: `Missing required fields: ${missingFields.join(", ")}`,
       });
     }
+
+    // Always inject correct hashKey from server configuration
+    formData.hashKey = getHashKey();
 
     console.log("📥 Received Form 13 Submission:");
     console.log("   - cntrList length:", formData.cntrList?.length);
@@ -500,6 +502,9 @@ router.put("/requests/:f13Id", async (req, res) => {
         error: "Form 13 request not found",
       });
     }
+
+    // Inject correct hashKey from server configuration
+    updateData.hashKey = getHashKey();
 
     // Call ODeX API with updated data
     const odexResponse = await callOdexAPI(
