@@ -467,7 +467,7 @@ const Form13 = () => {
 
     // FPOD Validation
     if (
-      ["INMAA1", "INPRT1", "INKAT1", "INCCU1", "INENN1"].includes(
+      ["INMAA1", "INPRT1", "INKAT1", "INCCU1", "INENN1", "INTUT1"].includes(
         formData.locId
       ) &&
       !formData.fpod
