@@ -24,7 +24,8 @@ app.use(
     origin: [
       config.clientUrl,
       "https://export.alvision.in",
-      "http://handover-odex.s3-website.ap-south-1.amazonaws.com"
+      "http://handover-odex.s3-website.ap-south-1.amazonaws.com",
+      "http://elock-tracking.s3-website.ap-south-1.amazonaws.com",
     ],
 
     credentials: true,

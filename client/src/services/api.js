@@ -1,9 +1,10 @@
 // client/src/services/api.js
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Note: Added /api
+const API_BASE_URL = import.meta.env.VITE_API_STRING || "http://43.205.59.159:5000/api";
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,36 +13,36 @@ const api = axios.create({
 });
 
 export const authAPI = {
-  login: (credentials) => api.post("/auth/login", credentials),
-  autoLogin: () => api.get("/auth/auto-login"),  // Auto-login using backend env credentials
-  logout: () => api.post("/auth/logout"),
-  me: () => api.get("/auth/me"),
+  login: (credentials) => api.post("auth/login", credentials),
+  autoLogin: () => api.get("auth/auto-login"),  // Auto-login using backend env credentials
+  logout: () => api.post("auth/logout"),
+  me: () => api.get("auth/me"),
 };
 
 export const vgmAPI = {
-  submit: (vgmData) => api.post("/vgm/submit", vgmData),
-  save: (vgmData) => api.post("/vgm/save", vgmData),
-  getStatus: (statusData) => api.post("/vgm/status", statusData),
-  getRequests: (filters) => api.get("/vgm/requests", { params: filters }),
+  submit: (vgmData) => api.post("vgm/submit", vgmData),
+  save: (vgmData) => api.post("vgm/save", vgmData),
+  getStatus: (statusData) => api.post("vgm/status", statusData),
+  getRequests: (filters) => api.get("vgm/requests", { params: filters }),
   updateRequest: (vgmId, updateData) =>
-    api.put(`/vgm/requests/${vgmId}`, updateData),
-  getRequestById: (vgmId) => api.get(`/vgm/requests/${vgmId}`),
+    api.put(`vgm/requests/${vgmId}`, updateData),
+  getRequestById: (vgmId) => api.get(`vgm/requests/${vgmId}`),
 };
 
 export const logAPI = {
-  getById: (logId) => api.get(`/logs/${logId}`),
+  getById: (logId) => api.get(`logs/${logId}`),
   getByModule: (moduleName, page = 1, limit = 10) =>
-    api.get(`/logs/module/${moduleName}?page=${page}&limit=${limit}`),
-  edit: (logId, updates) => api.patch(`/logs/${logId}/edit`, updates),
+    api.get(`logs/module/${moduleName}?page=${page}&limit=${limit}`),
+  edit: (logId, updates) => api.patch(`logs/${logId}/edit`, updates),
   update: (logId, completeData) =>
-    api.put(`/logs/${logId}/update`, completeData),
+    api.put(`logs/${logId}/update`, completeData),
 };
 
 export const masterAPI = {
   getShippingLines: (search) =>
-    api.get("/master/shipping-lines", { params: { search } }),
+    api.get("master/shipping-lines", { params: { search } }),
   seedShippingLines: (shippingLines) =>
-    api.post("/master/shipping-lines/seed", { shippingLines }),
+    api.post("master/shipping-lines/seed", { shippingLines }),
 };
 
 // Enhanced response interceptor to handle the new format

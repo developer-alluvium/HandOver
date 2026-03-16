@@ -1,7 +1,7 @@
 // src/services/form13API.js
 import api from "./api";
 
-const FORM13_BASE_URL = "/form13";
+const FORM13_BASE_URL = "form13";
 
 export const form13API = {
   // Vessel Master API - Calls actual ODeX API
