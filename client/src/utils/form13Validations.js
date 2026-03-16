@@ -126,7 +126,7 @@ export const LOCATION_SPECIFIC_RULES = {
   INTUT1: {
     // Tuticorin
     name: "Tuticorin",
-    requires: [],
+    requires: ["fpod"],
     optional: ["ShipperCity"],
     terminalSpecific: {
       DBGT: {

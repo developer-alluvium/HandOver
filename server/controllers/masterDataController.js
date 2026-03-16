@@ -3,17 +3,6 @@ import ShippingLineModel from "../models/ShippingLineModel.js";
 
 export const getShippingLines = async (req, res) => {
     try {
-        if (process.env.NODE_ENV === "pilot") {
-            // ONLY ALLOW THESE 3 IN PILOT AS REQUESTED
-            return res.json({
-                success: true,
-                data: [
-                    { label: "General Lines", value: "DEMO" },
-                    { label: "MSC", value: "DEBET" },
-                    { label: "Hapag", value: "DEALP" },
-                ],
-            });
-        }
 
         const { search } = req.query;
         let query = {};

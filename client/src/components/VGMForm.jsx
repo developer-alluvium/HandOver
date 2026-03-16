@@ -1067,6 +1067,19 @@ const VGMForm = ({
           }
         }
 
+        // Fallback for Liner if not set from operations
+        if (!updates.linerId && job.shipping_line_airline) {
+          console.log("[JOB SEARCH] Liner fallback from shipping_line_airline:", job.shipping_line_airline);
+          const linerMatch = findShippingLine(job.shipping_line_airline);
+          if (linerMatch) updates.linerId = linerMatch;
+        }
+
+        // Fallback for Book No if not set
+        if (!updates.bookNo && job.sb_no) {
+          console.log("[JOB SEARCH] Book No fallback from sb_no:", job.sb_no);
+          updates.bookNo = job.sb_no;
+        }
+
         // Port search - use the improved helper
         const portName = job.port_of_loading ||
           job.operations?.[0]?.containerDetails?.[0]?.portOfLoading || "";
