@@ -8,10 +8,12 @@ export const getShippingLines = async (req, res) => {
         let query = {};
 
         if (search) {
+            const escapedSearch = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
             query = {
                 $or: [
-                    { label: { $regex: search, $options: "i" } },
-                    { value: { $regex: search, $options: "i" } },
+                    { label: { $regex: escapedSearch, $options: "i" } },
+                    { value: { $regex: escapedSearch, $options: "i" } },
+                    { lable: { $regex: escapedSearch, $options: "i" } }, // Catch the typo version too
                 ],
             };
         }

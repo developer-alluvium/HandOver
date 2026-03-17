@@ -139,7 +139,7 @@ const ImagePreview = ({
       const key = new URL(imageUrl).pathname.slice(1);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_STRING}/delete-s3-file`,
+        `${import.meta.env.VITE_API_BASE_URL}/delete-s3-file`,
         {
           method: "POST",
           headers: {

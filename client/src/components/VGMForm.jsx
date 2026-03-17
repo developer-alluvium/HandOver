@@ -69,69 +69,173 @@ const filterOptions = (options, { inputValue }) => {
   const query = (inputValue || "").toLowerCase().trim();
   if (!query) return options;
 
-  return options.filter((option) => {
-    // strict prefix matching using pre-calculated lowercase values
-    return (
-      (option.searchLabel && option.searchLabel.startsWith(query)) ||
-      (option.searchValue && option.searchValue.startsWith(query))
-    );
-  });
+  return options
+    .filter((option) => {
+      const searchLabel = (option.searchLabel || "").toLowerCase();
+      const searchValue = (option.searchValue || "").toLowerCase();
+
+      // Use includes for flexibility
+      return searchLabel.includes(query) || searchValue.includes(query);
+    })
+    .sort((a, b) => {
+      // Prioritize results that start with the query
+      const aLabel = (a.searchLabel || "").toLowerCase();
+      const bLabel = (b.searchLabel || "").toLowerCase();
+      const aStarts = aLabel.startsWith(query);
+      const bStarts = bLabel.startsWith(query);
+
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+
+      // Secondary sort: length (shorter names first for more exact matches)
+      if (aLabel.length !== bLabel.length) {
+        return aLabel.length - bLabel.length;
+      }
+
+      return aLabel.localeCompare(bLabel);
+    });
 };
 
-const SelectField = ({ label, name, options, required = false, ...props }) => {
+const CustomSearchSelect = ({ options, value, onChange, placeholder, showValue, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Synchronize searchTerm with selected value only when dropdown is closed
+  useEffect(() => {
+    if (!isOpen) {
+      const selected = options.find(opt => String(opt.value) === String(value));
+      setSearchTerm(selected ? selected.label : "");
+    }
+  }, [value, isOpen, options]);
+
+  const filteredOptions = useMemo(() => {
+    const query = searchTerm.toLowerCase().trim();
+    if (!query) return options;
+
+    return options
+      .filter((option) => {
+        const sLabel = (option.label || "").toLowerCase();
+        const sValue = (option.value || "").toLowerCase();
+        return sLabel.includes(query) || sValue.includes(query);
+      })
+      .sort((a, b) => {
+        const aLabel = a.label.toLowerCase();
+        const bLabel = b.label.toLowerCase();
+        const aStarts = aLabel.startsWith(query);
+        const bStarts = bLabel.startsWith(query);
+
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        if (aLabel.length !== bLabel.length) return aLabel.length - bLabel.length;
+        return aLabel.localeCompare(bLabel);
+      });
+  }, [options, searchTerm]);
+
+  return (
+    <div className="custom-select-container" ref={containerRef}>
+      <div className="search-input-wrapper">
+        <input
+          type="text"
+          className="form-control"
+          autoComplete="off"
+          placeholder={placeholder || `Select ${label}`}
+          value={searchTerm}
+          onFocus={() => {
+            setIsOpen(true);
+            setSearchTerm(""); // Clear on focus for easier searching
+          }}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && filteredOptions.length > 0) {
+              onChange(filteredOptions[0]);
+              setIsOpen(false);
+              e.preventDefault();
+            }
+            if (e.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+        />
+        <span className={`dropdown-arrow ${isOpen ? "open" : ""}`}>▼</span>
+      </div>
+
+      {isOpen && (
+        <ul className="dropdown-list">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <li
+                key={option.value}
+                className={`dropdown-item ${String(option.value) === String(value) ? "selected" : ""}`}
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+              >
+                {option.label}
+              </li>
+            ))
+          ) : (
+            <li className="dropdown-item no-matches">No matches found</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+const SelectField = ({ label, name, options, required = false, showValue = false, ...props }) => {
   const formik = useFormikContext();
 
   // Normalize options to ensure consistent label/value structure
-  const normalizedOptions = useMemo(() => (options || []).map((opt) => {
-    const label = String(opt.label || opt.lable || opt.shipperNm || opt.name || String(opt)).trim();
-    const value = String(opt.value || opt.shipperId || opt.code || String(opt)).trim();
-    return {
-      label,
-      value,
-      // Pre-compute lowercase values for efficient filtering
-      searchLabel: label.toLowerCase(),
-      searchValue: value.toLowerCase(),
-    };
-  }), [options]);
+  const normalizedOptions = useMemo(() => {
+    const uniqueOptions = new Map();
+    (options || []).forEach((opt) => {
+      if (!opt) return;
 
-  // Find the currently selected option object
-  const selectedOption =
-    normalizedOptions.find(
-      (opt) => String(opt.value) === String(formik.values[name])
-    ) || null;
+      const rawLabel = String(opt.label || opt.lable || opt.shipperNm || opt.name || (typeof opt === 'string' ? opt : "")).trim();
+      const value = String(opt.value || opt.shipperId || opt.code || (typeof opt === 'string' ? opt : "")).trim();
+
+      // Optionally show value in label (e.g., "GPC : General Purpose Container")
+      const displayLabel = (showValue && value && value !== rawLabel)
+        ? `${value} : ${rawLabel}`
+        : rawLabel;
+
+      if (value && !uniqueOptions.has(value)) {
+        uniqueOptions.set(value, {
+          label: displayLabel,
+          value,
+        });
+      }
+    });
+
+    // Sort matches alphabetically by label
+    return Array.from(uniqueOptions.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [options, showValue]);
 
   return (
     <div className="form-group">
       <label>
         {label} {required && <span className="required">*</span>}
       </label>
-      <Autocomplete
-        id={name}
+      <CustomSearchSelect
+        label={label}
         options={normalizedOptions}
-        filterOptions={filterOptions}
-        autoHighlight
-        getOptionLabel={(option) => option.label || ""}
-        value={selectedOption}
-        onChange={(event, newValue) => {
+        value={formik.values[name]}
+        onChange={(newValue) => {
           formik.setFieldValue(name, newValue ? newValue.value : "");
         }}
-        isOptionEqualToValue={(option, value) => option.value === value.value}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder={`Select ${label}`}
-            error={formik.touched[name] && Boolean(formik.errors[name])}
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                padding: "4px !important",
-                backgroundColor: "#fff",
-              },
-              bgcolor: "white",
-              width: "100%",
-            }}
-          />
-        )}
         {...props}
       />
       {formik.touched[name] && formik.errors[name] && (
@@ -976,41 +1080,81 @@ const VGMForm = ({
         // --- Helper to find port by value prefix (e.g., INMUN1) ---
         const findPortByPrefix = (portString) => {
           if (!portString) return "";
-          // Extract the port code (before " - " or first 6 chars)
-          const portCode = portString.split(" - ")[0].trim().substring(0, 6);
-          console.log("[JOB SEARCH] Looking for port code:", portCode);
+          // Extract port code from "(CODE) NAME" or "CODE - NAME"
+          let portCode = "";
+          const parenMatch = portString.match(/\(([^)]+)\)/);
+          if (parenMatch) {
+            portCode = parenMatch[1];
+          } else {
+            portCode = portString.split(" - ")[0].trim();
+          }
+
+          // Take first 5 chars for matching (e.g., INMUN, INSBI)
+          const normalizedSearch = portCode.substring(0, 5).toLowerCase();
+          console.log("[JOB SEARCH] Searching port with code:", normalizedSearch);
+
           const match = PORTS.find((p) =>
-            p.value.toLowerCase().startsWith(portCode.toLowerCase().substring(0, 5))
+            p.value.toLowerCase().startsWith(normalizedSearch) ||
+            p.label.toLowerCase().includes(normalizedSearch)
           );
-          console.log("[JOB SEARCH] Port match:", match);
+          console.log("[JOB SEARCH] Port match found:", match);
           return match ? match.value : "";
         };
 
-        // --- Helper to find shipping line (search by name after code) ---
+        // --- Helper to find shipping line (Robust token-based exact match) ---
         const findShippingLine = (shippingLineName) => {
-          if (!shippingLineName) return "";
-          // Format: "CODE - NAME" e.g., "MLIE - MAERSK LINE"
-          const parts = shippingLineName.split(" - ");
-          const lineName = parts.length > 1 ? parts[1].trim() : shippingLineName;
-          const lineCode = parts[0].trim();
-
-          console.log("[JOB SEARCH] Looking for shipping line:", { lineCode, lineName });
-
-          // First try exact code match
-          let match = shippingLines.find((sl) =>
-            (sl.value || "").toLowerCase() === lineCode.toLowerCase()
-          );
-
-          // If no match, search by name (first 4 chars)
-          if (!match && lineName) {
-            const searchStr = lineName.substring(0, 4).toLowerCase();
-            match = shippingLines.find((sl) =>
-              (sl.label || sl.name || "").toLowerCase().includes(searchStr)
-            );
+          if (!shippingLineName || !shippingLines || shippingLines.length === 0) {
+            console.log("[JOB SEARCH] Cannot match: No master shipping lines available.");
+            return "";
           }
 
-          console.log("[JOB SEARCH] Shipping line match:", match);
-          return match ? match.value : "";
+          const apiStr = shippingLineName.toLowerCase().trim();
+          console.log(`[JOB SEARCH] Matching "${apiStr}" against ${shippingLines.length} master records.`);
+
+          // 1. Try exact match of the whole string against code or label
+          let match = shippingLines.find((sl) => {
+            const val = (sl.value || "").toLowerCase().trim();
+            const lab = (sl.label || sl.lable || sl.name || "").toLowerCase().trim();
+            return val === apiStr || lab === apiStr;
+          });
+          if (match) return match.value;
+
+          // 2. Split by " - " and try exact matches for each part
+          const parts = shippingLineName.split(" - ").map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+          console.log("[JOB SEARCH] Checking parts:", parts);
+
+          for (const part of parts) {
+            match = shippingLines.find((sl) => {
+              const val = (sl.value || "").toLowerCase().trim();
+              const lab = (sl.label || sl.lable || sl.name || "").toLowerCase().trim();
+              // Check if the part exactly matches either the master code or the master name
+              return val === part || lab === part;
+            });
+            if (match) {
+              console.log("[JOB SEARCH] Part match found:", match.value);
+              return match.value;
+            }
+          }
+
+          // 3. Stricter boundary match for longer names (prevents "MARINE" false positives)
+          // We only do this if the master name is distinctive (>= 8 chars)
+          match = shippingLines.find((sl) => {
+            const lab = (sl.label || sl.lable || sl.name || "").toLowerCase().trim();
+            if (lab.length < 8) return false;
+
+            // Escaping for regex and checking for whole word/phrase match
+            const escapedLab = lab.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            const regex = new RegExp(`\\b${escapedLab}\\b`, "i");
+            return regex.test(apiStr);
+          });
+
+          if (match) {
+            console.log("[JOB SEARCH] Boundary match found:", match.value);
+            return match.value;
+          }
+
+          console.log("[JOB SEARCH] No match found for:", apiStr);
+          return "";
         };
 
         // --- 1. Container Details ---
@@ -1021,16 +1165,18 @@ const VGMForm = ({
           updates.cntnrNo = container.containerNo || "";
 
           // Size: First 2 letters
-          if (container.containerSize) {
-            const sizeSearch = container.containerSize.substring(0, 2);
+          // Size: First 2 letters (handle containerSize or size)
+          const sizeVal = container.containerSize || container.size || "";
+          if (sizeVal) {
+            const sizeSearch = String(sizeVal).substring(0, 2);
             const sizeMatch = CONTAINER_SIZES.find(s => s.label.startsWith(sizeSearch));
             if (sizeMatch) updates.cntnrSize = sizeMatch.value;
           }
 
-          // Type: First 3 letters
-          const typeSource = container.containerType || container.containerSize || "";
+          // Type: First 3 letters (handle containerType or type)
+          const typeSource = container.containerType || container.type || container.containerSize || container.size || "";
           if (typeSource) {
-            const typeSearch = typeSource.substring(0, 3).toLowerCase();
+            const typeSearch = String(typeSource).substring(0, 3).toLowerCase();
             const typeMatch = CONTAINER_TYPES.find(t =>
               (t.label || "").toLowerCase().includes(typeSearch) ||
               (t.value || "").toLowerCase().includes(typeSearch)
@@ -1169,16 +1315,18 @@ const VGMForm = ({
       updates.totWt = wb.tareWeight || "";
 
       // Size mapping
-      if (container.containerSize) {
-        const sizeSearch = container.containerSize.substring(0, 2);
+      // Size mapping (handle containerSize or size)
+      const sizeVal = container.containerSize || container.size || "";
+      if (sizeVal) {
+        const sizeSearch = String(sizeVal).substring(0, 2);
         const sizeMatch = CONTAINER_SIZES.find(s => s.label.startsWith(sizeSearch));
         if (sizeMatch) updates.cntnrSize = sizeMatch.value;
       }
 
-      // Type mapping
-      const typeSource = container.containerType || container.containerSize || "";
+      // Type mapping (handle containerType or type)
+      const typeSource = container.containerType || container.type || container.containerSize || container.size || "";
       if (typeSource) {
-        const typeSearch = typeSource.substring(0, 3).toLowerCase();
+        const typeSearch = String(typeSource).substring(0, 3).toLowerCase();
         const typeMatch = CONTAINER_TYPES.find(t =>
           (t.label || "").toLowerCase().includes(typeSearch) ||
           (t.value || "").toLowerCase().includes(typeSearch)
@@ -1427,11 +1575,13 @@ const VGMForm = ({
                 name="cntnrSize"
                 options={CONTAINER_SIZES}
                 required
+                showValue
               />
               <SelectField
                 label="Type"
                 name="cntnrTp"
                 options={CONTAINER_TYPES}
+                showValue
               />
               <SelectField
                 label="Cargo Type"
@@ -1440,7 +1590,7 @@ const VGMForm = ({
                 required
               />
               <InputField
-                label="CSC Max Weight"
+                label="CSC Max wt. (Gross Wt.)"
                 name="cscPlateMaxWtLimit"
                 type="number"
                 step="0.01"
@@ -1529,7 +1679,7 @@ const VGMForm = ({
             <h3 className="panel-title">Weighbridge Details</h3>
             <div className="form-grid">
               <InputField
-                label="Registration No"
+                label="Weighbridge No"
                 name="weighBridgeRegNo"
                 required
               />
@@ -1541,7 +1691,7 @@ const VGMForm = ({
               <InputField label="Address Line 2" name="weighBridgeAddrLn2" />
               <InputField label="Address Line 3" name="weighBridgeAddrLn3" />
 
-              <InputField label="Slip No" name="weighBridgeSlipNo" required />
+              <InputField label="Weighbridge Slip No." name="weighBridgeSlipNo" required />
 
 
               {/* DateTime Input */}

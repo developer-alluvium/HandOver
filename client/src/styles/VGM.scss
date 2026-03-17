@@ -122,6 +122,7 @@ $spacing-base: 0.75rem; // 12px padding
   padding: $spacing-base; // Reduced padding
   margin-bottom: $spacing-base;
   padding-bottom: 3rem;
+  overflow: visible !important;
 
   .panel-title {
     font-size: 0.875rem;
@@ -153,12 +154,14 @@ $spacing-base: 0.75rem; // 12px padding
   }
 
   // 4 Columns for density
+  overflow: visible !important;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: visible !important;
 
   label {
     font-size: $font-size-sm;
@@ -532,4 +535,89 @@ $spacing-base: 0.75rem; // 12px padding
   padding: 1.5rem 0;
   margin-top: 1rem;
   border-top: 1px solid $border;
+}
+
+// --- Custom Search Select ---
+.custom-select-container {
+  position: relative;
+  width: 100%;
+
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .form-control {
+      padding-right: 30px; // Space for the arrow
+    }
+
+    .dropdown-arrow {
+      position: absolute;
+      right: 10px;
+      color: $text-muted;
+      pointer-events: none;
+      font-size: 8px;
+      transition: transform 0.2s;
+
+      &.open {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .dropdown-list {
+    position: absolute;
+    font-weight: 500;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 99999;
+    background: white;
+    border: 1px solid $border;
+    border-top: none;
+    border-bottom-left-radius: $radius;
+    border-bottom-right-radius: $radius;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-height: 250px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .dropdown-item {
+      padding: 8px 12px;
+      font-size: $font-size-base;
+      cursor: pointer;
+      color: $text-main;
+      transition: background 0.1s;
+      border-bottom: 1px solid #f8fafc;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: $primary;
+      }
+
+      &.selected {
+        background-color: #eff6ff;
+        color: $primary;
+        font-weight: 600;
+      }
+
+      &.no-matches {
+        color: $text-muted;
+        font-style: italic;
+        cursor: default;
+        padding: 12px;
+        text-align: center;
+
+        &:hover {
+          background: none;
+        }
+      }
+    }
+  }
 }
