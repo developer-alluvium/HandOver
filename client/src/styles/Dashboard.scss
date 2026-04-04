@@ -1,6 +1,7 @@
 // src/components/Dashboard/Dashboard.scss
 
 @use "sass:color";
+@use "./Global.scss" as *;
 
 // --- Variables ---
 $color-primary: #2563eb; // Royal Blue
@@ -168,12 +169,12 @@ body {
 .welcome-banner {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   color: white;
-  border-radius: $radius-md;
-  padding: $spacing-lg * 1.5;
-  margin-bottom: $spacing-lg;
+  border-radius: $radius; // Using global radius
+  padding: $spacing-lg * 2;
+  margin-bottom: $spacing-lg * 1.5;
   position: relative;
   overflow: hidden;
-  box-shadow: $shadow-md;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 
   .banner-content {
     position: relative;
@@ -323,9 +324,9 @@ body {
   overflow: hidden;
 
   &:hover:not(.disabled) {
-    border-color: color.adjust($color-primary, $lightness: 20%);
-    box-shadow: $shadow-md;
-    transform: translateY(-2px);
+    border-color: $primary;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-4px);
   }
 
   &.disabled {
@@ -411,40 +412,28 @@ body {
   }
 }
 
-// --- Panels (Generic) ---
-.panel {
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  overflow: hidden;
+// Panel styles moved to Global.scss
+.panel-header {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid $border;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-  .panel-header {
-    padding: $spacing-md $spacing-lg;
-    border-bottom: 1px solid $color-border;
-    background: #f8fafc;
+  h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-
-    h3 {
-      margin: 0;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: $color-text-main;
-
-      svg {
-        width: 18px;
-        height: 18px;
-        color: $color-text-muted;
-      }
-    }
+    gap: 0.5rem;
+    color: $text-main;
   }
+}
 
-  .panel-body {
-    padding: $spacing-lg;
-  }
+.panel-body {
+  padding: 1.25rem;
 }
 
 // Specific Panel Styles

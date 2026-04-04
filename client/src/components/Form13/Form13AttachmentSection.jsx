@@ -24,24 +24,8 @@ const Form13AttachmentSection = ({
   onFormDataChange,
   requiredAttachments = [],
 }) => {
-  // Common document types to show as fixed rows
-  const commonDocs = [
-    { code: 'BOOKING_COPY', name: 'Booking Copy' },
-    { code: 'SHIP_BILL', name: 'Shipping Bill' },
-    { code: 'VGM_ANXR1', name: 'VGM-Annexure 1' },
-    { code: 'DLVRY_ORDER', name: 'Delivery Order' },
-    { code: 'INVOICE', name: 'Invoice' },
-    { code: 'PACK_LIST', name: 'Packing List' },
-    { code: 'CNTNR_LOAD_PLAN', name: 'Container Load Plan' },
-  ];
-
-  // Merge common with required if they don't overlap
-  const displayDocs = [...commonDocs];
-  requiredAttachments.forEach(req => {
-    if (!displayDocs.find(d => d.code === req.code)) {
-      displayDocs.push(req);
-    }
-  });
+  // Only show what is mandatory from the requiredAttachments passed from parent
+  const displayDocs = requiredAttachments.filter(req => req.required);
 
   const handleFileSelect = (event, docCode) => {
     const file = event.target.files[0];

@@ -61,6 +61,16 @@ const Icons = {
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   ),
+  Info: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+  ),
+  Cancel: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>
+    </svg>
+  )
 };
 
 const TrackF13 = () => {
@@ -69,6 +79,10 @@ const TrackF13 = () => {
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [cancelModalData, setCancelModalData] = useState(null);
+  const [chaRemark, setChaRemark] = useState("");
+  const [statusResult, setStatusResult] = useState(null);
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -112,6 +126,59 @@ const TrackF13 = () => {
     navigate("/form13", { state: { editMode: true, f13Id: request._id } });
   };
 
+  const handleGetStatus = async (request) => {
+    try {
+      setLoading(true);
+      const payload = {
+        odexRefNo: request.odexRefNo,
+        pyrCode: request.pyrCode,
+        bookNo: request.bookNo
+      };
+      if (!payload.odexRefNo || !payload.pyrCode || !payload.bookNo) {
+        enqueueSnackbar("Missing required fields (odexRefNo, pyrCode, bookNo) on this record.", { variant: "warning" });
+        return;
+      }
+      const response = await form13API.getForm13Status(payload);
+      const newStatus = response.updatedStatus || "SUBMITTED";
+      enqueueSnackbar(`Status Synced: ${newStatus.replace(/_/g, " ")}`, { variant: "success" });
+      fetchF13Requests(pagination.page);
+      // Refresh current page to reflect possible status changes from server
+      fetchF13Requests(pagination.page);
+    } catch (err) {
+      enqueueSnackbar(err.message || "Failed to get status", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!chaRemark.trim()) {
+      enqueueSnackbar("Please add a remark", { variant: "warning" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const containerSource = cancelModalData.cntrList || cancelModalData.containers || [];
+      const payload = {
+        odexRefNo: cancelModalData.odexRefNo,
+        form13ReqCntnrVoList: containerSource.map(c => ({
+          cntnrNo: c.cntnrNo,
+          chaRemarks: chaRemark
+        }))
+      };
+      
+      const res = await form13API.cancelForm13(payload);
+      enqueueSnackbar("Cancellation requested successfully!", { variant: "success" });
+      setCancelModalData(null);
+      setChaRemark("");
+      fetchF13Requests(pagination.page);
+    } catch (err) {
+      enqueueSnackbar(err.message || "Failed to cancel form", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearFilters = () => {
     const clearedFilters = {
       status: "",
@@ -131,14 +198,11 @@ const TrackF13 = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch (status?.toUpperCase()) {
-      case "SUBMITTED":
-        return "badge-success";
-      case "FAILED":
-        return "badge-danger";
-      default:
-        return "badge-warning";
-    }
+    const s = status?.toUpperCase();
+    if (s === "SUBMITTED" || s === "SUCCESS") return "badge-success";
+    if (s === "FAILED" || s === "ERROR") return "badge-danger";
+    if (s?.includes("CANCEL")) return "badge-danger";
+    return "badge-warning";
   };
 
   // Initial load
@@ -149,19 +213,20 @@ const TrackF13 = () => {
   return (
     <div className="form13-container">
       <AppbarComponent />
-      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
-        <h2>Form 13 Tracking</h2>
+      <div className="page-header" style={{ marginBottom: '1.25rem', padding: '0 0.5rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em' }}>Form 13 Tracking</h2>
       </div>
 
       {/* Filters */}
-      <div className="panel">
-        <div className="d-flex mb-4 gap-2" style={{ fontWeight: 600 }}>
-          <Icons.Filter /> Filters
+      <div className="panel" sx={{ mb: 2, p: 2 }}>
+        <div className="d-flex mb-3 gap-2" style={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>
+          <Icons.Filter /> SEARCH FILTERS
         </div>
         <div
           className="form-grid"
           style={{
             gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "1rem"
           }}
         >
           <div className="form-group">
@@ -173,7 +238,7 @@ const TrackF13 = () => {
                 setFilters({ ...filters, status: e.target.value })
               }
             >
-              <option value="">All</option>
+              <option value="">All Statuses</option>
               <option value="SUBMITTED">Submitted</option>
               <option value="FAILED">Failed</option>
               <option value="PENDING">Pending</option>
@@ -183,7 +248,7 @@ const TrackF13 = () => {
             <label>Container No</label>
             <input
               className="form-control"
-              placeholder="ABCD1234567"
+              placeholder="e.g. ABCD1234567"
               value={filters.containerNo}
               onChange={(e) =>
                 setFilters({ ...filters, containerNo: e.target.value })
@@ -194,7 +259,7 @@ const TrackF13 = () => {
             <label>Booking No</label>
             <input
               className="form-control"
-              placeholder="BK001"
+              placeholder="e.g. BK001"
               value={filters.bookNo}
               onChange={(e) =>
                 setFilters({ ...filters, bookNo: e.target.value })
@@ -228,16 +293,18 @@ const TrackF13 = () => {
             style={{ display: "flex", alignItems: "flex-end", gap: "0.5rem" }}
           >
             <button
-              className="btn btn-primary w-full"
+              className="btn btn-primary"
+              style={{ flex: 2 }}
               onClick={handleApplyFilters}
             >
-              Apply
+              Search
             </button>
             <button
-              className="btn btn-outline w-full"
+              className="btn btn-outline"
+              style={{ flex: 1 }}
               onClick={handleClearFilters}
             >
-              Clear
+              Reset
             </button>
           </div>
         </div>
@@ -273,44 +340,65 @@ const TrackF13 = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Actions</th>
+                    <th style={{ width: '180px' }}>Actions</th>
                     <th>Booking No</th>
                     <th>Vessel</th>
-                    <th>Status</th>
+                    <th style={{ width: '150px' }}>Status</th>
                     <th>Date</th>
-                    <th>Containers</th>
+                    <th style={{ textAlign: 'center' }}>Containers</th>
                   </tr>
                 </thead>
                 <tbody>
                   {requests.map((req, i) => (
-                    <tr key={i}>
-                      <td>
-                        <div className="d-flex gap-2">
+                    <tr key={i} className="hover-row">
+                      <td className="actions-cell">
+                        <div className="d-flex gap-1">
                           <button
-                            className="btn btn-sm btn-outline"
-                            title="View"
+                            className="btn-icon btn-view"
+                            title="View Details"
                             onClick={() => setSelectedRequest(req)}
                           >
                             <Icons.Eye />
                           </button>
                           <button
-                            className="btn btn-sm btn-outline"
-                            title="Edit"
+                            className="btn-icon btn-edit"
+                            title="Edit / Resubmit"
                             onClick={() => handleEditRequest(req)}
                           >
                             <Icons.Edit />
                           </button>
+                          <button
+                            className="btn-icon btn-status"
+                            title="Sync Status from ODeX"
+                            onClick={() => handleGetStatus(req)}
+                          >
+                            <Icons.Refresh />
+                          </button>
+                          <button
+                            className="btn-icon btn-cancel text-danger"
+                            title="Request Cancellation"
+                            onClick={() => {
+                              setCancelModalData(req);
+                              setChaRemark("");
+                            }}
+                          >
+                            <Icons.Cancel />
+                          </button>
                         </div>
                       </td>
-                      <td>{req.bookNo}</td>
+                      <td style={{ fontWeight: 600, color: '#1a237e' }}>{req.bookNo}</td>
                       <td>{req.vesselNm}</td>
                       <td>
-                        <span className={`badge ${getStatusBadgeClass(req.status)}`}>
-                          {req.status}
+                        <span className={`status-badge ${getStatusBadgeClass(req.status)}`}>
+                          {req.status?.replace(/_/g, ' ') || 'PENDING'}
                         </span>
                       </td>
-                      <td>{dayjs(req.createdAt).format("DD/MM/YYYY HH:mm")}</td>
-                      <td>{req.containers?.length || 0}</td>
+                      <td className="text-muted">{dayjs(req.createdAt).format("DD/MM/YYYY HH:mm")}</td>
+                      <td style={{ textAlign: 'center' }}>
+                         <span className="count-circle">
+                           {req.cntrList?.length || req.containers?.length || 0}
+                         </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -350,52 +438,56 @@ const TrackF13 = () => {
         <div className="modal-overlay" onClick={() => setSelectedRequest(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Details: {selectedRequest.bookNo}</h3>
+              <h3>Request Details: {selectedRequest.bookNo}</h3>
               <button
                 className="close-btn"
                 onClick={() => setSelectedRequest(null)}
               >
-                ×
+                &times;
               </button>
             </div>
             <div className="modal-body">
-              <div className="form-grid">
-                <div>
-                  <label className="text-muted">Status</label>
-                  <div>{selectedRequest.status}</div>
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem' }}>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>CURRENT STATUS</label>
+                  <span className={`status-badge ${getStatusBadgeClass(selectedRequest.status)}`}>
+                    {selectedRequest.status?.replace(/_/g, ' ')}
+                  </span>
                 </div>
-                <div>
-                  <label className="text-muted">Vessel</label>
-                  <div>{selectedRequest.vesselNm}</div>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>VESSEL / VOYAGE</label>
+                  <div style={{ fontWeight: 600 }}>{selectedRequest.vesselNm}</div>
                 </div>
-                <div>
-                  <label className="text-muted">Booking No</label>
-                  <div>{selectedRequest.bookNo}</div>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>BOOKING NUMBER</label>
+                  <div style={{ fontWeight: 600 }}>{selectedRequest.bookNo}</div>
                 </div>
-                <div>
-                  <label className="text-muted">Location</label>
-                  <div>{selectedRequest.locId}</div>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>PORT LOCATION</label>
+                  <div style={{ fontWeight: 600 }}>{selectedRequest.locId}</div>
                 </div>
-                <div>
-                  <label className="text-muted">ODeX Ref No</label>
-                  <div style={{ fontWeight: 600 }}>
-                    {selectedRequest.odexRefNo || "N/A"}
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>ODEX REF NO</label>
+                  <div style={{ fontWeight: 700, color: '#2563eb' }}>
+                    {selectedRequest.odexRefNo || "PENDING"}
                   </div>
                 </div>
-                <div>
-                  <label className="text-muted">Containers</label>
-                  <div>{selectedRequest.containers?.length || 0}</div>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>CONTAINER COUNT</label>
+                  <div style={{ fontWeight: 600 }}>{selectedRequest.cntrList?.length || selectedRequest.containers?.length || 0}</div>
                 </div>
               </div>
-              <div className="mt-4">
-                <label className="text-muted">API Response Remarks</label>
-                <div style={{
-                  background: "#f1f5f9",
-                  padding: "1rem",
-                  borderRadius: "4px",
-                  color: selectedRequest.status === "FAILED" ? "#dc2626" : "inherit"
+
+              <div className="mt-4 p-3" style={{ background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div className="d-flex gap-2 mb-2" style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b' }}>
+                  <Icons.Info /> API FEEDBACK
+                </div>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  lineHeight: 1.6,
+                  color: selectedRequest.status === "FAILED" ? "#ef4444" : "#334155"
                 }}>
-                  {selectedRequest.form13ApiResponse?.responseMessage || "No remarks available"}
+                  {selectedRequest.form13ApiResponse?.responseMessage || "Processing complete. No specific remarks from ODeX."}
                 </div>
               </div>
             </div>
@@ -404,12 +496,79 @@ const TrackF13 = () => {
                 className="btn btn-primary"
                 onClick={() => setSelectedRequest(null)}
               >
-                Close
+                Close View
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Cancel Form Modal */}
+      {cancelModalData && (
+        <div className="modal-overlay" onClick={() => setCancelModalData(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+            <div className="modal-header">
+              <h3>Cancel Request</h3>
+              <button
+                className="close-btn"
+                onClick={() => setCancelModalData(null)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ marginBottom: '1.25rem', textAlign: 'center' }}>
+                <div style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  borderRadius: '50%', 
+                  background: '#fef2f2', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <Icons.Cancel style={{ color: '#ef4444', width: '24px', height: '24px' }} />
+                </div>
+                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Are you sure?</h4>
+                <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  You are about to request cancellation for <strong>{cancelModalData.bookNo}</strong>. 
+                  This action requires approval from the liner.
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label>REASON FOR CANCELLATION <span className="required">*</span></label>
+                <textarea
+                  className="form-control"
+                  rows="3"
+                  value={chaRemark}
+                  onChange={(e) => setChaRemark(e.target.value)}
+                  placeholder="e.g. Incorrect container details, Booking cancelled..."
+                  style={{ resize: 'none' }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-outline"
+                onClick={() => setCancelModalData(null)}
+                disabled={loading}
+              >
+                Dismiss
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleCancelSubmit}
+                disabled={loading}
+              >
+                {loading ? "Processing..." : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

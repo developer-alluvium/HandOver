@@ -125,12 +125,13 @@ export const vgmValidationSchema = Yup.object({
     .required("Weigh Bridge Time Stamp is required")
     .test(
       "format",
-      "Timestamp must be in format: YYYY-MM-DD HH:MM or DD-MM-YYYY HH:MM",
+      "Timestamp must be in format: YYYY-MM-DD HH:MM or DD-MM-YYYY HH:MM (supports 'T' separator)",
       (value) => {
         if (!value) return false;
         // Allows YYYY-MM-DD HH:mm(:ss) or DD-MM-YYYY HH:mm(:ss)
-        const yyyyMMdd = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/;
-        const ddMMyyyy = /^\d{2}-\d{2}-\d{4} \d{2}:\d{2}(:\d{2})?$/;
+        // Also supports ISO 'T' separator (e.g., YYYY-MM-DDTHH:mm)
+        const yyyyMMdd = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/;
+        const ddMMyyyy = /^\d{2}-\d{2}-\d{4}[ T]\d{2}:\d{2}(:\d{2})?$/;
         return yyyyMMdd.test(value) || ddMMyyyy.test(value);
       }
     )
@@ -141,14 +142,15 @@ export const vgmValidationSchema = Yup.object({
         if (!value) return false;
 
         let inputDate;
-        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
+        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/;
         const match = value.match(ddMMyyyyPattern);
 
         if (match) {
           const [, day, month, year, hour, minute, second] = match;
           inputDate = new Date(year, month - 1, day, hour, minute, second || 0);
         } else {
-          inputDate = new Date(value);
+          // Handles ISO format (YYYY-MM-DD[T]HH:mm)
+          inputDate = new Date(value.replace(" ", "T"));
         }
 
         const now = new Date();
@@ -162,14 +164,15 @@ export const vgmValidationSchema = Yup.object({
         if (!value) return false;
 
         let inputDate;
-        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/;
+        const ddMMyyyyPattern = /^(\d{2})-(\d{2})-(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/;
         const match = value.match(ddMMyyyyPattern);
 
         if (match) {
           const [, day, month, year, hour, minute, second] = match;
           inputDate = new Date(year, month - 1, day, hour, minute, second || 0);
         } else {
-          inputDate = new Date(value);
+          // Handles ISO format (YYYY-MM-DD[T]HH:mm)
+          inputDate = new Date(value.replace(" ", "T"));
         }
 
         const twoMonthsAgo = new Date();

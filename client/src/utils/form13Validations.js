@@ -554,47 +554,86 @@ export const ATTACHMENT_REQUIREMENTS = {
 // In your validation utils (form13Validations.js)
 export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
   const alwaysRequired = [
-    'locId', 'bnfCode', 'vesselNm', 'viaNo', 'terminalCode', 'service', 'pod', 'cargoTp', 'origin',
-    'bookNo', 'cntnrStatus', 'mobileNo', 'shipperNm', 'consigneeNm', 'cntnrNo', 'cntnrSize', 'vgmWt',
-    'cargoDesc', 'terminalLoginId'
+    'locId', 'bnfCode', 'vesselNm', 'terminalCode', 'service', 'pod', 'cargoTp', 'origin',
+    'cntnrStatus', 'mobileNo', 'shipperNm', 'cntnrNo', 'cntnrSize', 'iso', 'agentSealNo',
+    'customSealNo', 'vgmViaODeX', 'formType', 'driverNm'
   ];
 
   if (alwaysRequired.includes(fieldName)) {
     return true;
   }
 
-  // Conditional requirements
+  // 1. Location-specific checks
+  const locRules = LOCATION_SPECIFIC_RULES[formData.locId];
+  if (locRules) {
+    if (locRules.requires?.includes(fieldName)) return true;
+    if (locRules.terminalRules?.[formData.terminalCode]?.includes(fieldName)) return true;
+    if (locRules.terminalSpecific?.[formData.terminalCode]?.requires?.includes(fieldName)) return true;
+  }
+
+  // 2. Shipping Line checks
+  const lineRules = SHIPPING_LINE_RULES[formData.bnfCode];
+  if (lineRules) {
+    if (lineRules.requires?.includes(fieldName)) return true;
+    if (lineRules.containerRequires?.includes(fieldName)) return true;
+    if (lineRules.blNumberRule?.requires?.includes(fieldName) && lineRules.blNumberRule.condition(formData.cargoTp)) return true;
+  }
+
+  // 3. Cargo Type checks
+  const cargoRules = CARGO_TYPE_RULES[formData.cargoTp];
+  if (cargoRules) {
+    if (cargoRules.requires?.includes(fieldName)) return true;
+  }
+
+  // 4. Origin checks
+  const originRules = ORIGIN_RULES[formData.origin];
+  if (originRules) {
+    if (originRules.requires?.includes(fieldName)) return true;
+    if (originRules.locationSpecific?.[formData.locId]?.includes(fieldName)) return true;
+  }
+
+  // 5. Special manual checks
   switch (fieldName) {
-    case 'ShipperCity':
-      return formData.locId === "INTUT1" && formData.terminalCode === "DBGT";
+    case 'vgmWt':
+      return formData.vgmViaODeX === 'N';
+
+    case 'viaNo':
+      return false;
 
     case 'IsEarlyGateIn':
-      return formData.locId === "INMUN1" && formData.bnfCode?.toUpperCase() === "CMA";
+      return formData.locId === "INMUN1" && (formData.bnfCode || "").toUpperCase() === "CMA";
 
-    case 'driverNm':
-      return formData.origin === 'CFS';
-
-    case 'temp':
-      return formData.cargoTp === 'REEFER';
+    case 'FFCode':
+    case 'IECode':
+    case 'CHACode':
+      // At least one of FF Code, IE code, or CHA code is required for Nhava Sheva
+      if (formData.locId === "INNSA1") {
+        const hasAny = !!formData.FFCode || !!formData.IECode || !!formData.CHACode;
+        // If none is provided, all are conditionally required initially, or we require at least one.
+        // Returning true here would force all three if none provided.
+        // It's better handled elsewhere but conceptually this implies conditional true if not satisfied.
+        return !hasAny;
+      }
+      return false;
 
     case 'shipBillInvNo':
     case 'shipBillDt':
-    case 'chaNm':
     case 'chaPan':
     case 'exporterNm':
     case 'exporterIec':
     case 'noOfPkg':
       return true; // Usually mandatory for all exports
 
-    case 'leoDt':
-      return !!formData.containers?.[containerIndex]?.sbDtlsVo?.[0]?.leoNo;
-
-    case 'cfsCode':
-      return ['B', 'C', 'F_CFS'].includes(formData.origin);
+    case 'chaNm':
+      const hiddenChaTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+      return !hiddenChaTerminals.includes(formData.terminalCode);
 
     case 'issueTo':
       const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
       return !hiddenTerminals.includes(formData.terminalCode);
+
+    case 'leoDt':
+      return !!formData.containers?.[containerIndex]?.sbDtlsVo?.[0]?.leoNo;
 
     default:
       return false;

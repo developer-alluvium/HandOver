@@ -143,13 +143,10 @@ const Form13HeaderSection = ({
 
   // --- RENDERING HELPERS ---
 
-  const SectionHeader = ({ title, showRedBar }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, mt: 1 }}>
-      {showRedBar && <Box sx={{ width: 4, height: 24, bgcolor: '#d32f2f', mr: 1.5, borderRadius: '2px' }} />}
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1a237e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        {title}
-      </Typography>
-    </Box>
+  const SectionHeader = ({ title }) => (
+    <div className="panel-title">
+      {title}
+    </div>
   );
 
   const FormLabelCustom = ({ label, required }) => (
@@ -267,8 +264,8 @@ const Form13HeaderSection = ({
 
   return (
     <Box>
-      <SectionHeader title="Basic Information" showRedBar />
-      <Paper elevation={0} sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: '8px', bgcolor: '#fafafa' }}>
+      <div className="panel">
+        <SectionHeader title="Basic Information" />
         <Grid container spacing={3}>
           {renderField("bnfCode", "Shipping Line")}
           {renderField("locId", "Location")}
@@ -293,10 +290,10 @@ const Form13HeaderSection = ({
           {renderField("issueTo", "Issue To")}
           {renderField("IsEarlyGateIn", "Early Gate In")}
         </Grid>
-      </Paper>
+      </div>
 
-      <SectionHeader title="Stakeholder & Additional Info" showRedBar />
-      <Paper elevation={0} sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: '8px', bgcolor: '#fafafa', mb: 3 }}>
+      <div className="panel">
+        <SectionHeader title="Stakeholder & Additional Info" />
         <Grid container spacing={3}>
           {renderField("shipperNm", "Shipper Name", 4)}
           {renderField("consigneeNm", "Consignee Name", 4)}
@@ -313,7 +310,7 @@ const Form13HeaderSection = ({
           {renderField("ShipperCity", "Shipper City", 4)}
           {renderField("cfsCode", "CFS Code", 4)}
         </Grid>
-      </Paper>
+      </div>
     </Box>
   );
 };

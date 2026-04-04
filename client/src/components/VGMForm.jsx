@@ -22,7 +22,6 @@ import {
   PORTS,
   IMO_NUMBERS,
   CONTAINER_TYPES,
-  HANDOVER_LOCATIONS,
   getTerminalCodesByPort,
   AUTHORIZED_PERSONS,
 } from "../utils/constants/masterDataVGM.js";
@@ -277,7 +276,7 @@ const VGMForm = ({
   const lastCheckedBookingRef = useRef({ bookNo: "", linerId: "" });
   const bookingCheckTimerRef = useRef(null);
 
-  const [formValues, setFormValues] = useState({
+  const VGM_INITIAL_VALUES = useMemo(() => ({
     linerId: "",
     vesselNm: "",
     voyageNo: "",
@@ -315,7 +314,9 @@ const VGMForm = ({
     weighBridgeSlipNo: "",
     weighBridgeWtTs: "",
     terminalCode: "",
-  });
+  }), [userData]);
+
+  const [formValues, setFormValues] = useState(VGM_INITIAL_VALUES);
   // --- Initialize Formik ---
   const formik = useFormik({
     initialValues: formValues,
@@ -339,6 +340,29 @@ const VGMForm = ({
           payload.tareWt = values.tareWt?.toString();
         }
 
+
+        // --- DUPLICATE CHECK ---
+        const { bookNo, cntnrNo, linerId } = values;
+        if (!isEditMode) {
+          try {
+            const dupResponse = await vgmAPI.getRequests({
+              bookingNo: bookNo,
+              containerNo: cntnrNo,
+              linerId: linerId,
+              exactMatch: true
+            });
+
+            const existing = (dupResponse.data?.requests || []).filter(r => r.status !== 'CANCELLED');
+            if (existing.length > 0) {
+              enqueueSnackbar(`Duplicate submission detected: A VGM request for Container ${cntnrNo} and Booking ${bookNo} already exists.`, { variant: "error" });
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.warn("Duplicate check failed, proceeding:", err);
+          }
+        }
+        // --- END DUPLICATE CHECK ---
 
         if (values.shipId) payload.shipId = values.shipId;
         else {
@@ -481,9 +505,25 @@ const VGMForm = ({
     fetchShippingLines();
   }, []);
 
-  // --- Initialize Edit Mode ---
+  // --- Consolidated Initialization & Reset Logic ---
   useEffect(() => {
-    const initializeEditMode = async () => {
+    const initializeMode = async () => {
+      // 1. Check for reset signal from TopNavDropdown
+      if (location.state?.reset) {
+        setIsEditMode(false);
+        setRequestData(null);
+        setFormValues(VGM_INITIAL_VALUES);
+        formik.resetForm({ values: VGM_INITIAL_VALUES });
+        setJobNoSearch("");
+        setFetchedJobData(null);
+        setContainersList([]);
+        setSelectedContainerNo("");
+        setAttachments([]);
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      // 2. Normal Initialization (Edit / New)
       if (location.state?.editMode && location.state?.vgmId) {
         setIsEditMode(true);
         await fetchRequestDetails(location.state.vgmId);
@@ -491,10 +531,14 @@ const VGMForm = ({
         setIsEditMode(true);
         setRequestData(existingRequest);
         prefillForm(existingRequest);
+      } else {
+        // Fresh request
+        setIsEditMode(false);
+        setFormValues(VGM_INITIAL_VALUES);
       }
     };
-    initializeEditMode();
-  }, [location.state, editMode, existingRequest]);
+    initializeMode();
+  }, [location.state, editMode, existingRequest, VGM_INITIAL_VALUES]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -504,6 +548,8 @@ const VGMForm = ({
       }
     };
   }, []);
+
+
 
   const fetchRequestDetails = async (vgmId) => {
     try {
@@ -1077,6 +1123,28 @@ const VGMForm = ({
             .replace(/[.,]/g, "");
         };
 
+        // --- Helper to format Date-Time to DD-MM-YYYY HH:mm ---
+        const formatDateTimeForVGM = (dtStr) => {
+          if (!dtStr) return "";
+          try {
+            // Check if already in DD-MM-YYYY HH:mm format
+            if (/^\d{2}-\d{2}-\d{4} \d{2}:\d{2}/.test(dtStr)) return dtStr;
+
+            const dateObj = new Date(dtStr.replace(" ", "T"));
+            if (isNaN(dateObj.getTime())) return dtStr; // Fallback to raw string
+
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            const hours = String(dateObj.getHours()).padStart(2, '0');
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+            return `${day}-${month}-${year} ${hours}:${minutes}`;
+          } catch (e) {
+            return dtStr;
+          }
+        };
+
         // --- Helper to find port by value prefix (e.g., INMUN1) ---
         const findPortByPrefix = (portString) => {
           if (!portString) return "";
@@ -1158,78 +1226,87 @@ const VGMForm = ({
         };
 
         // --- 1. Container Details ---
-        if (job.operations?.[0]?.containerDetails?.length > 0) {
-          const container = job.operations[0].containerDetails[0];
-          console.log("[JOB SEARCH] Container details:", container);
+        // Robust extraction of container data
+        const containers = Array.isArray(job.containers) ? job.containers : [];
+        const operationsContainers = job.operations?.[0]?.containerDetails || [];
+        const firstContainer = containers[0] || operationsContainers[0] || {};
 
-          updates.cntnrNo = container.containerNo || "";
+        console.log("[JOB SEARCH] API Job Object:", job);
+        console.log("[JOB SEARCH] Selected Container Object:", firstContainer);
 
-          // Size: First 2 letters
-          // Size: First 2 letters (handle containerSize or size)
-          const sizeVal = container.containerSize || container.size || "";
-          if (sizeVal) {
-            const sizeSearch = String(sizeVal).substring(0, 2);
-            const sizeMatch = CONTAINER_SIZES.find(s => s.label.startsWith(sizeSearch));
-            if (sizeMatch) updates.cntnrSize = sizeMatch.value;
+        // Safely get container number
+        const cNo = firstContainer.containerNo || firstContainer.cntnrNo || "";
+        updates.cntnrNo = cNo;
+        console.log("[JOB SEARCH] Container No set to:", updates.cntnrNo);
+
+        // Container Size/Type mapping from "type": "40 High Cube" or "containerSize"
+        const fullType = String(firstContainer.type || firstContainer.containerType || firstContainer.containerSize || firstContainer.size || "").toUpperCase();
+        console.log("[JOB SEARCH] Raw type string for parsing:", fullType);
+
+        if (fullType) {
+          // Size: Looking for 20, 40, or 45 in the string
+          const sizeMatch = fullType.match(/\d{2}/);
+          if (sizeMatch) {
+            const sz = sizeMatch[0];
+            const szOpt = CONTAINER_SIZES.find(s => String(s.label).includes(sz));
+            if (szOpt) {
+              updates.cntnrSize = szOpt.value;
+              console.log("[JOB SEARCH] Matched Size:", szOpt.label);
+            }
           }
-
-          // Type: First 3 letters (handle containerType or type)
-          const typeSource = container.containerType || container.type || container.containerSize || container.size || "";
-          if (typeSource) {
-            const typeSearch = String(typeSource).substring(0, 3).toLowerCase();
-            const typeMatch = CONTAINER_TYPES.find(t =>
-              (t.label || "").toLowerCase().includes(typeSearch) ||
-              (t.value || "").toLowerCase().includes(typeSearch)
-            );
-            if (typeMatch) updates.cntnrTp = typeMatch.value;
+          // Type: looking for HC, High Cube, GP, etc.
+          const typeMatch = CONTAINER_TYPES.find(t =>
+            fullType.includes(String(t.label || "").toUpperCase()) ||
+            fullType.includes(String(t.value || "").toUpperCase())
+          );
+          if (typeMatch) {
+            updates.cntnrTp = typeMatch.value;
+            console.log("[JOB SEARCH] Matched Type:", typeMatch.label);
           }
-
-          // CSC Max Weight = grossWeight (from container details)
-          updates.cscPlateMaxWtLimit = container.grossWeight || "";
-          // VGM Total Weight = tareWeight from weighment details
-          updates.totWt = (job.operations?.[0]?.weighmentDetails?.[0]?.tareWeight) || "";
-          updates.cargoTp = container.cargoType === "Gen" ? "GEN" : "GEN";
         }
+
+        // CSC Max Weight
+        updates.cscPlateMaxWtLimit = firstContainer.maxGrossWeightKgs || firstContainer.grossWeight || "";
+
+        // Tare Weight
+        updates.tareWt = firstContainer.tareWeightKgs || "";
+
+        // VGM Total Weight
+        updates.totWt = firstContainer.vgmWtInvoice || (job.operations?.[0]?.weighmentDetails?.[0]?.tareWeight) || "";
+
+        updates.cargoTp = "GEN"; // Default
 
         // --- 2. Weighbridge Details ---
-        if (job.operations?.[0]?.weighmentDetails?.length > 0) {
-          const wb = job.operations[0].weighmentDetails[0];
-          updates.weighBridgeRegNo = wb.weighBridgeName || "";
-          updates.weighBridgeSlipNo = wb.slipNo || wb.regNo || "";
-          updates.weighBridgeAddrLn1 = wb.address || "";
-          updates.tareWt = wb.tareWeight || "";
-        }
+        // Weighbridge No = weighBridgeName
+        updates.weighBridgeRegNo = firstContainer.weighBridgeName || (job.operations?.[0]?.weighmentDetails?.[0]?.weighBridgeName) || "";
+
+        // Weighbridge Slip No. = weighmentRegNo
+        updates.weighBridgeSlipNo = firstContainer.weighmentRegNo || firstContainer.weighmentSlipNo || (job.operations?.[0]?.weighmentDetails?.[0]?.slipNo || job.operations?.[0]?.weighmentDetails?.[0]?.regNo) || "";
+
+        // Split Address into 3 parts of 20 chars each
+        const fullAddr = String(firstContainer.weighmentAddress || (job.operations?.[0]?.weighmentDetails?.[0]?.address) || "");
+        updates.weighBridgeAddrLn1 = fullAddr.substring(0, 20).trim();
+        updates.weighBridgeAddrLn2 = fullAddr.substring(20, 40).trim();
+        updates.weighBridgeAddrLn3 = fullAddr.substring(40, 60).trim();
+
+        updates.weighBridgeWtTs = formatDateTimeForVGM(firstContainer.weighmentDateTime || "");
 
         // --- 3. Booking / Liner / Port ---
-        if (job.operations?.[0]?.bookingDetails?.length > 0) {
-          const booking = job.operations[0].bookingDetails[0];
-          console.log("[JOB SEARCH] Booking details:", booking);
+        // Booking Number: sb_no in some models, bookingNo in others
+        updates.bookNo = job.sb_no || (job.operations?.[0]?.bookingDetails?.[0]?.bookingNo) || "";
 
-          updates.bookNo = booking.bookingNo || "";
-
-          if (booking.shippingLineName) {
-            const linerMatch = findShippingLine(booking.shippingLineName);
-            if (linerMatch) updates.linerId = linerMatch;
-          }
-        }
-
-        // Fallback for Liner if not set from operations
-        if (!updates.linerId && job.shipping_line_airline) {
-          console.log("[JOB SEARCH] Liner fallback from shipping_line_airline:", job.shipping_line_airline);
+        // Liner
+        if (job.shipping_line_airline) {
           const linerMatch = findShippingLine(job.shipping_line_airline);
+          if (linerMatch) updates.linerId = linerMatch;
+        } else if (job.operations?.[0]?.bookingDetails?.[0]?.shippingLineName) {
+          const linerMatch = findShippingLine(job.operations[0].bookingDetails[0].shippingLineName);
           if (linerMatch) updates.linerId = linerMatch;
         }
 
-        // Fallback for Book No if not set
-        if (!updates.bookNo && job.sb_no) {
-          console.log("[JOB SEARCH] Book No fallback from sb_no:", job.sb_no);
-          updates.bookNo = job.sb_no;
-        }
-
-        // Port search - use the improved helper
-        const portName = job.port_of_loading ||
-          job.operations?.[0]?.containerDetails?.[0]?.portOfLoading || "";
-        console.log("[JOB SEARCH] Port from API:", portName);
+        // Port
+        const portName = job.port_of_loading || job.custom_house || job.operations?.[0]?.containerDetails?.[0]?.portOfLoading || "";
+        console.log("[JOB SEARCH] Port search string:", portName);
         if (portName) {
           const portMatch = findPortByPrefix(portName);
           if (portMatch) updates.locId = portMatch;
@@ -1250,7 +1327,6 @@ const VGMForm = ({
           return normalizedAuth === normalizedExporter;
         });
 
-        console.log("[JOB SEARCH] Auth person match:", authMatch);
         if (authMatch) {
           updates.authPrsnNm = authMatch.authPerson;
           updates.authDesignation = authMatch.designation;
@@ -1258,21 +1334,19 @@ const VGMForm = ({
         }
 
         // --- Store containers for selection if multiple ---
-        const allContainers = job.operations?.[0]?.containerDetails || [];
+        const allContainers = job.containers || job.operations?.[0]?.containerDetails || [];
         const uniqueContainers = allContainers.filter(
           (c, idx, self) => c.containerNo && self.findIndex(x => x.containerNo === c.containerNo) === idx
         );
 
-        console.log("[JOB SEARCH] Found containers:", uniqueContainers.length);
+        console.log("[JOB SEARCH] Found unique containers:", uniqueContainers.length);
 
         if (uniqueContainers.length > 1) {
-          // Store job data and containers for selection
           setFetchedJobData(job);
           setContainersList(uniqueContainers);
           setSelectedContainerNo(uniqueContainers[0].containerNo);
           enqueueSnackbar(`Found ${uniqueContainers.length} containers. Please select one.`, { variant: "info" });
         } else {
-          // Clear container selection state for single container
           setFetchedJobData(null);
           setContainersList([]);
           setSelectedContainerNo("");
@@ -1299,46 +1373,45 @@ const VGMForm = ({
 
     setSelectedContainerNo(containerNo);
 
-    const allContainers = fetchedJobData.operations?.[0]?.containerDetails || [];
+    const allContainers = fetchedJobData.containers || fetchedJobData.operations?.[0]?.containerDetails || [];
     const container = allContainers.find(c => c.containerNo === containerNo);
     const weighmentDetails = fetchedJobData.operations?.[0]?.weighmentDetails || [];
-
-    // Find weighment for this container (match by containerNo or use first one)
-    const wb = weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {};
 
     if (container) {
       const updates = { ...formik.values };
 
       // Update container-specific fields
-      updates.cntnrNo = container.containerNo || "";
-      updates.cscPlateMaxWtLimit = container.grossWeight || "";
-      updates.totWt = wb.tareWeight || "";
+      updates.cntnrNo = container.containerNo || container.cntnrNo || "";
+      updates.cscPlateMaxWtLimit = container.maxGrossWeightKgs || container.grossWeight || "";
+      updates.tareWt = container.tareWeightKgs || "";
+      updates.totWt = container.vgmWtInvoice || "";
 
-      // Size mapping
-      // Size mapping (handle containerSize or size)
-      const sizeVal = container.containerSize || container.size || "";
-      if (sizeVal) {
-        const sizeSearch = String(sizeVal).substring(0, 2);
-        const sizeMatch = CONTAINER_SIZES.find(s => s.label.startsWith(sizeSearch));
-        if (sizeMatch) updates.cntnrSize = sizeMatch.value;
-      }
-
-      // Type mapping (handle containerType or type)
-      const typeSource = container.containerType || container.type || container.containerSize || container.size || "";
-      if (typeSource) {
-        const typeSearch = String(typeSource).substring(0, 3).toLowerCase();
+      // Size/Type mapping
+      const fullType = String(container.type || container.containerType || container.containerSize || container.size || "").toUpperCase();
+      if (fullType) {
+        const sizeMatch = fullType.match(/\d{2}/);
+        if (sizeMatch) {
+          const sz = sizeMatch[0];
+          const szOpt = CONTAINER_SIZES.find(s => s.label.includes(sz));
+          if (szOpt) updates.cntnrSize = szOpt.value;
+        }
         const typeMatch = CONTAINER_TYPES.find(t =>
-          (t.label || "").toLowerCase().includes(typeSearch) ||
-          (t.value || "").toLowerCase().includes(typeSearch)
+          fullType.includes((t.label || "").toUpperCase()) ||
+          fullType.includes((t.value || "").toUpperCase())
         );
         if (typeMatch) updates.cntnrTp = typeMatch.value;
       }
 
       // Weighbridge details for this container
-      updates.weighBridgeRegNo = wb.weighBridgeName || "";
-      updates.weighBridgeSlipNo = wb.slipNo || wb.regNo || "";
-      updates.weighBridgeAddrLn1 = wb.address || "";
-      updates.tareWt = wb.tareWeight || "";
+      updates.weighBridgeRegNo = container.weighBridgeName || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).weighBridgeName || "";
+      updates.weighBridgeSlipNo = container.weighmentRegNo || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).slipNo || "";
+
+      const fullAddr = String(container.weighmentAddress || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).address || "");
+      updates.weighBridgeAddrLn1 = fullAddr.substring(0, 20).trim();
+      updates.weighBridgeAddrLn2 = fullAddr.substring(20, 40).trim();
+      updates.weighBridgeAddrLn3 = fullAddr.substring(40, 60).trim();
+
+      updates.weighBridgeWtTs = formatDateTimeForVGM(container.weighmentDateTime || "");
 
       formik.setValues(updates);
       setFormValues(updates);
@@ -1352,26 +1425,27 @@ const VGMForm = ({
         <AppbarComponent />
 
         {/* Job No Search Panel - Redesigned for better UI */}
-        <Box sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          p: 3,
-          mb: 2,
-          backgroundColor: "#fff",
-          borderRadius: "8px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)"
-        }}>
-          <Box sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            maxWidth: "600px",
-            width: "100%"
-          }}>
+        <Box className="panel" sx={{ mb: 2, mt: 0, py: 1.5, bgcolor: '#fff !important' }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
             <TextField
-              fullWidth
+              sx={{
+                flex: 1,
+                maxWidth: 550,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  height: "38px", // Matches global input height
+                  backgroundColor: "#f8fafc",
+                  "&:hover fieldset": { borderColor: "#cbd5e1" },
+                }
+              }}
               size="small"
               placeholder="Auto-fill from Job No (e.g. GIM/00003...)"
               value={jobNoSearch}
@@ -1385,33 +1459,25 @@ const VGMForm = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#94a3b8" }} />
+                    <SearchIcon sx={{ color: "#94a3b8", fontSize: '1.1rem' }} />
                   </InputAdornment>
                 ),
-                sx: {
-                  borderRadius: "6px",
-                  bgcolor: "#f8fafc",
-                  "& fieldset": { borderColor: "#cbd5e1" },
-                  "&:hover fieldset": { borderColor: "#94a3b8" },
-                  "&.Mui-focused fieldset": { borderColor: "#2563eb" },
-                }
               }}
             />
             <Button
-              variant="contained"
+              className="btn-primary"
               onClick={handleJobSearch}
               disabled={loadingJob}
-              startIcon={loadingJob ? null : <CloudDownloadIcon />}
+              startIcon={loadingJob ? null : <CloudDownloadIcon sx={{ fontSize: '1.2rem !important', color: 'white' }} />}
               sx={{
-                height: "40px",
-                whiteSpace: "nowrap",
-                px: 3,
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "6px",
-                bgcolor: "#2563eb",
-                boxShadow: "none",
-                "&:hover": { bgcolor: "#1d4ed8", boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)" }
+                height: '38px',
+                minWidth: '140px',
+                textTransform: 'none',
+                boxShadow: 'none !important',
+                fontSize: '0.875rem',
+                color: 'white !important', // Explicit color fix
+                '& .MuiButton-startIcon': { color: 'white' },
+                borderRadius: "8px",
               }}
             >
               {loadingJob ? "Fetching..." : "Fetch Data"}
@@ -1459,7 +1525,7 @@ const VGMForm = ({
         <form onSubmit={formik.handleSubmit}>
           {/* Section 1: Shipper & Booking */}
           <div className="panel">
-            <h3 className="panel-title">Shipper / Booking Details</h3>
+            <div className="panel-title">Shipper / Booking Details</div>
             <div className="form-grid">
               <SelectField
                 label="Shipping Line"
@@ -1547,7 +1613,7 @@ const VGMForm = ({
 
           {/* Section 2: Container Details */}
           <div className="panel">
-            <h3 className="panel-title">Container Details</h3>
+            <div className="panel-title">Container Details</div>
             <div className="alert alert-info" style={{ fontSize: "0.85rem" }}>
               {formik.values.vgmEvalMethod === "M1"
                 ? "Method 1: Weighing the packed container."
@@ -1662,7 +1728,7 @@ const VGMForm = ({
             </div>
 
             {formik.values.cargoTp === "HAZ" && (
-              <div className="form-grid mt-4">
+              <div className="form-grid mt-2">
                 <SelectField
                   label="IMO Number"
                   name="imoNo1"
@@ -1676,7 +1742,7 @@ const VGMForm = ({
 
           {/* Section 3: Weighbridge */}
           <div className="panel">
-            <h3 className="panel-title">Weighbridge Details</h3>
+            <div className="panel-title">Weighbridge Details</div>
             <div className="form-grid">
               <InputField
                 label="Weighbridge No"
@@ -1719,16 +1785,27 @@ const VGMForm = ({
                     const pastedText = e.clipboardData.getData('text').trim();
                     console.log('Pasted datetime:', pastedText);
 
+                    // Support specialized format: 31.03.2026/Time:19:34
+                    const specialFormatMatch = pastedText.match(/^(\d{2})\.(\d{2})\.(\d{4})\/Time:(\d{2}):(\d{2})/);
+
+                    if (specialFormatMatch) {
+                      e.preventDefault();
+                      const [, d, m, y, h, min] = specialFormatMatch;
+                      const transformed = `${d}-${m}-${y} ${h}:${min}`;
+                      formik.setFieldValue("weighBridgeWtTs", transformed);
+                      return;
+                    }
+
                     setTimeout(() => {
                       let val = e.target.value.trim();
 
-                      // Auto-add seconds if missing (DD-MM-YYYY HH:MM)
+                      // Format standard DD-MM-YYYY HH:mm
                       if (val && val.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/)) {
-                        formik.setFieldValue("weighBridgeWtTs", val + ":00");
+                        formik.setFieldValue("weighBridgeWtTs", val);
                       }
-                      // Auto-add seconds if missing (YYYY-MM-DD HH:MM) - legacy support
-                      else if (val && val.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)) {
-                        formik.setFieldValue("weighBridgeWtTs", val + ":00");
+                      // Auto-fix dots to dashes: 31.03.2026 19:34
+                      else if (val && val.match(/^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})$/)) {
+                        formik.setFieldValue("weighBridgeWtTs", val.replace(/\./g, '-'));
                       }
                     }, 0);
                   }}
@@ -1750,7 +1827,7 @@ const VGMForm = ({
 
           {/* Section 4: Attachments */}
           <div className="panel">
-            <h3 className="panel-title">Attachments</h3>
+            <div className="panel-title">Attachments</div>
             <div className="alert alert-info">
               PDF only. Max 5MB. DG Declaration required for HAZ cargo.
             </div>

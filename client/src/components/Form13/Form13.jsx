@@ -51,7 +51,7 @@ const Form13 = () => {
   // Form Data State - Complete structure matching API requirements
   // HARDCODE YOUR HASHKEY HERE
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     // Header Section
     odexRefNo: "",
     reqId: "",
@@ -157,7 +157,10 @@ const Form13 = () => {
 
     // Attachments Section (attList in API)
     attachments: [],
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Load Master Data on component mount
   useEffect(() => {
@@ -221,16 +224,38 @@ const Form13 = () => {
     }
   };
 
-  // Initialize Edit Mode
+  // Initialize Edit Mode or Handle Reset
   useEffect(() => {
-    const initializeEditMode = async () => {
+    const initializeMode = async () => {
+      // Check for reset signal first
+      if (location.state?.reset) {
+        setIsEditMode(false);
+        setRequestId(null);
+        setFormData(initialFormData);
+        setError("");
+        setSuccess("");
+        setValidationErrors({});
+        setIsSaved(false);
+        window.scrollTo(0, 0);
+        return;
+      }
+
       if (location.state?.editMode && location.state?.f13Id) {
         setIsEditMode(true);
         setRequestId(location.state.f13Id);
         await fetchRequestDetails(location.state.f13Id);
+      } else {
+        // Reset form for fresh request
+        setIsEditMode(false);
+        setRequestId(null);
+        setFormData(initialFormData);
+        setError("");
+        setSuccess("");
+        setValidationErrors({});
+        setIsSaved(false);
       }
     };
-    initializeEditMode();
+    initializeMode();
   }, [location.state]);
 
   const fetchRequestDetails = async (f13Id) => {
@@ -1111,6 +1136,41 @@ const Form13 = () => {
         return;
       }
 
+      // --- DUPLICATE CHECK ---
+      // Check if any of the containers already exist for this Booking No
+      try {
+        const bookNo = formData.bookNo;
+        const bnfCode = formData.bnfCode;
+        
+        // Search for existing requests with same booking and shipping line
+        const response = await form13API.getRequests({ bookNo, bnfCode });
+        const existingRequests = response.data?.requests || [];
+        
+        // Check if any container in the current form matches an existing (non-cancelled) request
+        const duplicateContainers = [];
+        formData.containers.forEach(currCont => {
+          const isDuplicate = existingRequests.some(extReq => {
+            // Find container in existing request's cntrList
+            const containersInExt = extReq.cntrList || extReq.containers || [];
+            return containersInExt.some(extCont => 
+              extCont.cntnrNo === currCont.cntnrNo && 
+              extReq.status !== 'CANCELLED' &&
+              extReq._id !== requestId // Allow current request if editing
+            );
+          });
+          if (isDuplicate) duplicateContainers.push(currCont.cntnrNo);
+        });
+
+        if (duplicateContainers.length > 0) {
+          setError(`Duplicate submission detected: Container(s) ${duplicateContainers.join(', ')} already have a request for Booking No ${bookNo}.`);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Duplicate check failed, proceeding with submission:", err);
+      }
+      // --- END DUPLICATE CHECK ---
+
       // Prepare attachments with base64 encoding
       const attList = await Promise.all(
         formData.attachments.map(async (file) => {
@@ -1384,6 +1444,12 @@ const Form13 = () => {
           </Alert>
         )}
 
+        {isSaved && !success && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Form data is saved to DB. Don't forget to <strong>Submit to ODeX</strong> once finalized.
+          </Alert>
+        )}
+
         {success && (
           <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
             {success}
@@ -1447,6 +1513,7 @@ const Form13 = () => {
             onAddContainer={handleAddContainer}
             onRemoveContainer={handleRemoveContainer}
             validationErrors={validationErrors}
+            submitted={loading || Object.keys(validationErrors).length > 0}
           />
 
           {/* Attachments */}
@@ -1457,34 +1524,80 @@ const Form13 = () => {
             validationErrors={validationErrors}
           />
 
-          {/* Submit Button */}
-          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+          {/* Bottom Action Bar */}
+          <Box sx={{
+            mt: 4,
+            py: 3,
+            borderTop: "1px solid #e0e0e0",
+            display: "flex",
+            justifyContent: "center",
+            gap: 2,
+            flexWrap: "wrap"
+          }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => navigate("/track-f13")}
+              disabled={loading}
+              sx={{ minWidth: 150 }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setError("");
+                  // Prepare data (simplified save to DB only)
+                  let response;
+                  if (requestId) {
+                    response = await form13API.updateRequest(requestId, { ...formData, status: "SAVED" });
+                  } else {
+                    // For first save, we might want a simple endpoint or just /submit with a flag
+                    // Using current submit logic but marking as saved
+                    response = await form13API.submitForm13({ ...formData, status: "SAVED", skipOdex: true });
+                  }
+
+                  if (response.data?._id || response.data?.internalRef) {
+                    setRequestId(response.data?._id || response.data?.internalRef);
+                    setIsSaved(true);
+                    setSuccess("Form saved successfully to database.");
+                  }
+                } catch (err) {
+                  setError("Failed to save draft: " + (err.response?.data?.error || err.message));
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading || !masterDataLoaded}
+              startIcon={<SaveIcon />}
+              sx={{ minWidth: 150, bgcolor: "#0d6efd" }}
+            >
+              {loading ? "Saving..." : "Save"}
+            </Button>
+
             <Button
               variant="contained"
               size="large"
               onClick={handleSubmit}
               disabled={loading || !masterDataLoaded}
-              startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
-              sx={{ minWidth: 200 }}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+              sx={{
+                minWidth: 180,
+                bgcolor: (loading || !masterDataLoaded) ? "rgba(0,0,0,0.12)" : "#1976d2",
+                '&:hover': { bgcolor: "#1565c0" }
+              }}
             >
-              {loading ? (isEditMode ? "Updating..." : "Submitting...") : (isEditMode ? "Update Form 13" : "Submit Form 13")}
+              {loading ? (isEditMode ? "Updating..." : "Submitting...") : (isEditMode ? "Submit to ODeX" : "Submit to ODeX")}
             </Button>
           </Box>
         </Box>
 
-        <Fab
-          color="primary"
-          aria-label="submit"
-          sx={{
-            position: "fixed",
-            bottom: 16,
-            right: 16,
-          }}
-          onClick={handleSubmit}
-          disabled={loading || !masterDataLoaded}
-        >
-          <SendIcon />
-        </Fab>
+        {/* Removed Fab as requested */}
 
         {/* Copy From Previous Dialog */}
         <Dialog

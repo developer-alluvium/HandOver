@@ -1,0 +1,2406 @@
+ODeX-logo
+ODEX –Export Gate-passINTEGRATION API DOCUMENT
+ODEX –Export Gate-passINTEGRATION API DOCUMENT
+
+[TABLE START]
+Doc. ID | Ver. No. | Classification | Issue Date | Owner
+Doc. ID
+Ver. No.
+Classification
+Issue Date
+Owner
+OISPL_ITD_Export_Gate-pass_Integration_API_RC001.docx | 4.0 | Confidential | 28-06-2025 | ODeX
+OISPL_ITD_Export_Gate-
+pass_Integration_API_RC001.docx
+4.0
+Confidential
+28-06-2025
+ODeX
+Prepared BY: ODeX India Solutions Pvt. Ltd.
+© Copyrights – ODeX India Solutions Pvt. Ltd.No part of this document may be reproduced or transmitted in any form or by any means, electronic or mechanical, including photocopying or recording, for any purpose, without the express written consent of ODeX India Solutions Pvt. Ltd
+Contents
+1. Document Review3
+2. Business Use Case4
+3. Integration Scope6
+4. High-Level Architecture7
+5. API Specifications9
+5.1 Vessel Master API11
+5.2 POD Master API14
+5.3 Form 13 Submission API16
+5.3.1 Attachment Titles23
+5.3.2 Response Message27
+5.4 Get Form 13 Status API28
+5.5 Gate Pass - Cancellation API31
+6. MASTER DATA33
+6.1 Liner Ids BNF Code- Prod data36
+6.2 Port Ids (locId)36
+6.3 CFS (cfscode)37
+6.4 ISO Code (iso)38
+6.5 Location – POD (pod)38
+6.6 CFS code master38
+6.7 terminal login id (Mandatory for Adani terminals)38
+7. Errors and Validations39
+7.1 List of Schematic Errors39
+7.2 List of Business Validations42
+8. Beneficiary Locations Active for Form 13 on ODeXError! Bookmark not defined.
+9. Term Glossary54
+10. FAQs55
+1.Document Review
+This document provides a comprehensive technical and functional overview of theForm 13 (F13) API Integrationprocess, which is a key digital workflow for port operations within the ODeX platform. Form 13 is a critical document used in Indian ports (e.g., JNPT, Mundra, Pipavav) for gate-in permissions of containers, and this documentation aims to guide technical teams, integration partners, and stakeholders through its end-to-end automation.
+The manual is intended to support bothAPI consumers(such as shipping lines or third-party software vendors) andsystem implementersby detailing the process of submitting, validating, and managing Form 13 data via secure RESTful APIs.
+Objectives:
+To outline the structure, data flow, and system interactions required for successful Form 13 integration.
+To define API request/response standards, including field-level rules, mandatory checks, and sample payloads.
+To ensure consistency and error-handling mechanisms across all Form 13 submissions.
+To support faster onboarding of external systems or clients integrating with ODeX.
+Audience:
+This document is meant for:
+Backend/API Developers
+Integration Teams of Shipping Lines/Agents
+Business Analysts and Project Managers
+QA Teams involved in testing integration
+ODeX Internal IT & Support teams
+2. Business Use Case
+Form 13 (F13) is amandatory document issued by shipping linesto authorize thegate-in of export containersat Indian ports such as JNPT, Mundra, and Pipavav. Traditionally handled via email or manual systems, Form 13 is now being digitized through API integration to improve turnaround time, reduce manual errors, and ensure regulatory compliance.
+The Form 13 Integration enables seamless, real-time submission of container gate-inrequestsdirectly from thePayor’sinternal system to the ODeXSystem. This not only simplifiessubmission of Form 13 requestsbut also enhances operational efficiency, especially in high-volume export scenarios.
+Stakeholders Involved:
+
+[TABLE START]
+Stakeholders | Role
+Stakeholders
+Role
+Payor | Submits Form 13 for export containers
+Payor
+Submits Form 13 for export containers
+ODeX Platform | Acts as an intermediary, validating and forwarding Form 13 data
+ODeX Platform
+Acts as an intermediary, validating and forwarding Form 13 data
+Shipping Lines | ValidatesForm 13 data
+Shipping Lines
+ValidatesForm 13 data
+Customer (Exporter/CHA) | Receive Form 13 request status as an response
+Customer (Exporter/CHA)
+Receive Form 13 request status as an response
+Key Goals:
+Automate thesubmission of Form 13fromPayorsystems
+Enablefaster approvaland gate-in of export containersfrom Shipping lines
+Reduceerrors and rejectionsdue to data mismatch or manual entry
+Providereal-time visibilityof Form 13 status to stakeholders
+Current Challenges (Without Integration):
+Manual data entry leads to errors or inconsistencies
+Delays due to email-based communication
+Limited traceability of Form 13 status
+High support overhead to resolve submission/rejection issues
+Proposed Solution (With API Integration):
+Submit Form 13 through a secure REST API with proper validation
+Ensure container, vessel, and POD data is validated against ODeX master
+Receive instant response for success or actionable error messages
+Track Form 13 submission, status, and rejections in real time
+3. Integration Scope
+Overview:
+This integration enablesPayor’sto submitForm 13 datadirectly to ODeX via REST APIs.Shipping linevalidates andODeX shares the response back to the Payor.
+In Scope:
+Form 13 Transaction APIfor submitting container gate-in data.
+Master APIsfor Vessel, POD, Terminal, etc.
+Validationsfor mandatory fields and data format.
+API Responsesfor success and error handling.
+Retry Supportfor failed transactions.
+Status Tracking(if enabled on ODeX UI or API).
+Out of Scope:
+Amendments of submitted Form 13.
+EDI/SFTP-based submissions.
+Interfaces:
+Payor System→ ODeX API Gateway →Shipping LineReview
+ODeX manages downstream logic and responses.
+Security:
+Auth via API key/code(shared securely).
+HTTPS mandatory.
+Available in UAT & Production environments
+4. High-Level Architecture
+Overview:
+This section outlines the data flow betweena Payor, ODeX platform, andthe shipping linefor successful Form 13 processing via APIs.
+A diagram of a workflow
+
+AI-generated content may be incorrect.
+Steps Explained:
+Form 13 Submission:ThePayor’s system sends a POST request with container gate-in details.
+Validation & Processing (ODeX):ODeX validates:
+Vessel, POD, Terminal against Master APIs
+Mandatory fields and format.
+Visibility of request on ODeX for Shipping Line:Upon successful validation, ODeX forwards the Form 13response back to the Payor.
+
+[TABLE START]
+Environment | URL | Use Case
+Environment
+URL
+Use Case
+UAT | URL | Integration testing
+UAT
+URL
+Integration testing
+Production | URL | Real-time operations
+Production
+URL
+Real-time operations
+
+[TABLE START]
+API Type | Purpose
+API Type
+Purpose
+Master APIs | Validate vessels, ports, terminals
+Master APIs
+Validate vessels, ports, terminals
+Transaction API | Submit Form 13 data
+Transaction API
+Submit Form 13 data
+Response API | Return status or error messagesand Get Form 13 Request Status
+Response API
+Return status or error messagesand Get Form 13 Request Status
+5. API Specifications
+General Info:
+API Type:RESTful
+Format:JSON
+Protocol:HTTPS
+Authentication:API Key or Token
+Method:POST
+Environment:UAT and Production
+Field type:
+
+[TABLE START]
+Type | Code | Description
+Type
+Code
+Description
+Integer | INT | 0-9
+Integer
+INT
+0-9
+Decimal (defined places e.g. up to 2 decimal places) | DEC | 0.00 – 0.99
+Decimal (defined places e.g. up to 2 decimal places)
+DEC
+0.00 – 0.99
+Alphabetic | ALPHA | A-Z,a-z
+Alphabetic
+ALPHA
+A-Z,a-z
+Alphanumericwith Special Characters | ANS | A-Z,a-z, 0-9
+Alphanumericwith Special Characters
+ANS
+A-Z,a-z, 0-9
+Date | DATE | DDMMYYYY
+Date
+DATE
+DDMMYYYY
+Date & Time | DTM | DDMMYYYYHHMMSS
+Date & Time
+DTM
+DDMMYYYYHHMMSS
+File | FILE | File in Base 64 format
+File
+FILE
+File in Base 64 format
+Field requirement
+
+[TABLE START]
+Requirement | Description | Remarks
+Requirement
+Description
+Remarks
+M | Mandatory | Value is always expected
+M
+Mandatory
+Value is always expected
+O | Optional | This is up to the user whether to provide this value
+O
+Optional
+This is up to the user whether to provide this value
+C | Conditional | In any specific condition this value has to be provided
+C
+Conditional
+In any specific condition this value has to be provided
+Main APIs Covered:
+5.1 Vessel Master API
+In this Vessel master API request, user will be able to get those data which are defined in ODeX by liner (and Admin) and required for From 13/HBL request. Line Location wise Vessel name, terminal name, Via, Service name, CHA Valid from-to (So customer will send F13/HBL request within this time only), All these are defined by Shipping line while creating vessel information. Until these data are correct in the request, ODeX will not accept the same.
+Message Header
+
+[TABLE START]
+API Type | RESTful API
+API Type
+RESTful API
+EDI Type | JSON
+EDI Type
+JSON
+Method | POST
+Method
+POST
+URL | https://staging.odexglobal.com/RS/iForm13Service/json/getForm13VesselInfo
+URL
+https://staging.odexglobal.com/RS/iForm13Service/json/getForm13VesselInfo
+Hosted By | ODeX
+Hosted By
+ODeX
+Requested By | Client
+Requested By
+Client
+Request Message
+
+[TABLE START]
+SrNo | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+SrNo
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | CHA Name | pyrCode | ANS- 200 | M | Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+1
+CHA Name
+pyrCode
+ANS- 200
+M
+Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+2 | List Type |  | AN-10 | O | LOV - Gatepass, HBL. (if this field is not passed then will consider this as ‘Gatepass’, otherwise list type wise data should come. 
+2
+List Type
+AN-10
+O
+LOV - Gatepass, HBL. (if this field is not passed then will consider this as ‘Gatepass’, otherwise list type wise data should come. 
+3 | HashKey | hashKey | NA | C | Required only if additional security is desiredMandatory if encryption desired by customer.checksumKey to be generated using following logicstr = pyrcode+timestamp+secret keyUse crc32 hash function on above string and use the value
+3
+HashKey
+hashKey
+NA
+C
+Required only if additional security is desired
+Mandatory if encryption desired by customer.checksumKey to be generated using following logicstr = pyrcode+timestamp+secret key
+Use crc32 hash function on above string and use the value
+4 | Time Stamp | fromTs | DTM | M | YYYY-MM-DD HH:MM:SS Response will consist those data only, which are added/updated on or after this time.
+4
+Time Stamp
+fromTs
+DTM
+M
+YYYY-MM-DD HH:MM:SS Response will consist those data only, which are added/updated on or after this time.
+Request Sample
+Response Message
+
+[TABLE START]
+S.N | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+S.N
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | Shipping Line | bnfCode | ALPHA-8 | M | Refer Master Data Section
+1
+Shipping Line
+bnfCode
+ALPHA-8
+M
+Refer Master Data Section
+2 | Location (Port) | locId | AN- 8 | M | Refer Master Data Section
+2
+Location (Port)
+locId
+AN- 8
+M
+Refer Master Data Section
+3 | Vessel | vesselNm | ANS-50 | M |  
+3
+Vessel
+vesselNm
+ANS-50
+M
+ 
+4 | VIA No. | viaNo | AN-20 | O |  
+4
+VIA No.
+viaNo
+AN-20
+O
+ 
+5 | VCN No |   | AN-50 | O |  
+5
+VCN No
+ 
+AN-50
+O
+ 
+6 | Voyage No. |   | AN-20 | O |  
+6
+Voyage No.
+ 
+AN-20
+O
+ 
+7 | Type |   | AN-10 | O | LOV: F13,F11, CIO, if List type is HBL,then this this field is not applicable
+7
+Type
+ 
+AN-10
+O
+LOV: F13,F11, CIO, if List type is HBL,then this this field is not applicable
+8 | Service | service | ANS- 100 | O |  
+8
+Service
+service
+ANS- 100
+O
+ 
+9 | Terminal | terminalCode | AN- 50 | M |  
+9
+Terminal
+terminalCode
+AN- 50
+M
+ 
+10 | CHA Valid From | chaValidFrm | DTM | M | YYYY-MM-DD HH:MM:SS
+10
+CHA Valid From
+chaValidFrm
+DTM
+M
+YYYY-MM-DD HH:MM:SS
+11 | CHA Valid To | chaValidTo | DTM | M | YYYY-MM-DD HH:MM:SS
+11
+CHA Valid To
+chaValidTo
+DTM
+M
+YYYY-MM-DD HH:MM:SS
+12 | Last update Date/create date | lastUpdatedOn | DTM | M | YYYY-MM-DD HH:MM:SS – Latest time at which data is created/updated
+12
+Last update Date/create date
+lastUpdatedOn
+DTM
+M
+YYYY-MM-DD HH:MM:SS – Latest time at which data is created/updated
+13 | Response Message | responseMessage | AN | O | Failure message if any
+13
+Response Message
+responseMessage
+AN
+O
+Failure message if any
+Response Sample
+5.2 POD Master API
+In this POD Master API user will get list of PODs which are defined in ODeX by Liner/Admin) and required for From 13 request. Location, terminal wise service name and list of PODs applicable for Form 13 submission. In Form 13 request if a valid POD is not entered then ODeX will not accept the request. So use needs to ensure s/he is passing a valid code only.
+Message Header
+
+[TABLE START]
+API Type | RESTful API
+API Type
+RESTful API
+EDI Type | JSON
+EDI Type
+JSON
+Method | POST
+Method
+POST
+URL | https://staging.odexglobal.com/RS/iForm13Service/json/getForm13PODInfo
+URL
+https://staging.odexglobal.com/RS/iForm13Service/json/getForm13PODInfo
+Hosted By | ODeX
+Hosted By
+ODeX
+Requested By | Client
+Requested By
+Client
+Request Message
+
+[TABLE START]
+S.N | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+S.N
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | CHA Name | pyrCode | ANS- 200 | M | Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+1
+CHA Name
+pyrCode
+ANS- 200
+M
+Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+2 | HashKey | hashKey | NA | C | Required only if additional security is desiredMandatory if encryption desired by customer.checksumKey to be generated using following logicstr = pyrcode+timestamp+secret keyUse crc32 hash function on above string and use the value
+2
+HashKey
+hashKey
+NA
+C
+Required only if additional security is desired
+Mandatory if encryption desired by customer.checksumKey to be generated using following logicstr = pyrcode+timestamp+secret key
+Use crc32 hash function on above string and use the value
+3 | Time Stamp | fromTs | DTM | M | YYYY-MM-DD HH:MM:SS – OdeX will share those data only, which are added/updated on or after this time.
+3
+Time Stamp
+fromTs
+DTM
+M
+YYYY-MM-DD HH:MM:SS – OdeX will share those data only, which are added/updated on or after this time.
+ 
+Request Sample
+Response Message
+
+[TABLE START]
+S.N | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+S.N
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | Location | locId | AN-8 | M | Refer Master Data Section
+1
+Location
+locId
+AN-8
+M
+Refer Master Data Section
+2 | Terminal ID | terminalId | AN- 8 | M | Refer Master Data Section
+2
+Terminal ID
+terminalId
+AN- 8
+M
+Refer Master Data Section
+3 | Terminal Name | terminalNm | AN- 50 | M |  
+3
+Terminal Name
+terminalNm
+AN- 50
+M
+ 
+4 | Type |   | AN-10 | M | LOV: F13,F11,CIO
+4
+Type
+ 
+AN-10
+M
+LOV: F13,F11,CIO
+5 | Service Name | serviceNm | AN- 100 | M |  
+5
+Service Name
+serviceNm
+AN- 100
+M
+ 
+6 | POD Name | podNm | AN- | M |  
+6
+POD Name
+podNm
+AN-
+M
+ 
+7 | POD Code | podCd | AN-50 | M |  
+7
+POD Code
+podCd
+AN-50
+M
+ 
+8 | Status | status | AN-10 | M | Only Active data to be used
+8
+Status
+status
+AN-10
+M
+Only Active data to be used
+Response sample
+5.3 Form 13 Submission API
+InGate pass (Form 13)request API, data will be pulled from payor’s internal system and submitted via API. For Hapag, if the SI check is “N” then Form13 will remain in not submitted status. Response of API will provide the status of the request for that container. Request and response sections are divided into header, container and attachment sections for better clarity.
+Message Header:
+
+[TABLE START]
+API Type | RESTful API
+API Type
+RESTful API
+EDI Type | JSON
+EDI Type
+JSON
+Method | POST
+Method
+POST
+URL | https://staging.odexglobal.com/DEMO/RS/iForm13Service/json/saveF13
+URL
+https://staging.odexglobal.com/DEMO/RS/iForm13Service/json/saveF13
+Hosted By | ODeX
+Hosted By
+ODeX
+Requested By | Client
+Requested By
+Client
+ 
+Request Message:
+Note: As of now API is applicable only for Type = F13
+Header section- Request Message
+
+[TABLE START]
+Field Name | API Tags | Data Type andLength | M/O/C | Validations/Conditions
+Field Name
+API Tags
+Data Type andLength
+M/O/C
+Validations/Conditions
+ODeX Ref. No. | odexRefNo | AN-50 | O | Leave this tag blank. This is unique reference numebr, generated for each request by ODeX. This will be used in response further.
+ODeX Ref. No.
+odexRefNo
+AN-50
+O
+Leave this tag blank. This is unique reference numebr, generated for each request by ODeX. This will be used in response further.
+CHA Name | PyrCode |   | M | Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the PayorBlank for NSICT/NSIGT/CCTL/ICT
+CHA Name
+PyrCode
+ 
+M
+Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the PayorBlank for NSICT/NSIGT/CCTL/ICT
+Shipping Line | bnfCode | ALPHA- 8 | M | Refer Master Data Section
+Shipping Line
+bnfCode
+ALPHA- 8
+M
+Refer Master Data Section
+Location | locId | ALPHA- 8 | M | Refer Master Data Section
+Location
+locId
+ALPHA- 8
+M
+Refer Master Data Section
+Vessel Name | vesselNm | ANS-50 | M | Refer API 2.1
+Vessel Name
+vesselNm
+ANS-50
+M
+Refer API 2.1
+VIA No. | viaNo | AN | C |  
+VIA No.
+viaNo
+AN
+C
+ 
+terminalCode | terminalCode | AN-50 | M | Refer API 2.1
+terminalCode
+terminalCode
+AN-50
+M
+Refer API 2.1
+service | service | AN-100 | M | Refer API 2.1
+service
+service
+AN-100
+M
+Refer API 2.1
+pod | pod | ALPHA-50 | M | Refer API 3 for POD master.
+pod
+pod
+ALPHA-50
+M
+Refer API 3 for POD master.
+fpod | fpod | ALPHA-50 | C | Refer API 3 for POD master.
+fpod
+fpod
+ALPHA-50
+C
+Refer API 3 for POD master.
+cargoTp | cargoTp | ALPHA-50 | M | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations.
+cargoTp
+cargoTp
+ALPHA-50
+M
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations.
+origin | origin | ALPHA-50 | M | Refer Master Data Section
+origin
+origin
+ALPHA-50
+M
+Refer Master Data Section
+Shipping Inst No | shpInstructNo | INT-20 | C | Refer Master Data Section
+Shipping Inst No
+shpInstructNo
+INT-20
+C
+Refer Master Data Section
+Booking No. | bookNo | AN-20 | M | Mandatory if shipping line is “MSC”
+Booking No.
+bookNo
+AN-20
+M
+Mandatory if shipping line is “MSC”
+Mobile No. | mobileNo | INT-12 | M | If no value is sent, Default value can be picked from Mobile No. of the company
+Mobile No.
+mobileNo
+INT-12
+M
+If no value is sent, Default value can be picked from Mobile No. of the company
+CFS | cfsCode | AN-50 | C | Required in case when “Origin” is “Dock Destuff”Refer Master Data Section
+CFS
+cfsCode
+AN-50
+C
+Required in case when “Origin” is “Dock Destuff”Refer Master Data Section
+Issue to | issueTo | ALPHA- 50 | C | LOV: Shipper, CHA NameBlank for NSICT/NSIGT/CCTL/ICT
+Issue to
+issueTo
+ALPHA- 50
+C
+LOV: Shipper, CHA NameBlank for NSICT/NSIGT/CCTL/ICT
+Shipper Name | shipperNm | ANS-100 | M |  
+Shipper Name
+shipperNm
+ANS-100
+M
+ 
+Consignee Name | consigneeNm | ALPHA-35 | C | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Consignee Name
+consigneeNm
+ALPHA-35
+C
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Consignee Address | consigneeAddr | AN- 200 | C | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Consignee Address
+consigneeAddr
+AN- 200
+C
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Cargo Description | cargoDesc | AN- 250 | C | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Cargo Description
+cargoDesc
+AN- 250
+C
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Terminal Login ID | terminalLoginId | AN- 200 | C | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Terminal Login ID
+terminalLoginId
+AN- 200
+C
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations.
+Email ID (for notification) | email_Id | AN- 50 | O | All the Emails related to Form13 will be sent to these Email IDs. Comma separated Email ID’s, with no space before & after Email ID & comma
+Email ID (for notification)
+email_Id
+AN- 50
+O
+All the Emails related to Form13 will be sent to these Email IDs. Comma separated Email ID’s, with no space before & after Email ID & comma
+BL Number | bookCopyBlNo | AN-20 | C | Mandatory if shipping line is “Hapag Llyod” and cargo type is not “Reefer”
+BL Number
+bookCopyBlNo
+AN-20
+C
+Mandatory if shipping line is “Hapag Llyod” and cargo type is not “Reefer”
+cntnrStatus | cntnrStatus | ALPHA-50 | M | LOV : Full, Empty
+cntnrStatus
+cntnrStatus
+ALPHA-50
+M
+LOV : Full, Empty
+Form Type | formType | Dropdown, Type code list | M | LOV: F13,F11,CIOOn selection of type, all remaining field validations will be applied
+Form Type
+formType
+Dropdown, Type code list
+M
+LOV: F13,F11,CIOOn selection of type, all remaining field validations will be applied
+Early Gate In Check | IsEarlyGateIn | Y/N | C | Mundra > Form 13, Storage and line charges will be applicable.Optional.Only for CMA line
+Early Gate In Check
+IsEarlyGateIn
+Y/N
+C
+Mundra > Form 13, Storage and line charges will be applicable.Optional.Only for CMA line
+shipper code | NA | Auto populates | M |  
+shipper code
+NA
+Auto populates
+M
+ 
+shipper city | ShipperCity | AN-50 | C | F13, Tuticorin location specific mandatory field, terminal code - DBGT
+shipper city
+ShipperCity
+AN-50
+C
+F13, Tuticorin location specific mandatory field, terminal code - DBGT
+FF_CODE | FFCode | AN-50 | C | Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+FF_CODE
+FFCode
+AN-50
+C
+Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+IE_CODE | IECode | AN-50 | C | Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+IE_CODE
+IECode
+AN-50
+C
+Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+Notify_TO |   | Free Text | O | Add for all types
+Notify_TO
+ 
+Free Text
+O
+Add for all types
+CHA_CODE / CHA_No | CHACode | Free Text | C | Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+CHA_CODE / CHA_No
+CHACode
+Free Text
+C
+Required for Nhavasheva terminls, Conditional as CHA Code, FF Code OR IE code, one of this required > Checked from Master Code FF and CHA Codes are maintained
+ 
+Container Section- Request Message
+The below section can be multiple in each Form13 request, hence we will need to handle it accordingly in API. Eg: if there are 3 containers in the request, all these fields must repeat 3 times.
+
+[TABLE START]
+Field Name | API Field | Data Type and Length | M/O/C | Description/Additional Details
+Field Name
+API Field
+Data Type and Length
+M/O/C
+Description/Additional Details
+Container Request ID | cntnrReqId |   |   |  
+Container Request ID
+cntnrReqId
+ 
+ 
+ 
+Container No. | cntnrNo | AN- 20 | M | Container Format Check
+Container No.
+cntnrNo
+AN- 20
+M
+Container Format Check
+Size | cntnrSize | AN- 20 | M | Refer Master Data Section
+Size
+cntnrSize
+AN- 20
+M
+Refer Master Data Section
+ISO Code | iso | AN- 50 | M | Refer Master Data Section
+ISO Code
+iso
+AN- 50
+M
+Refer Master Data Section
+Agent Seal No. | agentSealNo | AN-20 | M |  
+Agent Seal No.
+agentSealNo
+AN-20
+M
+ 
+Custom Seal No. | customSealNo | AN-20 | M |  
+Custom Seal No.
+customSealNo
+AN-20
+M
+ 
+VGM(MT) | vgmWt | DEC- (3,2) | C | Required only when “VGM via ODeX” is “N”
+VGM(MT)
+vgmWt
+DEC- (3,2)
+C
+Required only when “VGM via ODeX” is “N”
+VGM via ODeX | vgmViaODeX | ALPHA | M | LOV: Y and NIf Y, then1. “VGM(MT)” can be Passed as Blank & ODeX will Pull VGM Wt.2.VGM – Annexure 1 att. is not required
+VGM via ODeX
+vgmViaODeX
+ALPHA
+M
+LOV: Y and NIf Y, then1. “VGM(MT)” can be Passed as Blank & ODeX will Pull VGM Wt.2.VGM – Annexure 1 att. is not required
+HSN Code |   | Free Text | C | Mandatory if type is F11 else blank
+HSN Code
+ 
+Free Text
+C
+Mandatory if type is F11 else blank
+Commodity Name |   | Autopopulate | C | Auto populates based on the Code of HSN code.Refer the HSN code Master.
+Commodity Name
+ 
+Autopopulate
+C
+Auto populates based on the Code of HSN code.Refer the HSN code Master.
+DO No. | doNo | AN-50 | O | Optional Value
+DO No.
+doNo
+AN-50
+O
+Optional Value
+Temp(in Celsius) | temp | DEC-(3,2) | C | Required when “cargo Type”=REF
+Temp(in Celsius)
+temp
+DEC-(3,2)
+C
+Required when “cargo Type”=REF
+Voltage | volt | DEC-(7,2) | O | Optional Value
+Voltage
+volt
+DEC-(7,2)
+O
+Optional Value
+IMO No. | imoNo1 | AN-50 | C | Required when “cargo Type”=HAZRefer Master Data
+IMO No.
+imoNo1
+AN-50
+C
+Required when “cargo Type”=HAZRefer Master Data
+UN No. | unNo1 | AN-50 | C | Required when “cargo Type”=HAZRefer Master Data
+UN No.
+unNo1
+AN-50
+C
+Required when “cargo Type”=HAZRefer Master Data
+IMO No. 1 | imoNo2 | AN-50 | O | Required when “cargo Type”=HAZRefer Master Data
+IMO No. 1
+imoNo2
+AN-50
+O
+Required when “cargo Type”=HAZRefer Master Data
+UN No. 1 | unNo2 | AN-50 | O | Required when “cargo Type”=HAZRefer Master Data
+UN No. 1
+unNo2
+AN-50
+O
+Required when “cargo Type”=HAZRefer Master Data
+IMO No. 2 | imoNo3 | AN-50 | O | Required when “cargo Type”=HAZRefer Master Data
+IMO No. 2
+imoNo3
+AN-50
+O
+Required when “cargo Type”=HAZRefer Master Data
+UN No. 2 | unNo3 | AN-50 | O | Required when “cargo Type”=HAZRefer Master Data
+UN No. 2
+unNo3
+AN-50
+O
+Required when “cargo Type”=HAZRefer Master Data
+IMO No. 3 | imoNo4 | AN-50 | O | Required when “cargo Type”=HAZ.Refer Master Data
+IMO No. 3
+imoNo4
+AN-50
+O
+Required when “cargo Type”=HAZ.Refer Master Data
+UN No. 3 | unNo4 | AN-50 | O | Required when “cargo Type”=HAZRefer Master Data
+UN No. 3
+unNo4
+AN-50
+O
+Required when “cargo Type”=HAZRefer Master Data
+Right Dimensions | rightDimensions | DEC-(3,2) | C | Required when “cargo Type”=ODC
+Right Dimensions
+rightDimensions
+DEC-(3,2)
+C
+Required when “cargo Type”=ODC
+Top Dimensions | topDimensions | DEC-(3,2) | C | Required when “cargo Type”=ODC
+Top Dimensions
+topDimensions
+DEC-(3,2)
+C
+Required when “cargo Type”=ODC
+Back Dimensions | backDimensions | DEC-(3,2) | C | Required when “cargo Type”=ODC
+Back Dimensions
+backDimensions
+DEC-(3,2)
+C
+Required when “cargo Type”=ODC
+Left Dimensions | leftDimensions | DEC-(3,2) | C | Required when “cargo Type”=ODC
+Left Dimensions
+leftDimensions
+DEC-(3,2)
+C
+Required when “cargo Type”=ODC
+Front Dimensions | frontDimensions | DEC-(3,2) | C | Required when “cargo Type”=ODC
+Front Dimensions
+frontDimensions
+DEC-(3,2)
+C
+Required when “cargo Type”=ODC
+ODC Units | odcUnits | DEC- (3,2) | C | Required when “cargo Type”=ODC
+ODC Units
+odcUnits
+DEC- (3,2)
+C
+Required when “cargo Type”=ODC
+Remarks (CHA) | chaRemarks | AN- 50 | O |  
+Remarks (CHA)
+chaRemarks
+AN- 50
+O
+ 
+Vehicle No. | vehicleNo | AN- 50 | C | Required for Mundra Location when “Origin” = Factory Stuffed OR ICD by Road.
+Vehicle No.
+vehicleNo
+AN- 50
+C
+Required for Mundra Location when “Origin” = Factory Stuffed OR ICD by Road.
+Driver Licence No. | driverLicNo | AN- 100 | C |  
+Driver Licence No.
+driverLicNo
+AN- 100
+C
+ 
+Driver Name | driverNm | ALPHA- 100 | M |  
+Driver Name
+driverNm
+ALPHA- 100
+M
+ 
+Haulier | haulier | ANS-100 | C |  
+Haulier
+haulier
+ANS-100
+C
+ 
+Special Stow | spclStow | ANS-100 | C | Required only for NSICT/NSIGT/BMCTRefer section 8.8 Master data to refer special stow values.
+Special Stow
+spclStow
+ANS-100
+C
+Required only for NSICT/NSIGT/BMCTRefer section 8.8 Master data to refer special stow values.
+Special Stow Remarks | spclStowRemark | AN-100 | C | Required only for NSICT/NSIGT/BMCT
+Special Stow Remarks
+spclStowRemark
+AN-100
+C
+Required only for NSICT/NSIGT/BMCT
+Status | status | AN-50 |   |  
+Status
+status
+AN-50
+ 
+ 
+SHIP_INSTRUCT_NO | Free Text | M | C | Mandatory for MSC Shipping line only
+SHIP_INSTRUCT_NO
+Free Text
+M
+C
+Mandatory for MSC Shipping line only
+Shipping Bill Section- Request Message
+
+[TABLE START]
+Field Name | API Field | Data Type and Length | M/O/C | Description/Additional Details
+Field Name
+API Field
+Data Type and Length
+M/O/C
+Description/Additional Details
+SB No | shipBillInvNo | AN-22 | M |  
+SB No
+shipBillInvNo
+AN-22
+M
+ 
+SB date | shipBillDt | DTM | M | YYYY-MM-DD HH:MM:SS
+SB date
+shipBillDt
+DTM
+M
+YYYY-MM-DD HH:MM:SS
+LEO No | leoNo |   |   O |  
+LEO No
+leoNo
+ 
+  O
+ 
+LEO Date | leoDt | DTM | C | YYYY-MM-DD HH:MM:SS
+LEO Date
+leoDt
+DTM
+C
+YYYY-MM-DD HH:MM:SS
+CHA Name | chaNm | AN- 50 | M | Auto pull from Logged in user. Payor will have to send either its Payor ID or a unique key, which will be shared by ODeX with the PayorBlank for NSICT/NSIGT/CCTL/ICT
+CHA Name
+chaNm
+AN- 50
+M
+Auto pull from Logged in user. Payor will have to send either its Payor ID or a unique key, which will be shared by ODeX with the PayorBlank for NSICT/NSIGT/CCTL/ICT
+CHA PAN | chaPan | AN-50 | M | 5 Digit Alphabets, 4 digit number and 1 digit Alphabet.
+CHA PAN
+chaPan
+AN-50
+M
+5 Digit Alphabets, 4 digit number and 1 digit Alphabet.
+Exporter Name | exporterNm | AN- 50 | M |  
+Exporter Name
+exporterNm
+AN- 50
+M
+ 
+Exporter IEC | exporterIec | AN-50 | M | 10 Digit Numeric
+Exporter IEC
+exporterIec
+AN-50
+M
+10 Digit Numeric
+NO of packages | noOfPkg |   | M |  
+NO of packages
+noOfPkg
+ 
+M
+ 
+Attachment Section- Request Message
+
+[TABLE START]
+Field Name | API Field | Data Type and | M/O/C | Description/Additional Details
+Field Name
+API Field
+Data Type and
+M/O/C
+Description/Additional Details
+  |   | Length |   |  
+ 
+ 
+Length
+ 
+ 
+Attachment Request ID | attReqID | - |   | Required for Form13 Modify API,  Form13 Cancellation API
+Attachment Request ID
+attReqID
+-
+ 
+Required for Form13 Modify API,  Form13 Cancellation API
+Attachment Name | attNm | 500 | M | e.g. : abc.pdfOnly pdf file is allowed
+Attachment Name
+attNm
+500
+M
+e.g. : abc.pdfOnly pdf file is allowed
+Attachment Data | attData | - | M | Attachment to be converted to byte array. File Byte Array Length Should not exceed '5242880'
+Attachment Data
+attData
+-
+M
+Attachment to be converted to byte array. File Byte Array Length Should not exceed '5242880'
+Attachment Title | attTitle | 200 | M | Attachment Title. Optional Container No. can be sent in case of VGM-Annexure 1 attachment
+Attachment Title
+attTitle
+200
+M
+Attachment Title. Optional Container No. can be sent in case of VGM-Annexure 1 attachment
+ 
+Note: Total Attachment size should not exceed 4MB.
+Request Sample:
+5.3.1Attachment Titles
+
+[TABLE START]
+CODE_ID | CODE_DESC | IS_REQUIRED | M/O/C | Description/Additional Details
+CODE_ID
+CODE_DESC
+IS_REQUIRED
+M/O/C
+Description/Additional Details
+BOOKING_COPY | Booking Copy | Y | M | Mandatory For All Locations
+BOOKING_COPY
+Booking Copy
+Y
+M
+Mandatory For All Locations
+BOOK_CNFRM_CPY | Booking Confirmation Copy | Y | C | Mandatory For Chennai,Kattupalli,Ennore.Cargo Type: HAZ, ODC, GEN, ONION, REF.
+BOOK_CNFRM_CPY
+Booking Confirmation Copy
+Y
+C
+Mandatory For Chennai,Kattupalli,Ennore.Cargo Type: HAZ, ODC, GEN, ONION, REF.
+BOOKING_CONF_COPY | Booking confirmation copy | Y | C | Mandatory for Vishakapatnam.Delivery Type: DOCK,FACTOR.Origin: ON_WHELL. Type: E_TANK 
+BOOKING_CONF_COPY
+Booking confirmation copy
+Y
+C
+Mandatory for Vishakapatnam.Delivery Type: DOCK,FACTOR.Origin: ON_WHELL. Type: E_TANK 
+CHK_LIST | Check List | Y | C | Mandatory For Chennai, Kattupalli,Ennore.Cargo Type: HAZ, ODC, GEN, ONION, REF.
+CHK_LIST
+Check List
+Y
+C
+Mandatory For Chennai, Kattupalli,Ennore.Cargo Type: HAZ, ODC, GEN, ONION, REF.
+CLN_CRTFCT | Cleaning certificate | Y | C | Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Cargo type - HAZ. Container - Empty
+CLN_CRTFCT
+Cleaning certificate
+Y
+C
+Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Cargo type - HAZ. Container - Empty
+CNTNR_LOAD_PLAN | Container Load Plan | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore,Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: DOCK STUFF
+CNTNR_LOAD_PLAN
+Container Load Plan
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore,Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: DOCK STUFF
+CUSTOMS_EXAM_REPORT | Customs Examination Report | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: ON WHEEL.
+CUSTOMS_EXAM_REPORT
+Customs Examination Report
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: ON WHEEL.
+DG_DCLRTION | DG Declaration | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kattupalli, Kandla.Cargo: HAZ ODC
+DG_DCLRTION
+DG Declaration
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kattupalli, Kandla.Cargo: HAZ ODC
+DLVRY_ORDER | Delivery Order | Y | C | Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff, Dock Stuff, Empty tank.
+DLVRY_ORDER
+Delivery Order
+Y
+C
+Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff, Dock Stuff, Empty tank.
+FIRE_OFC_CRTFCT | Fire Office Certificate | Y | C | Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ ODC
+FIRE_OFC_CRTFCT
+Fire Office Certificate
+Y
+C
+Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ ODC
+HAZ_DG_DECLARATION | HAZ DG DECLARATION | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kattupalli, Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+HAZ_DG_DECLARATION
+HAZ DG DECLARATION
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kattupalli, Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+INVOICE | Invoice | Y | C | Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam,Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff, Empty tank.
+INVOICE
+Invoice
+Y
+C
+Mandatory For Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai, Vishakapatnam,Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff, Empty tank.
+LASHING_CERTIFICATE | LASHING CERTIFICATE | Y | C | Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC & HAZ
+LASHING_CERTIFICATE
+LASHING CERTIFICATE
+Y
+C
+Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC & HAZ
+MMD_APPRVL | MMD Approval | Y | C | Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ OCD
+MMD_APPRVL
+MMD Approval
+Y
+C
+Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ OCD
+MSDS | MSDS | Y | C | Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+MSDS
+MSDS
+Y
+C
+Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+MSDS_SHEET | MSDS Sheet | Y | C | Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ & OCD
+MSDS_SHEET
+MSDS Sheet
+Y
+C
+Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ & OCD
+ODC_SURVEYOR_REPORT_PHOTOS | ODC SURVEYOR REPORT + PHOTOS | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+ODC_SURVEYOR_REPORT_PHOTOS
+ODC SURVEYOR REPORT + PHOTOS
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Cargo: ODC HAZ
+PACK_LIST | Packing List | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff
+PACK_LIST
+Packing List
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Factory Stuff
+PRE_EGM | Pre-EGM | N | O | Chennai
+PRE_EGM
+Pre-EGM
+N
+O
+Chennai
+SHIP_BILL | Shipping Bill | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+SHIP_BILL
+Shipping Bill
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin, Vishakapatnam, Haldia, Krishnapatnam, Kandla.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+SHIPPING_INSTRUCTION | Shipping instruction (SI) | Y | C | Mandatory for Vishakapatnam.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+SHIPPING_INSTRUCTION
+Shipping instruction (SI)
+Y
+C
+Mandatory for Vishakapatnam.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+SURVY_RPRT | Survey Report | Y | C | Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ & OCD
+SURVY_RPRT
+Survey Report
+Y
+C
+Mandatory For Chennai, Kattupalli, Ennore.Cargo: HAZ & OCD
+VGM_ANXR1 | VGM-Annexure 1 | Y | C | Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata,Pipavav, Hazira, Marmagoa, Cochin, Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+VGM_ANXR1
+VGM-Annexure 1
+Y
+C
+Mandatory for Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata,Pipavav, Hazira, Marmagoa, Cochin, Chennai,Vishakapatnam, Haldia, Krishnapatnam, Kattupalli,Paradip, Kandla, Kakinada, Ennore.Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+5.3.2Response Message
+Header Section:
+
+[TABLE START]
+S.N | Field Name | API Field | Description/Additional Details | 
+S.N
+Field Name
+API Field
+Description/Additional Details
+1 | ODeX Ref No |  odexRefNo | Reference number for the submitted request. | 
+1
+ODeX Ref No
+ odexRefNo
+Reference number for the submitted request.
+2 | Request ID |  reqId | request Identification Number | 
+2
+Request ID
+ reqId
+request Identification Number
+3 | Booking No. |  bookNo |   | 
+3
+Booking No.
+ bookNo
+ 
+Container Section:
+
+[TABLE START]
+S.N | Field Name | API Field | Description/Additional Details | 
+S.N
+Field Name
+API Field
+Description/Additional Details
+1 | Container Request ID |  cntnrReqId |   | 
+1
+Container Request ID
+ cntnrReqId
+ 
+2 | Container No. |  cntnrNo |   | 
+2
+Container No.
+ cntnrNo
+ 
+3 | Pin No. |  pinNo |   | 
+3
+Pin No.
+ pinNo
+ 
+4 | Status |  status |   | 
+4
+Status
+ status
+ 
+5 | Liner Remarks |  linerRemarks |   | 
+5
+Liner Remarks
+ linerRemarks
+ 
+6 | SI check |   | Mandatory if type is F13. If SI ispassed,then show “Y” else “N” | 
+6
+SI check
+ 
+Mandatory if type is F13. If SI ispassed,then show “Y” else “N”
+7 | Attachment Request ID | attReqId |   | 
+7
+Attachment Request ID
+attReqId
+ 
+8 | Attachment Title |  attTitle |   | 
+8
+Attachment Title
+ attTitle
+ 
+9 | Attachment Name |  attNm |   | 
+9
+Attachment Name
+ attNm
+ 
+10 | Attachment Data |  attData |   | 
+10
+Attachment Data
+ attData
+ 
+11 | Response | responseMessage | Refer Error Message section in Master Data for list of error messages | 
+11
+Response
+responseMessage
+Refer Error Message section in Master Data for list of error messages
+Response Sample:
+5.4 Get Form 13 Status API
+Message Header
+
+[TABLE START]
+API Type | RESTful API
+API Type
+RESTful API
+EDI Type | JSON
+EDI Type
+JSON
+Method | POST
+Method
+POST
+URL | https://staging.odexglobal.com /RS/iForm13Service/json/getForm13ReqInfo
+URL
+https://staging.odexglobal.com /RS/iForm13Service/json/getForm13ReqInfo
+Hosted By | ODeX
+Hosted By
+ODeX
+Requested By | Client
+Requested By
+Client
+Request Message:
+Header Section
+
+[TABLE START]
+S.N | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+S.N
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | ODeX Ref No | odexRefNo | 50 |  | 
+1
+ODeX Ref No
+odexRefNo
+50
+2 | Request ID | reqId | - |  | 
+2
+Request ID
+reqId
+-
+3 | Booking No. | bookNo | 20 |  | 
+3
+Booking No.
+bookNo
+20
+4 | Container List | cntrList | - |  | 
+4
+Container List
+cntrList
+-
+5 | CHA Code | pyrCode |  |  | 
+5
+CHA Code
+pyrCode
+Container Section
+
+[TABLE START]
+S.N | Field Name | API Field | Data Type andLength | M/O/C | Description/Additional Details
+S.N
+Field Name
+API Field
+Data Type and
+Length
+M/O/C
+Description/Additional Details
+1 | Container Request ID | cntnrReqId | - |  | 
+1
+Container Request ID
+cntnrReqId
+-
+2 | Container No. | cntnrNo | 20 |  | 
+2
+Container No.
+cntnrNo
+20
+Request Sample
+Response Message
+Header Section
+
+[TABLE START]
+S.N | Field Name | API Field | Description/Additional Details | 
+S.N
+Field Name
+API Field
+Description/Additional Details
+1 | ODeX Ref No |  odexRefNo |   | 
+1
+ODeX Ref No
+ odexRefNo
+ 
+2 | Request ID |  reqId |   | 
+2
+Request ID
+ reqId
+ 
+3 | Booking No. |  bookNo |   | 
+3
+Booking No.
+ bookNo
+ 
+4 | Response | responseMessage | Refer Error Message section in Master Data for list of error messages | 
+4
+Response
+responseMessage
+Refer Error Message section in Master Data for list of error messages
+Container Section
+
+[TABLE START]
+S.N | Field Name | API Field | Description/Additional Details | 
+S.N
+Field Name
+API Field
+Description/Additional Details
+1 | Container Request ID |  cntnrReqId |   | 
+1
+Container Request ID
+ cntnrReqId
+ 
+2 | Container No. |  cntnrNo |   | 
+2
+Container No.
+ cntnrNo
+ 
+3 | Pin No. |  pinNo |   | 
+3
+Pin No.
+ pinNo
+ 
+4 | Status |  status |   | 
+4
+Status
+ status
+ 
+5 | Liner Remarks |  linerRemarks |   | 
+5
+Liner Remarks
+ linerRemarks
+ 
+6 | Attachment Request ID | attReqId | This field will be blank | 
+6
+Attachment Request ID
+attReqId
+This field will be blank
+7 | Attachment Title |  attTitle |  If status is “confirmed” then according to type attachment should be provided. | 
+7
+Attachment Title
+ attTitle
+ If status is “confirmed” then according to type attachment should be provided.
+8 | Attachment Name |  attNm |   | 
+8
+Attachment Name
+ attNm
+ 
+9 | Attachment Data |  attData |   | 
+9
+Attachment Data
+ attData
+ 
+10 | Hash Key | hashKey | checksumKey to be generated using following logicstr = bookNo.+cntnrNo1+ status1 + cntnrNo2+ status2+…+secret key. Use crc32 hash function on above string and use the value | 
+10
+Hash Key
+hashKey
+checksumKey to be generated using following logicstr = bookNo.+cntnrNo1+ status1 + cntnrNo2+ status2+…+secret key. Use crc32 hash function on above string and use the value
+Response Sample
+5.5Gate Pass - CancellationAPI
+The Form 13 Cancellation API enables registered users to withdraw a previously submitted Gate Pass request for both import and export operations. This functionality is essential in scenarios where the original submission contains incorrect information, operational plans change, or the request was submitted in error or duplicate. Cancellations can be initiated prior to gate-in, provided the Form 13 is in an active state such as ‘Verified’or ‘Confirmed’.
+In cases where the gate pass has already been confirmed, a structured Request for Cancellation (RFC) workflow is followed, requiring approval from the relevant Liner or platform authority. The cancellation process ensures data integrity, prevents unauthorized terminal access, and facilitates resubmission of corrected Form 13 details where necessary.
+
+[TABLE START]
+Status | Description
+Status
+Description
+Requested | The Form 13 request has been submitted by the Payor but is yet to be verified or acted upon.
+Requested
+The Form 13 request has been submitted by the Payor but is yet to be verified or acted upon.
+Verified | The Form 13 request has been validated for correctness and meets all required criteria.
+Verified
+The Form 13 request has been validated for correctness and meets all required criteria.
+Confirmed | Form 13 has been formally approved by the Liner or the system and is ready for operational use.
+Confirmed
+Form 13 has been formally approved by the Liner or the system and is ready for operational use.
+Rejected | The Form 13 request has been rejected due to invalid data, non-compliance, or operational reasons.
+Rejected
+The Form 13 request has been rejected due to invalid data, non-compliance, or operational reasons.
+Request for Cancellation Requested | A cancellation request has been initiated after confirmation, pending approval.
+Request for Cancellation Requested
+A cancellation request has been initiated after confirmation, pending approval.
+Request for Cancellation Approved | The cancellation request has been approved, and the Form 13 is officially voided.
+Request for Cancellation Approved
+The cancellation request has been approved, and the Form 13 is officially voided.
+Request for Cancellation Rejected | The cancellation request has been denied, andForm13 remains valid.
+Request for Cancellation Rejected
+The cancellation request has been denied, andForm13 remains valid.
+Re-requested | A new Form 13 request has been submitted after a previous cancellation or rejection.
+Re-requested
+A new Form 13 request has been submitted after a previous cancellation or rejection.
+Message Header:
+
+[TABLE START]
+API Type | RESTful API
+API Type
+RESTful API
+EDI Type | JSON
+EDI Type
+JSON
+Method | POST
+Method
+POST
+URL | https://staging.odexglobal.com/DEMO/RS/iForm13Service/json/requestF13CancelPyr
+URL
+https://staging.odexglobal.com/DEMO/RS/iForm13Service/json/requestF13CancelPyr
+Hosted By | ODeX
+Hosted By
+ODeX
+Requested By | Client
+Requested By
+Client
+Request:
+Response:
+6. MASTER DATA
+
+[TABLE START]
+S.N | Field | Value to be passed in API | Description/Additional Details
+S.N
+Field
+Value to be passed in API
+Description/Additional Details
+1 | cntnrSize | 1X20 | 20Ft
+1
+cntnrSize
+1X20
+20Ft
+ |   | 1X40 | 40Ft
+ 
+1X40
+40Ft
+ |   | 1X45 | 45Ft
+ 
+1X45
+45Ft
+2 | cargoTp | HAZ | HAZ
+2
+cargoTp
+HAZ
+HAZ
+ |   | GEN | GEN
+ 
+GEN
+GEN
+ |   | REF | REF
+ 
+REF
+REF
+ |   | ONION | ONION
+ 
+ONION
+ONION
+ |   | ODC | ODC
+ 
+ODC
+ODC
+ |  | ODC(HAZ) | ODC (HAZ)
+ODC(HAZ)
+ODC (HAZ)
+ |  | FLT | Flexi Tank
+FLT
+Flexi Tank
+ |  | REF(HAZ) | REF(HAZ)
+REF(HAZ)
+REF(HAZ)
+ |  | FLT(HAZ) | Hazardous Flexi Tank
+FLT(HAZ)
+Hazardous Flexi Tank
+ |  | PERISH | Perish
+PERISH
+Perish
+3 | Origin | B | BUFFER
+3
+Origin
+B
+BUFFER
+ |  | C | DOCK STUFFED
+C
+DOCK STUFFED
+ |  | F | FACTORY STUFFED
+F
+FACTORY STUFFED
+ |  | R | ICD BY ROAD
+R
+ICD BY ROAD
+ |  | W | ON WHEEL CONTAINER
+W
+ON WHEEL CONTAINER
+ |  | F_CFS | Factory Stuffed Via CFS
+F_CFS
+Factory Stuffed Via CFS
+ |  | E_TANK | Empty Tank
+E_TANK
+Empty Tank
+4 | odexRefNo |   | Unique No. for each request. This will be shared by ZODeX for each request inthe Acknowledgementfile.
+4
+odexRefNo
+ 
+Unique No. for each request. This will be shared by ZODeX for each request inthe Acknowledgementfile.
+5 | PayorId |   | Unique for each Payor. Will be shared separately for test and production
+5
+PayorId
+ 
+Unique for each Payor. Will be shared separately for test and production
+6 | secretKey |   | Key used in encrypting the message. Unique for each shipper. Will be shared separately for test and production.
+6
+secretKey
+ 
+Key used in encrypting the message. Unique for each shipper. Will be shared separately for test and production.
+7 | ImoNo1 | 0 | Hazardous
+7
+ImoNo1
+0
+Hazardous
+ |  | 1.1 | Explosives
+1.1
+Explosives
+ |  | 1.2 | Explosives
+1.2
+Explosives
+ |  | 1.3 | Explosives
+1.3
+Explosives
+ |  | 1.4 | Explosives
+1.4
+Explosives
+ |  | 1.5 | Explosives
+1.5
+Explosives
+ |  | 2.1 | Inflammable gases
+2.1
+Inflammable gases
+ |  | 2.2 | Non-flammable gases
+2.2
+Non-flammable gases
+ |  | 2.3 | Poisonous gases
+2.3
+Poisonous gases
+ |  | 3 | Flammable liquids
+3
+Flammable liquids
+ |  | 3.1 | Inflammable liquids
+3.1
+Inflammable liquids
+ |  | 3.2 | Inflammable liquids
+3.2
+Inflammable liquids
+ |  | 3.3 | Inflammable liquids
+3.3
+Inflammable liquids
+ |  | 4.1 | Inflammable solids
+4.1
+Inflammable solids
+ |  | 4.2 | Spontaneously combustible
+4.2
+Spontaneously combustible
+ |  | 4.3 | Dangerous when wet
+4.3
+Dangerous when wet
+ |  | 5.1 | Oxidizing substances
+5.1
+Oxidizing substances
+ |  | 5.2 | Organic peroxides
+5.2
+Organic peroxides
+ |  | 6.1 | Poisonous(toxic) substances
+6.1
+Poisonous(toxic) substances
+ |  | 6.2 | Infectious substances
+6.2
+Infectious substances
+ |  | 7 | Radioactive substances
+7
+Radioactive substances
+ |  | 8 | Corrosives
+8
+Corrosives
+ |  | 8.1 | Hazardous
+8.1
+Hazardous
+ |  | 9 | Miscellaneous dangerous substances
+9
+Miscellaneous dangerous substances
+ |  | 9.O | Hazardous
+9.O
+Hazardous
+ |  | ONI | Onion
+ONI
+Onion
+8 | Special Stow |  | 
+8
+Special Stow
+ |  | UN |    Under deck stowage
+UN
+   Under deck stowage
+ |  | DO |    Open door
+DO
+   Open door
+ |  | AD |    ABOVE DECK
+AD
+   ABOVE DECK
+ |  | BD |    BELOW DECK
+BD
+   BELOW DECK
+ |  | AF |    ABOVE FORE
+AF
+   ABOVE FORE
+ |  | BF |    BELOW FORE
+BF
+   BELOW FORE
+ |  | AA |    ABOVE AFT
+AA
+   ABOVE AFT
+ |  | BA |    BELOW AFT
+BA
+   BELOW AFT
+ |  | WS |    WINTER STORAGE
+WS
+   WINTER STORAGE
+ |  | AH |    Away FROM HEAT /BOILER
+AH
+   Away FROM HEAT /BOILER
+ |  | AS |    ABOVE DECK AWAY FROM HEAT /BOILER / SUNLIGHT
+AS
+   ABOVE DECK AWAY FROM HEAT /BOILER / SUNLIGHT
+ |  | BH |    BELOW DECK AWAY FROM HEAT /BOILER / SUNLIGHT
+BH
+   BELOW DECK AWAY FROM HEAT /BOILER / SUNLIGHT
+ |  | AT |    ABOVE  DECK TOP TIER STOWAGE
+AT
+   ABOVE  DECK TOP TIER STOWAGE
+ |  | BT |    BELOW  DECK TOP TIER STOWAGE
+BT
+   BELOW  DECK TOP TIER STOWAGE
+ |  | BW |    BELOW WATER LINE STOWAGE
+BW
+   BELOW WATER LINE STOWAGE
+ |  | OD |    ON DECK FOR ONE DOOR OPEN
+OD
+   ON DECK FOR ONE DOOR OPEN
+6.1 Liner Ids BNF Code- Prod data
+A screenshot of a computer
+
+AI-generated content may be incorrect.
+Note: Liner ID will be provided separately for test area.
+6.2 Port Ids (locId)
+
+[TABLE START]
+S.N | Location | Code
+S.N
+Location
+Code
+1 | NhavaSheva | INNSA1
+1
+NhavaSheva
+INNSA1
+2 | Mundra | INMUN1
+2
+Mundra
+INMUN1
+3 | Mangalore | INNML1
+3
+Mangalore
+INNML1
+4 | Tuticorin | INTUT1
+4
+Tuticorin
+INTUT1
+5 | Kolkata | INCCU1
+5
+Kolkata
+INCCU1
+6 | Pipavav | INPAV1
+6
+Pipavav
+INPAV1
+7 | Hazira | INHZA1
+7
+Hazira
+INHZA1
+8 | Marmagoa | INMRM1
+8
+Marmagoa
+INMRM1
+9 | Cochin | INCOK1
+9
+Cochin
+INCOK1
+10 | Chennai | INMAA1
+10
+Chennai
+INMAA1
+11 | Vishakapatnam | INVTZ1
+11
+Vishakapatnam
+INVTZ1
+12 | Haldia | INHAL1
+12
+Haldia
+INHAL1
+13 | Krishnapatnam | INKRI1
+13
+Krishnapatnam
+INKRI1
+14 | Kattupalli | INKAT1
+14
+Kattupalli
+INKAT1
+15 | Paradip | INPRT1
+15
+Paradip
+INPRT1
+16 | Kandla | INIXY1
+16
+Kandla
+INIXY1
+17 | Kakinada | INKAK1
+17
+Kakinada
+INKAK1
+6.3 CFS (cfscode)
+A screenshot of a computer
+
+AI-generated content may be incorrect.
+6.4 ISO Code (iso)
+6.5 Location – POD(pod)
+6.6 CFS code master
+6.7 terminal login id (Mandatory for Adani terminals)
+7. Errors and Validations
+7.1List of Schematic Errors
+
+[TABLE START]
+S.N | Error Messages | Description
+S.N
+Error Messages
+Description
+1 | Shipping Line is required | 
+1
+Shipping Line is required
+2 | Location is required | 
+2
+Location is required
+3 | VIA No. is required | We will map text of Vessel-VIA with the ID in our system. If the Vessel-VIA text mismatches In our system, we will throw error Message in response as ”Incorrect Vessel”
+3
+VIA No. is required
+We will map text of Vessel-VIA with the ID in our system. If the Vessel-VIA text mismatches In our system, we will throw error Message in response as ”Incorrect Vessel”
+4 | Vessel Name is required | 
+4
+Vessel Name is required
+5 | Form Type is required | 
+5
+Form Type is required
+6 | Location(POD) is required | 
+6
+Location(POD) is required
+7 | FPOD is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations.
+7
+FPOD is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations.
+8 | Cargo Type is required | 
+8
+Cargo Type is required
+9 | Origin is required | 
+9
+Origin is required
+10 | Shipping Inst No is required | Mandatory for MSC
+10
+Shipping Inst No is required
+Mandatory for MSC
+11 | Booking No. is required | 
+11
+Booking No. is required
+12 | BL no is required | Mandatory if type is F13 and shipping line is Hapag (N/A for Bollore payor) and cargo type is “Reefer”
+12
+BL no is required
+Mandatory if type is F13 and shipping line is Hapag (N/A for Bollore payor) and cargo type is “Reefer”
+13 | Shipping Instructions are not submitted | If SI check fails
+13
+Shipping Instructions are not submitted
+If SI check fails
+14 | Invalid Booking No. | 
+14
+Invalid Booking No.
+15 | CFS is required | Required in case when “Origin” is “Dock Destuff". Refer Master Data Section
+15
+CFS is required
+Required in case when “Origin” is “Dock Destuff". Refer Master Data Section
+16 | Issue to is required | 
+16
+Issue to is required
+17 | Shipper Name is required | 
+17
+Shipper Name is required
+18 | CHA No. is required | 
+18
+CHA No. is required
+19 | CHA Name is required | Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+19
+CHA Name is required
+Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+20 | CHA Code is required | If either of any value (CHA Code, IEC Code, FF Code is blank)
+20
+CHA Code is required
+If either of any value (CHA Code, IEC Code, FF Code is blank)
+21 | IEC Code is required | If either of any value (CHA Code, IEC Code, FF Code is blank)
+21
+IEC Code is required
+If either of any value (CHA Code, IEC Code, FF Code is blank)
+22 | FF Code is requried | If either of any value (CHA Code, IEC Code, FF Code is blank)
+22
+FF Code is requried
+If either of any value (CHA Code, IEC Code, FF Code is blank)
+23 | Consignee Name is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+23
+Consignee Name is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+24 | Consignee Address is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+24
+Consignee Address is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+25 | Cargo Description is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+25
+Cargo Description is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+26 | Terminal Login ID is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+26
+Terminal Login ID is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore, Mundra Locations
+27 | Container No. is required | 
+27
+Container No. is required
+28 | Size is required | 
+28
+Size is required
+29 | ISO Code is required | 
+29
+ISO Code is required
+30 | Agent Seal No. is required | 
+30
+Agent Seal No. is required
+31 | Custom Seal No. is required | 
+31
+Custom Seal No. is required
+32 | VGM(MT) is required | 
+32
+VGM(MT) is required
+33 | SB No. or Inv No. is required | 
+33
+SB No. or Inv No. is required
+34 | No. of Package is required | Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations only
+34
+No. of Package is required
+Required for Chennai, Paradip, Kattupalli, Kolkata, Ennore Locations only
+35 | Temp(in Celsius) is required | Required when “cargo Type”=REF
+35
+Temp(in Celsius) is required
+Required when “cargo Type”=REF
+36 | IMO No. is required | Required when “cargo Type”=HAZ
+36
+IMO No. is required
+Required when “cargo Type”=HAZ
+37 | UN No. is required | Required when “cargo Type”=HAZ
+37
+UN No. is required
+Required when “cargo Type”=HAZ
+40 | Right Dimensions is required | Required when “cargo Type”=ODC
+40
+Right Dimensions is required
+Required when “cargo Type”=ODC
+41 | Top Dimensions is required | Required when “cargo Type”=ODC
+41
+Top Dimensions is required
+Required when “cargo Type”=ODC
+42 | Back Dimensions is required | Required when “cargo Type”=ODC
+42
+Back Dimensions is required
+Required when “cargo Type”=ODC
+43 | Left Dimensions is required | Required when “cargo Type”=ODC
+43
+Left Dimensions is required
+Required when “cargo Type”=ODC
+44 | Front Dimensions is required | Required when “cargo Type”=ODC
+44
+Front Dimensions is required
+Required when “cargo Type”=ODC
+45 | ODC Units is required | Required when “cargo Type”=ODC
+45
+ODC Units is required
+Required when “cargo Type”=ODC
+46 | ODeX Ref. No. is required | ODeX Reference Number is generated for each weighbridge
+46
+ODeX Ref. No. is required
+ODeX Reference Number is generated for each weighbridge
+47 | hashkey is required | Required only if additional security is desired
+47
+hashkey is required
+Required only if additional security is desired
+48 | hashkey is incorrect | In case hashkey logic is not correct
+48
+hashkey is incorrect
+In case hashkey logic is not correct
+49 | Invalid Container No. | Incorrect Container No. format
+49
+Invalid Container No.
+Incorrect Container No. format
+Sample JSON:
+7.2List of Business Validations
+Header Section:
+
+[TABLE START]
+API Tags | Cause | Errors | Remarks | Corrective Measures
+API Tags
+Cause
+Errors
+Remarks
+Corrective Measures
+odexRefNo | 1) In case the initial reponse file's reference number and new file's reference number are different.2) In case the shared file has the reference number and the request for the same is already verified/confirmed by the liner | 1) Error (1000) - ODeX Reference number mismatch.2) Error (1001) - ODeX Reference number is already verified/confirmed by the line. | *Note: In case the tags has all the causes rather than anyone, system should display all the errors* | 1) The ODeX reference number should match with the initial response file's reference number.2) Kindly proceed with the amendment request by logging into ODeX (UI) in case of any data updates.
+odexRefNo
+1) In case the initial reponse file's reference number and new file's reference number are different.2) In case the shared file has the reference number and the request for the same is already verified/confirmed by the liner
+1) Error (1000) - ODeX Reference number mismatch.2) Error (1001) - ODeX Reference number is already verified/confirmed by the line.
+*Note: In case the tags has all the causes rather than anyone, system should display all the errors*
+1) The ODeX reference number should match with the initial response file's reference number.2) Kindly proceed with the amendment request by logging into ODeX (UI) in case of any data updates.
+PyrCode |  |  |  | 
+PyrCode
+bnfCode | User input data does not match with our available master data | Error (1002) - Shipping Line code is invalid. |  | Shipping Line code should match with the master data values.
+bnfCode
+User input data does not match with our available master data
+Error (1002) - Shipping Line code is invalid.
+Shipping Line code should match with the master data values.
+locId | User input data does not match with our available master data | Error (1003) - Location code is invalid. |  | Location code should match with the master data values.
+locId
+User input data does not match with our available master data
+Error (1003) - Location code is invalid.
+Location code should match with the master data values.
+vesselNm | 1) User input value does not match with the available vessel name.2) User input vessel name has cut-off. | 1) Error (1004) - vessel name is invalid.2) Error (1005) - Mentioned vessel name has been cut-off. |  | 1) Vessel name should match with the actual vessel.2) Kindly contact shipping line.
+vesselNm
+1) User input value does not match with the available vessel name.2) User input vessel name has cut-off.
+1) Error (1004) - vessel name is invalid.2) Error (1005) - Mentioned vessel name has been cut-off.
+1) Vessel name should match with the actual vessel.2) Kindly contact shipping line.
+viaNo | User input data does not match with the via no defined for the vessel. | Error (1006) - Via no is not applicable for the used vessel. |  | Please enter the correct Via no.
+viaNo
+User input data does not match with the via no defined for the vessel.
+Error (1006) - Via no is not applicable for the used vessel.
+Please enter the correct Via no.
+terminalCode | 1) User input value does not match with the available master data.2) User input data does not match with the Terminal code defined for the vessel. | 1) Error (1007) - Terminal code is invalid.2) Error (1008) - Terminal code is not applicable for the used vessel. |  | 1) Terminal code should match with the master data value.2) Please enter the correct Terminal code for the used vessel.
+terminalCode
+1) User input value does not match with the available master data.2) User input data does not match with the Terminal code defined for the vessel.
+1) Error (1007) - Terminal code is invalid.2) Error (1008) - Terminal code is not applicable for the used vessel.
+1) Terminal code should match with the master data value.2) Please enter the correct Terminal code for the used vessel.
+service | 1) User input value does not match with the available master data.2) User input data does not match with the Service defined for the vessel. | 1) Error (1009) - Service code is invalid.2) Error (1010) - Service code is not applicable for the used vessel. |  | 1) Service code should match the master data value.2) Please enter the correct Service code for the used vessel.
+service
+1) User input value does not match with the available master data.2) User input data does not match with the Service defined for the vessel.
+1) Error (1009) - Service code is invalid.2) Error (1010) - Service code is not applicable for the used vessel.
+1) Service code should match the master data value.2) Please enter the correct Service code for the used vessel.
+pod | 1) User input value does not match with the available master data.2) User input data does not match with the POD defined for the vessel/Service. | 1) Error (1011) - POD is invalid.2) Error (1012) - POD is not applicable for the used vessel/Service. |  | 1) POD value should match with the master data value.2) Please enter the correct POD value for the used vessel.
+pod
+1) User input value does not match with the available master data.2) User input data does not match with the POD defined for the vessel/Service.
+1) Error (1011) - POD is invalid.2) Error (1012) - POD is not applicable for the used vessel/Service.
+1) POD value should match with the master data value.2) Please enter the correct POD value for the used vessel.
+fpod | User input data does not match with our available master data | Error (1013) - FPOD is invalid. |  | Please enter the correct FPOD value for the used vessel.
+fpod
+User input data does not match with our available master data
+Error (1013) - FPOD is invalid.
+Please enter the correct FPOD value for the used vessel.
+cargoTp | User input data does not match with our available master data | Error (1014) - Cargo Type is invalid. |  | Please enter the correct Cargo type for the used vessel.
+cargoTp
+User input data does not match with our available master data
+Error (1014) - Cargo Type is invalid.
+Please enter the correct Cargo type for the used vessel.
+origin | User input data does not match with our available master data | Error (1015) - Origin is invalid. |  | Please enter the correct Origin value for the used vessel.
+origin
+User input data does not match with our available master data
+Error (1015) - Origin is invalid.
+Please enter the correct Origin value for the used vessel.
+mobileNo | User input data Exceed 10 digits. | Error (1016) - Mobile number exceeds 10 digits |  | 
+mobileNo
+User input data Exceed 10 digits.
+Error (1016) - Mobile number exceeds 10 digits
+cfsCode | User input data does not match with the CFS code master. | Error (1017) - CFS code is invalid. | *Note: Validate only when Origin is Dock Stuff. * | CFS code should match the master data value.
+cfsCode
+User input data does not match with the CFS code master.
+Error (1017) - CFS code is invalid.
+*Note: Validate only when Origin is Dock Stuff. *
+CFS code should match the master data value.
+issueTo | User input data does not match with the LOV values. | Error (1018): issueTo is invalid. |  | Please enter the correct issueTo value.
+issueTo
+User input data does not match with the LOV values.
+Error (1018): issueTo is invalid.
+Please enter the correct issueTo value.
+cntnrStatus | User input data does not match with the available options | Error (1019) - Container status is invalid. |  | Please enter the correct container status for the used vessel.
+cntnrStatus
+User input data does not match with the available options
+Error (1019) - Container status is invalid.
+Please enter the correct container status for the used vessel.
+formType | User input data is different than available form type options | Error (1020) - Form Type invalid. |  | Please enter the correct Form Type for the used vessel.
+formType
+User input data is different than available form type options
+Error (1020) - Form Type invalid.
+Please enter the correct Form Type for the used vessel.
+IsEarlyGateIn | (By default, the value will be 'No'. If 'Yes', then the system checks the config --> Form 13 beneficiary. "Early GateIn Req." "Auto Approve GateIn Req". The column will be Yes. If this config is disabled for Shipping line and location, then error to be shown.) | Error (1023) - Selected shipping line is currently accepting early gate in requests. |  | Kindly contact each other with the respective shipping line.
+IsEarlyGateIn
+(By default, the value will be 'No'. If 'Yes', then the system checks the config --> Form 13 beneficiary. "Early GateIn Req." "Auto Approve GateIn Req". The column will be Yes. If this config is disabled for Shipping line and location, then error to be shown.)
+Error (1023) - Selected shipping line is currently accepting early gate in requests.
+Kindly contact each other with the respective shipping line.
+ShipperCity | User input data Exceed 50 Characters. | Error (1028) - Field length exceeded 50-character limit. |  | 
+ShipperCity
+User input data Exceed 50 Characters.
+Error (1028) - Field length exceeded 50-character limit.
+FFCode | User input data Exceed 50 Characters. | Error (1029) - Field length exceeded 50-character limit. |  | 
+FFCode
+User input data Exceed 50 Characters.
+Error (1029) - Field length exceeded 50-character limit.
+IECode | User input data Exceed 50 Characters. | Error (1030) - Field length exceeded 50-character limit. |  | 
+IECode
+User input data Exceed 50 Characters.
+Error (1030) - Field length exceeded 50-character limit.
+CHACode | User input data Exceed 50 Characters. | Error (1031) - Field length exceeded 50-character limit. |  | 
+CHACode
+User input data Exceed 50 Characters.
+Error (1031) - Field length exceeded 50-character limit.
+Container Section:
+
+[TABLE START]
+API Tags | Cause | Errors | Remarks | Corrective Measures
+API Tags
+Cause
+Errors
+Remarks
+Corrective Measures
+Size | User input data is different than available master data. | Error (1035) - Container Size is invalid. | System to check the continer size master to validate. | Container Size should match with the master data value.
+Size
+User input data is different than available master data.
+Error (1035) - Container Size is invalid.
+System to check the continer size master to validate.
+Container Size should match with the master data value.
+ISO Code | User input data is different than available master data. | Error (1036) - ISO code is invalid. | System to check the ISO code master to validate | Container ISO code should match with the master data value.
+ISO Code
+User input data is different than available master data.
+Error (1036) - ISO code is invalid.
+System to check the ISO code master to validate
+Container ISO code should match with the master data value.
+VGM(MT) | User input data is exceeding the field format and length 'Dec - (3,2). | Error (1037) - Field format invalid. | Required only when “VGM viaODeX” is “N”System should highlight this field if the 'VGM via ODeX' is yes and VGM for the container is available in the system in verified status. Also the checkbox for 'VGM via ODeX' should get auto-checked. This is an existing functionalty. | Please provide the VGM weight in Metric Tons (MT).
+VGM(MT)
+User input data is exceeding the field format and length 'Dec - (3,2).
+Error (1037) - Field format invalid.
+Required only when “VGM viaODeX” is “N”System should highlight this field if the 'VGM via ODeX' is yes and VGM for the container is available in the system in verified status. Also the checkbox for 'VGM via ODeX' should get auto-checked. This is an existing functionalty.
+Please provide the VGM weight in Metric Tons (MT).
+VGM via ODeX | 1) User input 'Y' in the tag, but the container is not available on ODeX.2) User input 'Y' in the tag and the container is avaialble on ODeX but, is not in verified status. | 1) Error (1038) - Container does not exist.2) Error (1039) - Container VGM is not verified. | LOV: Y and NIf Y, then1. “VGM(MT)” can be Passed as Blank & ODeX will Pull VGM Wt.2.VGM – Annexure 1 att. is not requiredNote: Please set the corrective measure based on the form type. | For Form13:1) Please share the container VGM weight in 'VGM(MT)'.For Forwarding note/Cart in order:1) Please share the Container tare weight and Cargo weight for the used container.
+VGM via ODeX
+1) User input 'Y' in the tag, but the container is not available on ODeX.2) User input 'Y' in the tag and the container is avaialble on ODeX but, is not in verified status.
+1) Error (1038) - Container does not exist.2) Error (1039) - Container VGM is not verified.
+LOV: Y and NIf Y, then1. “VGM(MT)” can be Passed as Blank & ODeX will Pull VGM Wt.2.VGM – Annexure 1 att. is not requiredNote: Please set the corrective measure based on the form type.
+For Form13:1) Please share the container VGM weight in 'VGM(MT)'.For Forwarding note/Cart in order:1) Please share the Container tare weight and Cargo weight for the used container.
+IMO No. | User input data is different than available master data. | Error (1038) - IMO code is invalid. |  | IMO code should match with the master data values.
+IMO No.
+User input data is different than available master data.
+Error (1038) - IMO code is invalid.
+IMO code should match with the master data values.
+IMO No. 1 | User input data is different than available master data. | Error (1039) - IMO code is invalid. |  | IMO code should match with the master data values.
+IMO No. 1
+User input data is different than available master data.
+Error (1039) - IMO code is invalid.
+IMO code should match with the master data values.
+IMO No. 2 | User input data is different than available master data. | Error (1040) - IMO code is invalid. |  | IMO code should match with the master data values.
+IMO No. 2
+User input data is different than available master data.
+Error (1040) - IMO code is invalid.
+IMO code should match with the master data values.
+IMO No. 3 | User input data is different than available master data. | Error (1041) - IMO code is invalid. |  | IMO code should match with the master data values.
+IMO No. 3
+User input data is different than available master data.
+Error (1041) - IMO code is invalid.
+IMO code should match with the master data values.
+ODC Units | User input data is different than predefined units. | Error (1042) - ODC unit is invalid. |  | ODC unit should be CM, FT, IN, M.
+ODC Units
+User input data is different than predefined units.
+Error (1042) - ODC unit is invalid.
+ODC unit should be CM, FT, IN, M.
+Status | In case the shared file has the Status = Requested and the request for the same is already in verified/confirmed actioned by the liner | Error (1043) - The request for the booking number is already verified/confirmed by the line. |  | Kindly proceed with the amendment request by logging into ODeX (UI) in case of any data updates.
+Status
+In case the shared file has the Status = Requested and the request for the same is already in verified/confirmed actioned by the liner
+Error (1043) - The request for the booking number is already verified/confirmed by the line.
+Kindly proceed with the amendment request by logging into ODeX (UI) in case of any data updates.
+Special Stow | 1) User input value does not match with the available master data.2) User input data is blank for form type = Forwarding note and terminals = NSICT/NSIGT/BMCT defined for the vessel.. | 1) Error (1044) - Special Stow code is invalid.2) Error (1045) - Special Stow code cannot be blank for the used container. |  | 1) Special Stow code should match with the master data values.2) Please input the correct Special Stow code.
+Special Stow
+1) User input value does not match with the available master data.2) User input data is blank for form type = Forwarding note and terminals = NSICT/NSIGT/BMCT defined for the vessel..
+1) Error (1044) - Special Stow code is invalid.2) Error (1045) - Special Stow code cannot be blank for the used container.
+1) Special Stow code should match with the master data values.2) Please input the correct Special Stow code.
+HSN_CODE | User input data is different than available master data. | Error (1048) - HSN code is invalid. |  | HSN code should match with the master data values.
+HSN_CODE
+User input data is different than available master data.
+Error (1048) - HSN code is invalid.
+HSN code should match with the master data values.
+COMMODITY_NAME |  |  | Commodity name will be auto fetched from the master data based on HSN code. | 
+COMMODITY_NAME
+Commodity name will be auto fetched from the master data based on HSN code.
+Valofcargos | User input data is exceeding the field format and length 'Dec - (11,2)'. | Error (1049) - Field format invalid. |  | Please provide the value of cargo (Rs.) in Dec - (11,2) format.
+Valofcargos
+User input data is exceeding the field format and length 'Dec - (11,2)'.
+Error (1049) - Field format invalid.
+Please provide the value of cargo (Rs.) in Dec - (11,2) format.
+Shipping Bill Section:
+
+[TABLE START]
+API Tags | Cause | Errors | Corrective Measures
+API Tags
+Cause
+Errors
+Corrective Measures
+shipBillDt | User input data format is different than the system format | Error (1050): Date format is incorrect. | Please enter the correct date format (YYYY-MM-DD)
+shipBillDt
+User input data format is different than the system format
+Error (1050): Date format is incorrect.
+Please enter the correct date format (YYYY-MM-DD)
+chaPan | User input data format is different than the system format | Error (1051): Date format is incorrect. | Please enter the correct PAN Format.
+chaPan
+User input data format is different than the system format
+Error (1051): Date format is incorrect.
+Please enter the correct PAN Format.
+exporterIec | User input data format is different than the system format | Error (1052): IEC code cannot be more than 10characters | 
+exporterIec
+User input data format is different than the system format
+Error (1052): IEC code cannot be more than 10characters
+leoDt | User input data format is different than the system format | Error (1053): Date format is incorrect. | Please enter the correct date format (YYYY-MM-DD)
+leoDt
+User input data format is different than the system format
+Error (1053): Date format is incorrect.
+Please enter the correct date format (YYYY-MM-DD)
+Sample JSON:
+Standard Fields Used:
+
+[TABLE START]
+Data Type | Code | Example / Format
+Data Type
+Code
+Example / Format
+Integer | INT | 0–9
+Integer
+INT
+0–9
+Decimal | DEC | 0.00–0.99
+Decimal
+DEC
+0.00–0.99
+Alphabetic | ALPHA | A–Z, a–z
+Alphabetic
+ALPHA
+A–Z, a–z
+Alphanumeric | AN | A–Z, a–z, 0–9
+Alphanumeric
+AN
+A–Z, a–z, 0–9
+Date | DATE | DDMMYYYY
+Date
+DATE
+DDMMYYYY
+Date & Time | DTM | DDMMYYYYHHMMSS
+Date & Time
+DTM
+DDMMYYYYHHMMSS
+File (Base64) | FILE | File content as Base64
+File (Base64)
+FILE
+File content as Base64
+Field Requirement Levels:
+
+[TABLE START]
+Requirement | Meaning
+Requirement
+Meaning
+M | Mandatory
+M
+Mandatory
+O | Optional
+O
+Optional
+C | Conditional (based on logic)
+C
+Conditional (based on logic)
+9. Term Glossary
+
+[TABLE START]
+Term | Description
+Term
+Description
+Form 13 (F13) | Document authorizing container gate-in at Indian ports for export shipments.
+Form 13 (F13)
+Document authorizing container gate-in at Indian ports for export shipments.
+CHA | Customs House Agent – submits Form 13 on behalf of exporter.
+CHA
+Customs House Agent – submits Form 13 on behalf of exporter.
+BNF Code | Unique identifier for the shipping line in ODeX.
+BNF Code
+Unique identifier for the shipping line in ODeX.
+LOC ID | Port location code (e.g., INNSA1 for Nhava Sheva).
+LOC ID
+Port location code (e.g., INNSA1 for Nhava Sheva).
+Vessel Name | Name of the vessel for export.
+Vessel Name
+Name of the vessel for export.
+VIA No. | Unique voyage reference associated with a vessel.
+VIA No.
+Unique voyage reference associated with a vessel.
+VCN | Vessel Call Number – used by ports to track vessel visits.
+VCN
+Vessel Call Number – used by ports to track vessel visits.
+Terminal Code | Code representing terminal at port (e.g., NSICT, CCTL).
+Terminal Code
+Code representing terminal at port (e.g., NSICT, CCTL).
+Service Name | Shipping service route name (e.g., FI3, INDFEX).
+Service Name
+Shipping service route name (e.g., FI3, INDFEX).
+POD | Port of Discharge – where container is to be unloaded.
+POD
+Port of Discharge – where container is to be unloaded.
+FPOD | Final Port of Discharge – end destination in case of transshipment.
+FPOD
+Final Port of Discharge – end destination in case of transshipment.
+ODC | Over-Dimensional Cargo.
+ODC
+Over-Dimensional Cargo.
+HAZ | Hazardous Cargo.
+HAZ
+Hazardous Cargo.
+REF | Reefer/Temperature-controlled Cargo.
+REF
+Reefer/Temperature-controlled Cargo.
+VGM | Verified Gross Mass of the container.
+VGM
+Verified Gross Mass of the container.
+Payor ID | Unique identifier for the CHA/shipping party within ODeX.
+Payor ID
+Unique identifier for the CHA/shipping party within ODeX.
+hashKey | Encrypted key for added API request security.
+hashKey
+Encrypted key for added API request security.
+Attachment Title | Type of document attached (e.g., BOOKING_COPY, VGM_ANXR1).
+Attachment Title
+Type of document attached (e.g., BOOKING_COPY, VGM_ANXR1).
+Container Status | Indicates if container isFullorEmpty.
+Container Status
+Indicates if container isFullorEmpty.
+Booking No. | Unique booking number issued by shipping line.
+Booking No.
+Unique booking number issued by shipping line.
+BL No. | Bill of Lading Number.
+BL No.
+Bill of Lading Number.
+Origin | Source location of stuffing (Factory, Dock, ICD, etc.).
+Origin
+Source location of stuffing (Factory, Dock, ICD, etc.).
+10. FAQs
+Q1: What is Form 13?
+A:Form 13 is a mandatory gate-in permission document issued by the shipping line to authorize the entry of export containers at Indian ports.
+Q2: Can I submit Form 13 manually if the API fails?
+A:Yes, Form 13 can still be submitted manually via the ODeX web interface in case of API failure or fallback.
+Q3: What if the vessel or POD is not available in the master?
+A:Use theVessel Master APIandPOD Master APIto fetch valid values. If missing, contact the shipping line or ODeX support to update master data.
+Q4: Is hashKey mandatory in all API calls?
+A:No. hashKey isoptional, butmandatory if additional encryption/security is required.
+Q5: What should I do if I receive an “Incorrect Vessel” error?
+A:Check that theVessel NameandVIA No.exactly match the ODeX vessel master list (case-sensitive, no extra spaces).
+Q6: How can I get the list of valid attachment types?
+A:Refer to theAttachment Titlessection in this document or use the code list provided by ODeX.
+Q7: What happens if required fields are missing?
+A:The API will return a structured error message. Review the error, fix the request, and re-submit.
+Q8: Can I track the status of a Form 13 submission?
+A:Yes, use theGet Status APIto retrieve the real-time status of your Form 13 requests.
+Q9: Can the same API key/token be used across environments?
+A: No,separate keys/tokens are shared for UAT and Production environments.
+Q10: Is it possible to submit multiple containers in a single Form 13 request?A: Yes,the API supports batch submission. Each container must be structured individually within the request.Q11: Are partial failures handled during bulk container submissions?A: No,validation is applied at the container level but the whole request may be rejected if any required field is missing or invalid for any container.Q12: What is the typical response time for Form 13 API requests?A: API responses are returned in real-time, typically within 2–3 seconds under normal load.
+Q13: What should I do if a port, vessel, or POD is missing from the master list?A:You should raise a request with ODeX support to have the master updated.Q14: How often are master data APIs (Vessel, POD, Terminal) updated?A:They are updated as per changes received from shipping lines. Data fetched via timestamp-based APIs ensures the latest information.
+Q15: What happens if an incorrect cargo type or container size is passed?
+A:The API will return an appropriate validation error. Refer to the master values shared in the documentation to correct it.
+Q16: Is VGM mandatory for all containers?
+A:VGM is mandatory only if"VGM via ODeX"is set to"N".If set to"Y",ODeX will fetch VGM details internally.
+Q17: What file formats are accepted for attachments?A:OnlyPDF filesare accepted. The size should not exceed 4 MB per attachment.
+Q18: Can the same attachment title be reused for multiple containers?A: Yes,provided each Doc details are provided in the attachment section.
+Q19: Can failed API requests be retried automatically?A: Yes,retry logic can be implemented on the client side based on the error messages returned.
+Q20: How are amendments to submitted Form 13 handled?A:Amendments are not supported via API. You must log into the ODeX UI to raise modification requests.
+Q21: How can we track historical Form 13 requests?A:Use theGet Form 13 Status APIto retrieve current and past statuses of submitted requests.
+Q22: Are there any audit logs for API transactions?A: Yes,all API transactions are logged by ODeX for audit and support purposes.

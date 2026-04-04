@@ -37,7 +37,7 @@ const getHashKey = () => {
 
 // Helper function to call ODeX API with robust error handling
 
-export const callOdexAPI = async (endpoint, requestData) => {
+export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => {
   const url = `${ODEX_CONFIG.baseURL}${endpoint}`;
   // console.log("📤 Payload:", JSON.stringify(requestData, null, 2));
 
@@ -46,6 +46,7 @@ export const callOdexAPI = async (endpoint, requestData) => {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...customHeaders,
       },
       timeout: 30000,
     });
@@ -122,9 +123,8 @@ router.post("/vessel-master", async (req, res) => {
       });
     }
 
-    // Get current timestamp and hashkey
-    // const fromTs = getCurrentTimestamp();
-    const fromTs = "2025-11-09 00:00:00";
+    // Use fromTs from request or default to current timestamp
+    const fromTs = req.body.fromTs || getCurrentTimestamp();
     const hashKey = getHashKey();
 
     // Prepare request for ODeX API
@@ -178,9 +178,8 @@ router.post("/pod-master", async (req, res) => {
     }
 
     // Get current timestamp and hashkey
-    // const fromTs = getCurrentTimestamp();
-    const fromTs = "2022-07-19 00:00:00";
-
+    // Use fromTs from request or default to current timestamp
+    const fromTs = req.body.fromTs || getCurrentTimestamp();
     const hashKey = getHashKey();
 
     // Prepare request for ODeX API
@@ -227,6 +226,7 @@ router.post("/pod-master", async (req, res) => {
 router.post("/submit", async (req, res) => {
   try {
     const formData = req.body;
+    const { skipOdex = false } = formData;
 
     // Validate required fields including formType
     const requiredFields = [
@@ -247,16 +247,20 @@ router.post("/submit", async (req, res) => {
     // Always inject correct hashKey from server configuration
     formData.hashKey = getHashKey();
 
-    console.log("📥 Received Form 13 Submission:");
-    console.log("   - cntrList length:", formData.cntrList?.length);
-    console.log("   - attList length:", formData.attList?.length);
-    console.log("   - Full payload keys:", Object.keys(formData));
-
-    // Save the EXACT payload as-is - no transformation
+    // Save the EXACT payload as-is
     const form13 = new Form13(formData);
+    form13.status = formData.status || (skipOdex ? "SAVED" : "PENDING");
     await form13.save();
 
     console.log("💾 Saved document ID:", form13._id);
+
+    if (skipOdex) {
+      return res.json({
+        success: true,
+        data: { _id: form13._id, message: "Form saved as draft" },
+        internalRef: form13._id,
+      });
+    }
 
     // Call ODeX API
     const odexResponse = await callOdexAPI(
@@ -268,6 +272,10 @@ router.post("/submit", async (req, res) => {
     if (odexResponse.odexRefNo) {
       form13.odexRefNo = odexResponse.odexRefNo;
       form13.status = "SUBMITTED";
+      await form13.save();
+    } else {
+      // If no ref no but API succeeded, maybe it's held or needs review
+      form13.status = "SUBMITTED_LOCAL";
       await form13.save();
     }
 
@@ -288,12 +296,12 @@ router.post("/submit", async (req, res) => {
 // Get Form 13 Status - Calls actual ODeX API
 router.post("/status", async (req, res) => {
   try {
-    const { pyrCode, odexRefNo } = req.body;
+    const { pyrCode, odexRefNo, bookNo } = req.body;
 
-    if (!pyrCode || !odexRefNo) {
+    if (!pyrCode || !odexRefNo || !bookNo) {
       return res.status(400).json({
         success: false,
-        error: "pyrCode and odexRefNo are required",
+        error: "pyrCode, odexRefNo and bookNo are required",
       });
     }
 
@@ -303,6 +311,7 @@ router.post("/status", async (req, res) => {
     const statusRequest = {
       pyrCode,
       odexRefNo,
+      bookNo,
       hashKey,
     };
 
@@ -312,10 +321,43 @@ router.post("/status", async (req, res) => {
       statusRequest
     );
 
-    res.json({
-      success: true,
-      data: odexResponse,
-    });
+    // Update the local record with the new status information if available
+    try {
+      const statusObj = Array.isArray(odexResponse) ? odexResponse[0] : odexResponse;
+      
+      // Extract status from container list if available, otherwise from root
+      const firstCntrStatus = (statusObj?.cntrList && statusObj.cntrList.length > 0) 
+        ? statusObj.cntrList[0].status 
+        : null;
+      
+      const newStatus = firstCntrStatus || statusObj?.status || statusObj?.currentStatus || "SUBMITTED";
+
+      const updatedDoc = await Form13.findOneAndUpdate(
+        { odexRefNo: odexRefNo, bookNo: bookNo },
+        { 
+          $set: { 
+            statusApiResponse: odexResponse,
+            status: newStatus
+          } 
+        },
+        { new: true }
+      );
+      console.log(`✅ Updated status for ${odexRefNo} to: ${newStatus}`);
+      
+      // Return the updated status in the response so frontend can use it immediately
+      return res.json({
+        success: true,
+        data: odexResponse,
+        updatedStatus: newStatus
+      });
+    } catch (dbErr) {
+      console.error("Failed to update local status after ODeX check:", dbErr);
+      // Fallback response if DB update fails but API succeeded
+      return res.json({
+        success: true,
+        data: odexResponse,
+      });
+    }
   } catch (error) {
     console.error("Form 13 Status Error:", error);
     res.status(500).json({
@@ -328,30 +370,46 @@ router.post("/status", async (req, res) => {
 // Cancel Form 13 - Calls actual ODeX API
 router.post("/cancel", async (req, res) => {
   try {
-    const { pyrCode, odexRefNo, reason } = req.body;
+    const { odexRefNo, form13ReqCntnrVoList } = req.body;
 
-    if (!pyrCode || !odexRefNo || !reason) {
+    if (!odexRefNo || !form13ReqCntnrVoList) {
       return res.status(400).json({
         success: false,
-        error: "pyrCode, odexRefNo and reason are required",
+        error: "odexRefNo and form13ReqCntnrVoList are required",
       });
     }
 
-    // Get hashkey from environment
-    const hashKey = getHashKey();
+    // For cancellation, ODeX expects clientId and secretKey in headers
+    // Using pyrCode as clientId and hashKey as secretKey as per pilot config
+    const customHeaders = {
+      clientId: config.odex.pyrCode,
+      secretKey: config.odex.hashKey,
+    };
 
+    // Clean payload to match sample provided by user
     const cancelRequest = {
-      pyrCode,
       odexRefNo,
-      reason,
-      hashKey,
+      form13ReqCntnrVoList: form13ReqCntnrVoList.map((item) => ({
+        cntnrNo: item.cntnrNo,
+        chaRemarks: item.chaRemarks,
+      })),
     };
 
     // Call actual ODeX Cancellation API
     const odexResponse = await callOdexAPI(
       ODEX_CONFIG.endpoints.cancelForm13,
-      cancelRequest
+      cancelRequest,
+      customHeaders
     );
+
+    // Check if ODeX returned a business error in the data object despite success: true
+    if (odexResponse?.data?.error && Array.isArray(odexResponse.data.error) && odexResponse.data.error.length > 0) {
+      return res.status(200).json({
+        success: false,
+        error: odexResponse.data.error[0],
+        data: odexResponse
+      });
+    }
 
     res.json({
       success: true,
@@ -405,6 +463,11 @@ router.get("/requests", async (req, res) => {
       page = 1,
       limit = 10,
     } = req.query;
+
+    // Prevent caching for requests list
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     const filterQuery = {};
 

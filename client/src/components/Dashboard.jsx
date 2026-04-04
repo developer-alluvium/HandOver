@@ -154,7 +154,7 @@ const Dashboard = () => {
     onClick,
     disabled = false,
   }) => (
-    <div className={`feature-card ${disabled ? "disabled" : ""}`}>
+    <div className={`feature-card ${disabled ? "disabled" : ""}`} onClick={onClick}>
       <div className="card-body">
         <div className="card-header">
           <div className="card-icon">{icon}</div>
@@ -163,7 +163,7 @@ const Dashboard = () => {
         <p>{description}</p>
       </div>
       <div className="card-footer">
-        <button onClick={onClick} disabled={disabled} className="btn-primary">
+        <button disabled={disabled} className="btn-primary">
           {buttonText}
         </button>
       </div>

@@ -91,26 +91,6 @@ export const IMO_NUMBERS = [
   { value: "ONI", label: "ONI - Onion" },
 ]
 
-export const HANDOVER_LOCATIONS = [
-  { value: "INNSA1", label: "Nhava Sheva" },
-  { value: "INMUN1", label: "Mundra" },
-  { value: "INNML1", label: "Mangalore" },
-  { value: "INTUT1", label: "Tuticorin" },
-  { value: "INCCU1", label: "Kolkata" },
-  { value: "INPAV1", label: "Pipavav" },
-  { value: "INHZA1", label: "Hazira" },
-  { value: "INMRM1", label: "Marmagoa" },
-  { value: "INCOK1", label: "Cochin" },
-  { value: "INMAA1", label: "Chennai" },
-  { value: "INVTZ1", label: "Vishakapatnam" },
-  { value: "INHAL1", label: "Haldia" },
-  { value: "INKRI1", label: "Krishnapatnam" },
-  { value: "INKAT1", label: "Kattupalli" },
-  { value: "INPRT1", label: "Paradip" },
-  { value: "INIXY1", label: "Kandla" },
-  { value: "INKAK1", label: "Kakinada" },
-];
-
 export const TERMINAL_CODES = [
   // Nhava Sheva
   { value: "JNPCT", label: "JNPCT - NSFTPL", portId: "INNSA1" },

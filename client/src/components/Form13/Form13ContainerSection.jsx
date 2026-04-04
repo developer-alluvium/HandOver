@@ -46,9 +46,21 @@ const ContainerRow = ({
   locId,
   terminalCode,
   bnfCode,
-  origin
+  origin,
+  submitted = false
 }) => {
   const [open, setOpen] = useState(false);
+
+  // Auto-expand if there are validation errors after submission
+  React.useEffect(() => {
+    if (submitted) {
+      const hasErrors = Object.keys(validationErrors).some(key => key.startsWith(`container_${index}_`));
+      if (hasErrors) {
+        setOpen(true);
+      }
+    }
+  }, [submitted, validationErrors, index]);
+
   const availableIsoCodes = getIsoCodesBySize(container.cntnrSize);
   const sb = container.sbDtlsVo && container.sbDtlsVo[0] ? container.sbDtlsVo[0] : {};
 
@@ -84,6 +96,7 @@ const ContainerRow = ({
             variant="standard"
             value={container.cntnrNo}
             onChange={(e) => handleContainerChange("cntnrNo", e.target.value.toUpperCase())}
+            onFocus={() => setOpen(true)}
             error={!!validationErrors[`container_${index}_cntnrNo`]}
             inputProps={{ style: { fontSize: '0.875rem' }, maxLength: 11 }}
             helperText={validationErrors[`container_${index}_cntnrNo`]}
@@ -166,7 +179,7 @@ const ContainerRow = ({
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Driver Name *</Typography>
+                      <Typography variant="caption" color="text.secondary">Driver Name <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField
                         fullWidth size="small" variant="standard"
                         value={container.driverNm}
@@ -185,7 +198,7 @@ const ContainerRow = ({
                       />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Custom Seal No *</Typography>
+                      <Typography variant="caption" color="text.secondary">Custom Seal No <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField
                         fullWidth size="small" variant="standard"
                         value={container.customSealNo}
@@ -195,7 +208,7 @@ const ContainerRow = ({
                     </Grid>
                     {isMSC && (
                       <Grid item xs={12}>
-                        <Typography variant="caption" color="text.secondary">Shipping Instruction No *</Typography>
+                        <Typography variant="caption" color="text.secondary">Shipping Instruction No <span style={{ color: '#d32f2f' }}>*</span></Typography>
                         <TextField
                           fullWidth size="small" variant="standard"
                           value={container.shpInstructNo}
@@ -225,11 +238,11 @@ const ContainerRow = ({
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">SB No *</Typography>
+                      <Typography variant="caption" color="text.secondary">SB No <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={sb.shipBillInvNo || ""} onChange={(e) => handleSBChange("shipBillInvNo", e.target.value)} error={!!validationErrors[`container_${index}_shipBillInvNo`]} />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">SB Date *</Typography>
+                      <Typography variant="caption" color="text.secondary">SB Date <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" type="date" value={sb.shipBillDt || ""} onChange={(e) => handleSBChange("shipBillDt", e.target.value)} InputLabelProps={{ shrink: true }} error={!!validationErrors[`container_${index}_shipBillDt`]} />
                     </Grid>
 
@@ -238,25 +251,25 @@ const ContainerRow = ({
                       <TextField fullWidth size="small" variant="standard" value={sb.leoNo || ""} onChange={(e) => handleSBChange("leoNo", e.target.value)} />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">LEO Date {sb.leoNo && "*"}</Typography>
+                      <Typography variant="caption" color="text.secondary">LEO Date {sb.leoNo && <span style={{ color: '#d32f2f' }}>*</span>}</Typography>
                       <TextField fullWidth size="small" variant="standard" type="date" value={sb.leoDt || ""} onChange={(e) => handleSBChange("leoDt", e.target.value)} InputLabelProps={{ shrink: true }} error={!!validationErrors[`container_${index}_leoDt`]} disabled={!sb.leoNo} />
                     </Grid>
 
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Packages *</Typography>
+                      <Typography variant="caption" color="text.secondary">Packages <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" type="number" value={sb.noOfPkg || ""} onChange={(e) => handleSBChange("noOfPkg", e.target.value)} error={!!validationErrors[`container_${index}_noOfPkg`]} />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Exporter IEC *</Typography>
+                      <Typography variant="caption" color="text.secondary">Exporter IEC <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={sb.exporterIec || ""} onChange={(e) => handleSBChange("exporterIec", e.target.value)} error={!!validationErrors[`container_${index}_exporterIec`]} />
                     </Grid>
 
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">CHA Name *</Typography>
+                      <Typography variant="caption" color="text.secondary">CHA Name <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={sb.chaNm || ""} onChange={(e) => handleSBChange("chaNm", e.target.value)} error={!!validationErrors[`container_${index}_chaNm`]} />
                     </Grid>
                     <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">CHA PAN *</Typography>
+                      <Typography variant="caption" color="text.secondary">CHA PAN <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField
                         fullWidth size="small" variant="standard"
                         value={sb.chaPan || ""}
@@ -268,7 +281,7 @@ const ContainerRow = ({
                     </Grid>
 
                     <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Exporter Name *</Typography>
+                      <Typography variant="caption" color="text.secondary">Exporter Name <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={sb.exporterNm || ""} onChange={(e) => handleSBChange("exporterNm", e.target.value)} error={!!validationErrors[`container_${index}_exporterNm`]} />
                     </Grid>
                   </Grid>
@@ -286,7 +299,7 @@ const ContainerRow = ({
                       </Box>
                       <Grid container spacing={1}>
                         <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary">IMO No 1 *</Typography>
+                          <Typography variant="caption" color="text.secondary">IMO No 1 <span style={{ color: '#d32f2f' }}>*</span></Typography>
                           <Select
                             fullWidth
                             size="small"
@@ -301,7 +314,7 @@ const ContainerRow = ({
                           </Select>
                         </Grid>
                         <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary">UN No 1 *</Typography>
+                          <Typography variant="caption" color="text.secondary">UN No 1 <span style={{ color: '#d32f2f' }}>*</span></Typography>
                           <TextField fullWidth size="small" variant="standard" value={container.unNo1} onChange={(e) => handleContainerChange("unNo1", e.target.value)} error={!!validationErrors[`container_${index}_unNo1`]} />
                         </Grid>
                         <Grid item xs={6}>
@@ -334,7 +347,7 @@ const ContainerRow = ({
                       </Box>
                       <Grid container spacing={1}>
                         <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary">Temp (C) *</Typography>
+                          <Typography variant="caption" color="text.secondary">Temp (C) <span style={{ color: '#d32f2f' }}>*</span></Typography>
                           <TextField fullWidth size="small" variant="standard" value={container.temp} onChange={(e) => handleContainerChange("temp", e.target.value)} error={!!validationErrors[`container_${index}_temp`]} />
                         </Grid>
                         <Grid item xs={6}>
@@ -393,7 +406,7 @@ const ContainerRow = ({
 
                   {isSpecialStowNeeded && (
                     <Box>
-                      <Typography variant="caption" color="text.secondary">Special Stow *</Typography>
+                      <Typography variant="caption" color="text.secondary">Special Stow <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <Select
                         fullWidth
                         size="small"
@@ -406,7 +419,7 @@ const ContainerRow = ({
                           <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                         ))}
                       </Select>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Special Stow Remark *</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Special Stow Remark <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={container.spclStowRemark} onChange={(e) => handleContainerChange("spclStowRemark", e.target.value)} error={!!validationErrors[`container_${index}_spclStowRemark`]} />
                     </Box>
                   )}
@@ -432,6 +445,7 @@ const Form13ContainerSection = ({
   onAddContainer,
   onRemoveContainer,
   validationErrors = {},
+  submitted = false
 }) => {
   const { containerSizes } = masterData;
 
@@ -468,11 +482,11 @@ const Form13ContainerSection = ({
           <TableHead sx={{ bgcolor: '#f5f5f5' }}>
             <TableRow>
               <TableCell />
-              <TableCell sx={{ fontWeight: 'bold' }}>Container No *</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Size *</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>ISO Code *</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Agent Seal *</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>VGM (MT) *</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Container No <span style={{ color: '#d32f2f' }}>*</span></TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Size <span style={{ color: '#d32f2f' }}>*</span></TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>ISO Code <span style={{ color: '#d32f2f' }}>*</span></TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Agent Seal <span style={{ color: '#d32f2f' }}>*</span></TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>VGM (MT) <span style={{ color: '#d32f2f' }}>*</span></TableCell>
               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>via ODeX</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Action</TableCell>
             </TableRow>
@@ -492,6 +506,7 @@ const Form13ContainerSection = ({
                 terminalCode={formData.terminalCode}
                 bnfCode={formData.bnfCode}
                 origin={formData.origin}
+                submitted={submitted}
               />
             ))}
           </TableBody>

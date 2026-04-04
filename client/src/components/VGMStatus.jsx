@@ -62,16 +62,13 @@ const Icons = {
     </svg>
   ),
   Search: () => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+    </svg>
+  ),
+  Info: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
     </svg>
   ),
 };
@@ -305,7 +302,10 @@ const VGMStatus = () => {
   };
 
   const getStatusBadgeClass = (displayStatus) => {
-    return displayStatus === "Verified" ? "badge-success" : "badge-warning";
+    const s = displayStatus?.toUpperCase();
+    if (s === "VERIFIED" || s === "SUCCESS") return "badge-success";
+    if (s === "FAILED" || s === "ERROR") return "badge-danger";
+    return "badge-warning";
   };
 
   // --- Logic 2: Get Remarks ---
@@ -475,11 +475,11 @@ const VGMStatus = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Actions</th>
+                    <th style={{ width: '120px' }}>Actions</th>
                     <th>Shipping Line</th>
                     <th>Container</th>
                     <th>Booking</th>
-                    <th>Status</th>
+                    <th style={{ width: '130px' }}>Status</th>
                     <th>Port</th>
                     <th>Remarks</th>
                     <th>VGM Weight</th>
@@ -493,50 +493,44 @@ const VGMStatus = () => {
                     const verified = isVerified(req);
 
                     return (
-                      <tr key={i}>
-                        <td>
-                          <div className="d-flex gap-2">
+                      <tr key={i} className="hover-row">
+                        <td className="actions-cell">
+                          <div className="d-flex gap-1">
                             <button
-                              className="btn btn-sm btn-outline"
-                              title="View"
+                              className="btn-icon btn-view"
+                              title="View Details"
                               onClick={() => setSelectedRequest(req)}
                             >
                               <Icons.Eye />
                             </button>
                             <button
-                              className={`btn btn-sm btn-outline ${verified ? "btn-disabled" : ""} `}
-                              title={verified ? "Cannot edit verified request" : "Edit"}
+                              className={`btn-icon btn-edit ${verified ? "disabled" : ""} `}
+                              title={verified ? "Cannot edit verified request" : "Edit / Resubmit"}
                               onClick={() => handleEditRequest(req)}
                               disabled={verified}
-                              style={verified ? { opacity: 0.5, cursor: "not-allowed" } : {}}
                             >
                               <Icons.Edit />
                             </button>
                           </div>
                         </td>
-                        <td>{getLinerName(req.linerId)}</td>
-                        <td>{req.cntnrNo}</td>
+                        <td style={{ fontWeight: 500 }}>{getLinerName(req.linerId)}</td>
+                        <td style={{ fontWeight: 600, color: '#1a237e' }}>{req.cntnrNo}</td>
                         <td>{req.bookNo}</td>
                         <td>
-                          <span
-                            className={`badge ${getStatusBadgeClass(
-                              displayStatus
-                            )
-                              } `}
-                          >
+                          <span className={`status-badge ${getStatusBadgeClass(displayStatus)}`}>
                             {displayStatus}
                           </span>
                         </td>
                         <td>{getPortName(req.locId)}</td>
-                        <td>
-                          <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={remarks}>
+                        <td className="text-muted">
+                          <div style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={remarks}>
                             {remarks}
                           </div>
                         </td>
-                        <td>
+                        <td style={{ fontWeight: 600 }}>
                           {req.totWt ? `${req.totWt} ${req.totWtUom} ` : "N/A"}
                         </td>
-                        <td>
+                        <td className="text-muted">
                           {dayjs(req.createdAt).format("DD/MM/YYYY HH:mm")}
                         </td>
                       </tr>
