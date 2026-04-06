@@ -283,17 +283,7 @@ export const vgmValidationSchema = Yup.object({
   shipId: Yup.string().max(10, "Max 10 characters allowed"),
 
   shipperNm: Yup.string()
-    .test(
-      "third-party-shipper-name",
-      "Shipper Name is required for third party without Shipper ID",
-      function (value) {
-        const { shipId } = this.parent;
-        if (!shipId) {
-          return value && value.length > 0;
-        }
-        return true;
-      }
-    )
+    .required("Shipper Name is required")
     .max(100, "Max 100 characters allowed"),
 
   shipRegTP: Yup.string()

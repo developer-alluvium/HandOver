@@ -126,6 +126,15 @@ const TrackF13 = () => {
     navigate("/form13", { state: { editMode: true, f13Id: request._id } });
   };
 
+  const downloadBase64PDF = (base64String, fileName) => {
+    if (!base64String) return;
+    const linkSource = `data:application/pdf;base64,${base64String}`;
+    const downloadLink = document.createElement("a");
+    downloadLink.href = linkSource;
+    downloadLink.download = fileName;
+    downloadLink.click();
+  };
+
   const handleGetStatus = async (request) => {
     try {
       setLoading(true);
@@ -139,10 +148,37 @@ const TrackF13 = () => {
         return;
       }
       const response = await form13API.getForm13Status(payload);
-      const newStatus = response.updatedStatus || "SUBMITTED";
+      
+      // The interceptor might have unwrapped the data to be the array [ { ... } ]
+      const responseData = response.data;
+      const statusObj = Array.isArray(responseData) ? responseData[0] : responseData;
+      
+      // Look for status in all possible locations
+      const getStatusFromData = (obj) => {
+        if (!obj) return null;
+        if (obj.status) return obj.status;
+        if (obj.currentStatus) return obj.currentStatus;
+        if (obj.cntrList && obj.cntrList.length > 0) return obj.cntrList[0].status;
+        return null;
+      };
+
+      const rawStatus = response.updatedStatus || getStatusFromData(statusObj) || "SUBMITTED";
+      const newStatus = String(rawStatus).toUpperCase();
+      
       enqueueSnackbar(`Status Synced: ${newStatus.replace(/_/g, " ")}`, { variant: "success" });
-      fetchF13Requests(pagination.page);
-      // Refresh current page to reflect possible status changes from server
+
+      // Handle PDF download if status is CONFIRMED
+      if (newStatus === "CONFIRMED") {
+        const pdfBase64 = statusObj?.confirmedpdf || (Array.isArray(responseData) && responseData[0]?.confirmedpdf);
+        
+        if (pdfBase64) {
+          enqueueSnackbar("Downloading Confirmation PDF...", { variant: "info" });
+          downloadBase64PDF(pdfBase64, `Form13_Confirmation_${request.bookNo}.pdf`);
+        } else {
+          console.warn("Status is CONFIRMED but confirmedpdf field is missing in response:", responseData);
+        }
+      }
+
       fetchF13Requests(pagination.page);
     } catch (err) {
       enqueueSnackbar(err.message || "Failed to get status", { variant: "error" });

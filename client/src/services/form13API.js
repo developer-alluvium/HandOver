@@ -18,17 +18,22 @@ export const form13API = {
       const response = await api.post(`${FORM13_BASE_URL}/submit`, formData);
 
       // Handle ODeX API response structure
-      if (response.data.responseMessage && response.data.responseMessage !== "Success") {
+      const respData = response.data || {};
+      const msg = respData.responseMessage || respData.responsemessage || respData.data?.responsemessage || respData.data?.responseMessage;
+
+      if (msg && msg.toLowerCase() !== "success") {
         // This is an ODeX error response
-        throw new Error(response.data.responseMessage);
+        throw new Error(msg);
       }
 
-      // If we have odexRefNo, it's successful
-      if (response.data.odexRefNo) {
+      // If we have odexRefNo (either at root or inside data), it's successful
+      const odexRefNo = respData.odexRefNo || respData.data?.odexRefNo;
+
+      if (odexRefNo) {
         return {
           success: true,
-          data: response.data,
-          odexRefNo: response.data.odexRefNo
+          data: respData,
+          odexRefNo: odexRefNo
         };
       }
 

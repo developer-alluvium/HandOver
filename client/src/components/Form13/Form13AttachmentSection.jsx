@@ -13,19 +13,69 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  FormControl,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
+
+const ALL_DOC_TYPES = {
+  BOOKING_COPY: "Booking Copy",
+  PRE_EGM: "Pre-EGM",
+  SHIP_BILL: "Shipping Bill",
+  SHIPPING_INSTRUCTION: "Shipping instruction (SI)",
+  SURVY_RPRT: "Survey Report",
+  VGM_ANXR1: "VGM-Annexure 1",
+  MSDS: "MSDS",
+  MSDS_SHEET: "MSDS Sheet",
+  ODC_SURVEYOR_REPORT_PHOTOS: "ODC SURVEYOR REPORT + PHOTOS",
+  PACK_LIST: "Packing List",
+  HAZ_DG_DECLARATION: "HAZ DG DECLARATION",
+  INVOICE: "Invoice",
+  LASHING_CERTIFICATE: "LASHING CERTIFICATE",
+  MMD_APPRVL: "MMD Approval",
+  CUSTOMS_EXAM_REPORT: "Customs Examination Report",
+  DG_DCLRTION: "DG Declaration",
+  DLVRY_ORDER: "Delivery Order",
+  FIRE_OFC_CRTFCT: "Fire Office Certificate",
+  BOOK_CNFRM_CPY: "Booking Confirmation Copy",
+  BOOKING_CONF_COPY: "Booking confirmation copy",
+  CHK_LIST: "Check List",
+  CLN_CRTFCT: "Cleaning certificate",
+  CNTNR_LOAD_PLAN: "Container Load Plan",
+};
 
 const Form13AttachmentSection = ({
   formData,
   onFormDataChange,
   requiredAttachments = [],
 }) => {
+  const [selectedNewType, setSelectedNewType] = React.useState('');
+
   // Only show what is mandatory from the requiredAttachments passed from parent
+  const mandatoryCodes = requiredAttachments.filter(req => req.required).map(r => r.code);
   const displayDocs = requiredAttachments.filter(req => req.required);
+
+  // Identify any other attachments that are uploaded but NOT in mandatory list
+  const customAttachments = formData.attachments.filter(att => {
+    const attTitle = att.title || att.attTitle;
+    return !mandatoryCodes.includes(attTitle);
+  }).map(att => {
+    const attTitle = att.title || att.attTitle;
+    return {
+      code: attTitle,
+      name: ALL_DOC_TYPES[attTitle] || attTitle,
+      required: false,
+      isCustom: true
+    };
+  });
+
+  // Combine them for display
+  const allDisplayDocs = [...displayDocs, ...customAttachments];
 
   const handleFileSelect = (event, docCode) => {
     const file = event.target.files[0];
@@ -45,8 +95,6 @@ const Form13AttachmentSection = ({
     fileWithTitle.title = docCode;
 
     // IMPORTANT: Concept-aware replacement
-    // If we are uploading Packing List, we must remove ANY existing Packing List entry 
-    // even if it had a different code (like PACKING_LIST or PL) in the past.
     const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
     const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
 
@@ -58,7 +106,8 @@ const Form13AttachmentSection = ({
     });
 
     onFormDataChange('attachments', '', [...otherAttachments, fileWithTitle]);
-    event.target.value = '';
+    if (event.target) event.target.value = '';
+    setSelectedNewType(''); // Reset dropdown if it was a new upload
   };
 
   const handleRemoveFile = (docCode) => {
@@ -102,7 +151,7 @@ const Form13AttachmentSection = ({
         Total Attachment size should not exceed 4 MB. Uploading documents depends on internet connectivity.
       </Typography>
 
-      <TableContainer component={Paper} elevation={0} sx={{ borderTop: '2px solid #1a237e', borderRadius: 0 }}>
+      <TableContainer component={Paper} elevation={0} sx={{ borderTop: '2px solid #1a237e', borderRadius: 0, mb: 3 }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: '#fafafa' }}>
@@ -112,9 +161,9 @@ const Form13AttachmentSection = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {displayDocs.map((doc) => {
+            {allDisplayDocs.map((doc) => {
               const uploadedFile = getUploadedFileForType(doc.code);
-              const isRequired = requiredAttachments.find(r => r.code === doc.code)?.required;
+              const isRequired = doc.required;
               const fileName = uploadedFile ? (uploadedFile.name || uploadedFile.attNm || "File Attached") : "";
 
               return (
@@ -182,6 +231,51 @@ const Form13AttachmentSection = ({
                 </TableRow>
               );
             })}
+
+            {/* Row for adding new custom document */}
+            <TableRow sx={{ bgcolor: '#fcfcfc' }}>
+              <TableCell>
+                <FormControl fullWidth size="small" variant="standard">
+                  <Select
+                    displayEmpty
+                    value={selectedNewType}
+                    onChange={(e) => setSelectedNewType(e.target.value)}
+                    sx={{ fontSize: '0.875rem' }}
+                  >
+                    <MenuItem value="" disabled>Select Document Type</MenuItem>
+                    {Object.entries(ALL_DOC_TYPES)
+                      .filter(([code]) => !allDisplayDocs.some(d => d.code === code))
+                      .map(([code, name]) => (
+                        <MenuItem key={code} value={code}>{name}</MenuItem>
+                      ))
+                    }
+                  </Select>
+                </FormControl>
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="contained"
+                  component="label"
+                  size="small"
+                  disabled={!selectedNewType}
+                  startIcon={<UploadIcon />}
+                  sx={{
+                    textTransform: 'none',
+                    bgcolor: selectedNewType ? '#1a237e' : '#bdbdbd',
+                    '&:hover': { bgcolor: '#121858' }
+                  }}
+                >
+                  Upload
+                  <input
+                    type="file"
+                    hidden
+                    accept=".pdf"
+                    onChange={(e) => handleFileSelect(e, selectedNewType)}
+                  />
+                </Button>
+              </TableCell>
+              <TableCell />
+            </TableRow>
           </TableBody>
         </Table>
       </TableContainer>

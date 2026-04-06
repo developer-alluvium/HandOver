@@ -639,6 +639,7 @@ export const getVGMRequests = async (req, res) => {
       return {
         vgmId: log._id,
         cntnrNo: requestBody.cntnrNo,
+        cntnrSize: requestBody.cntnrSize,
         bookNo: requestBody.bookNo,
         linerId: requestBody.linerId, // Shipping Line
         locId: requestBody.locId, // Port
@@ -646,6 +647,7 @@ export const getVGMRequests = async (req, res) => {
         cntnrStatus: displayStatus, // Display status for UI
         totWt: requestBody.totWt,
         totWtUom: requestBody.totWtUom,
+        shipperNm: requestBody.shipperNm,
         vgmEvalMethod: requestBody.vgmEvalMethod,
         weighBridgeSlipNo: requestBody.weighBridgeSlipNo,
         weighBridgeWtTs: requestBody.weighBridgeWtTs,

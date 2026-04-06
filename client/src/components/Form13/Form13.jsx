@@ -22,6 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Save as SaveIcon, Send as SendIcon } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { form13API } from "../../services/form13API";
+import { vgmAPI } from "../../services/api";
 import Form13HeaderSection from "./Form13HeaderSection";
 import Form13ContainerSection from "./Form13ContainerSection";
 import Form13ShippingBillSection from "./Form13ShippingBillSection";
@@ -75,10 +76,10 @@ const Form13 = () => {
     consigneeNm: "",
     consigneeAddr: "",
     cargoDesc: "",
-    terminalLoginId: "",
+    terminalLoginId: "ALL_CHA",
     emailId: "",
     bookCopyBlNo: "",
-    cntnrStatus: "",
+    cntnrStatus: "Full",
     formType: "F13",
     IsEarlyGateIn: "N",
     ShipperCity: "",
@@ -224,9 +225,92 @@ const Form13 = () => {
     }
   };
 
-  // Initialize Edit Mode or Handle Reset
+  const handleVGMAutoFill = async (bookNo) => {
+    if (!bookNo || bookNo.length < 3) return;
+
+    try {
+      console.log(`[VGM-AUTOFILL] Searching for Booking: ${bookNo}`);
+      const response = await vgmAPI.getRequests({ bookingNo: bookNo, exactMatch: true });
+      console.log("[VGM-AUTOFILL] API Response:", response.data);
+      const vgmRequests = response.data?.requests || [];
+
+      if (vgmRequests.length > 0) {
+        console.log(`[VGM-AUTOFILL] Found ${vgmRequests.length} VGM records`);
+        // Map VGM records to Form 13 container structure
+        const vgmContainers = vgmRequests.map(vgm => {
+          // Convert weight from KGS to MTS (if exists)
+          let convertedWt = "";
+          if (vgm.totWt) {
+            const wtInKgs = parseFloat(vgm.totWt);
+            if (!isNaN(wtInKgs)) {
+              convertedWt = (wtInKgs / 1000).toFixed(3); // 1000 KGS = 1 MTS
+            }
+          }
+
+          return {
+            ...initialFormData.containers[0],
+            cntnrNo: vgm.cntnrNo || "",
+            cntnrSize: vgm.cntnrSize || "",
+            vgmWt: convertedWt,
+            vgmViaODeX: "Y",
+            sbDtlsVo: [
+              {
+                ...initialFormData.containers[0].sbDtlsVo[0],
+                exporterNm: vgm.shipperNm || "",
+              }
+            ]
+          };
+        });
+
+        // Get uniquely identified containers (by number)
+        const uniqueVgmContainers = [];
+        const seen = new Set();
+        vgmContainers.forEach(c => {
+          if (c.cntnrNo && !seen.has(c.cntnrNo)) {
+            uniqueVgmContainers.push(c);
+            seen.add(c.cntnrNo);
+          }
+        });
+
+        // Check which containers are already in the form
+        const existingNos = formData.containers.map(c => (c.cntnrNo || "").trim()).filter(Boolean);
+        const newVgmContainers = uniqueVgmContainers.filter(c => !existingNos.includes(c.cntnrNo.trim()));
+
+        console.log(`[VGM-AUTOFILL] New containers to add: ${newVgmContainers.length}`);
+
+        if (newVgmContainers.length > 0) {
+          setFormData(prev => {
+            const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
+            const finalContainers = isFirstEmpty ? newVgmContainers : [...prev.containers, ...newVgmContainers];
+            return {
+               ...prev,
+               containers: finalContainers
+            };
+          });
+          setSuccess(`Auto-filled ${newVgmContainers.length} containers from VGM data`);
+        }
+      } else {
+        console.log("[VGM-AUTOFILL] No matching VGM records found for this booking");
+      }
+    } catch (err) {
+      console.error("[VGM-AUTOFILL] Error:", err);
+    }
+  };
+
+  // Trigger VGM Auto-fill when booking number is entered (Debounced)
   useEffect(() => {
-    const initializeMode = async () => {
+    console.log(`[DEBUG] bookNo effect check: val="${formData.bookNo}", len=${formData.bookNo?.length}, editMode=${isEditMode}`);
+    if (formData.bookNo && formData.bookNo.length >= 3 && !isEditMode) {
+      const timer = setTimeout(() => {
+        handleVGMAutoFill(formData.bookNo);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.bookNo, isEditMode]);
+
+  // Initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
       // Check for reset signal first
       if (location.state?.reset) {
         setIsEditMode(false);
@@ -255,7 +339,7 @@ const Form13 = () => {
         setIsSaved(false);
       }
     };
-    initializeMode();
+    loadInitialData();
   }, [location.state]);
 
   const fetchRequestDetails = async (f13Id) => {
@@ -1344,7 +1428,8 @@ const Form13 = () => {
 
       // Call API
       let response;
-      if (isEditMode && requestId) {
+      // Use update if we have a requestId (either from initial load OR from a 'Save' action)
+      if (requestId) {
         response = await form13API.updateRequest(requestId, payload);
       } else {
         response = await form13API.submitForm13(payload);
@@ -1353,8 +1438,8 @@ const Form13 = () => {
       console.log("📥 Raw API Response:", response);
       const respData = response?.data || {};
 
-      const businessFlag = respData.business_validation;
-      const businessErrors = respData.business_validations;
+      const businessFlag = respData.business_validation || respData["business validation"] || respData.data?.["business validation"] || respData.data?.business_validation;
+      const businessErrors = respData.business_validations || respData.data?.business_validations;
 
       if (businessFlag === "FAIL" && businessErrors) {
         console.log("🚨 Business validation failed");
@@ -1366,8 +1451,8 @@ const Form13 = () => {
       }
 
       // Handle Schema Validation Failures
-      const schemaFlag = respData.schema_validation;
-      const schemaErrors = respData.schema_validations;
+      const schemaFlag = respData.schema_validation || respData["schema validation"] || respData.data?.["schema validation"] || respData.data?.schema_validation;
+      const schemaErrors = respData.schema_validations || respData.data?.schema_validations;
 
       if (schemaFlag === "FAIL" && schemaErrors) {
         console.log("🚨 Schema validation failed");
@@ -1378,10 +1463,10 @@ const Form13 = () => {
         return;
       }
 
-      const odexRefNo = respData.odexRefNo;
+      const odexRefNo = respData.odexRefNo || respData.data?.odexRefNo || response.odexRefNo;
 
       if (odexRefNo) {
-        console.log("✅ Form submitted successfully");
+        console.log("✅ Form submitted successfully: ", odexRefNo);
         setSuccess(
           `Form 13 ${isEditMode ? "updated" : "submitted"} successfully! Reference No: ${odexRefNo}`
         );
@@ -1563,7 +1648,9 @@ const Form13 = () => {
                   }
 
                   if (response.data?._id || response.data?.internalRef) {
-                    setRequestId(response.data?._id || response.data?.internalRef);
+                    const newId = response.data?._id || response.data?.internalRef;
+                    setRequestId(newId);
+                    setIsEditMode(true); // Switch to edit mode so subsequent submits update this record
                     setIsSaved(true);
                     setSuccess("Form saved successfully to database.");
                   }

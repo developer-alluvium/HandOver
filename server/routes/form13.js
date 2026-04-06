@@ -269,8 +269,10 @@ router.post("/submit", async (req, res) => {
     );
 
     // Update with ODeX reference
-    if (odexResponse.odexRefNo) {
-      form13.odexRefNo = odexResponse.odexRefNo;
+    const odexRefNo = odexResponse.odexRefNo || odexResponse.data?.odexRefNo;
+
+    if (odexRefNo) {
+      form13.odexRefNo = odexRefNo;
       form13.status = "SUBMITTED";
       await form13.save();
     } else {
