@@ -240,8 +240,8 @@ export const LOCATION_SPECIFIC_RULES = {
 export const SHIPPING_LINE_RULES = {
   MSCU: {
     name: "MSC",
-    requires: ["bookNo", "shpInstructNo"],
-    containerRequires: ["shpInstructNo"],
+    requires: ["bookNo"],
+    containerRequires: [],
     specialNotes:
       "Booking No and Shipping Instruction No are mandatory for MSC",
     errorCodes: {
@@ -650,65 +650,22 @@ export const getRequiredAttachments = (formData) => {
   const { locId, cargoTp, origin, cntnrStatus } = formData;
   const required = [];
 
-  // ---------------------------
-  // NORMALIZATION
-  // ---------------------------
   const normCargoTp = (cargoTp || "").toUpperCase();
+  const normOrigin = (origin || "").toUpperCase();
   const normCntnrStatus = (cntnrStatus || "").toUpperCase();
 
-  // ✅ FIX 1: "R" was missing — map it to "W" (On Wheel / ICD by Road)
-  const ORIGIN_MAP = {
-    B: "B",
-    C: "C",
-    DOCK: "C",
-    DOCK_STUFF: "C",
-    F: "F",
-    FACTORY: "F",
-    FACTORY_STUFF: "F",
-    R: "W",       // ← ICD by Road treated same as On Wheel
-    W: "W",
-    ON_WHEEL: "W",
-    ON_WHELL: "W",
-    WHEEL: "W",
-    E_TANK: "E_TANK",
-    EMPTY_TANK: "E_TANK",
-    F_CFS: "F_CFS",
-  };
-  const normOrigin = ORIGIN_MAP[(origin || "").toUpperCase()] || origin;
+  // Port Lists from Excel
+  const ListA = ["INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1", "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1", "INHAL1", "INKRI1", "INIXY1"];
+  const ListChennaiGroup = ["INMAA1", "INKAT1", "INENN1"];
+  const ListExtended = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
 
-  // ---------------------------
-  // ✅ FIX 2: Correct locIds matching LOCATION_SPECIFIC_RULES
-  // ---------------------------
-  const LIST_A = [
-    "INNSA1",  // Nhava Sheva
-    "INMUN1",  // Mundra
-    "INNML1",  // Mangalore
-    "INTUT1",  // Tuticorin
-    "INCCU1",  // Kolkata
-    "INPAV1",  // Pipavav
-    "INHZA1",  // Hazira
-    "INMRM1",  // Marmagoa
-    "INCOK1",  // Cochin
-    "INVTZ1",  // Vishakapatnam
-    "INHAL1",  // Haldia
-    "INKRI1",  // Krishnapatnam
-    "INIXY1",  // Kandla
-  ];
+  // Helper to check cargo types
+  const isHazCargo = normCargoTp.includes("HAZ");
+  const isOdcCargo = normCargoTp.includes("ODC");
+  // ODC Hazardous specifically matches the dropdown value ODC(HAZ) or if both HAZ and ODC are present
+  const isOdcHazCargo = normCargoTp === "ODC(HAZ)" || normCargoTp === "ODC HAZARDOUS" || (isHazCargo && isOdcCargo);
+  const isHazOrOdc = isHazCargo || isOdcCargo || isOdcHazCargo;
 
-  const CHENNAI_GROUP = [
-    "INMAA1",  // Chennai
-    "INKAT1",  // Kattupalli
-    "INENN1",  // Ennore
-  ];
-
-  // Ports where VGM_ANXR1 / HAZ_DG / LASHING / MSDS / ODC apply (LIST_A + Chennai + Paradip + Kakinada)
-  const EXTENDED_PORTS = [...new Set([...LIST_A, ...CHENNAI_GROUP, "INPRT1", "INKAK1"])];
-
-  const ALL_ORIGINS = ["C", "F", "W", "E_TANK"];
-
-  // ---------------------------
-  // HELPERS
-  // ---------------------------
   const addReq = (code) => {
     if (!required.some((r) => r.code === code)) {
       required.push({
@@ -719,133 +676,120 @@ export const getRequiredAttachments = (formData) => {
     }
   };
 
-  const isListA = LIST_A.includes(locId);
-  const isChennaiGroup = CHENNAI_GROUP.includes(locId);
-  const isVizag = locId === "INVTZ1";
-  const isExtended = EXTENDED_PORTS.includes(locId);
-
-  // ======================================================
-  // ATTACHMENT RULES (per Section 5.3.1 documentation)
-  // ======================================================
-
   // 1. Always mandatory
   addReq("BOOKING_COPY");
 
-  // 2. BOOK_CNFRM_CPY — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC, GEN, ONION, REF
-  if (isChennaiGroup && ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)) {
+  // 2. PRE_EGM - Optional for Chennai
+  if (locId === "INMAA1") {
+    required.push({
+      code: "PRE_EGM",
+      name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES["PRE_EGM"],
+      required: false
+    });
+  }
+
+  // 3. BOOK_CNFRM_CPY - Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF
+  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
     addReq("BOOK_CNFRM_CPY");
   }
 
-  // 3. BOOKING_CONF_COPY — Vishakapatnam only
-  //    Delivery Type: DOCK, FACTORY | Origin: ON_WHEEL | Type: E_TANK
-  //    ✅ FIX 3: Doc says Del Type DOCK/FACTORY + Origin ON_WHEEL + Type E_TANK
-  //    Since we only have origin in the form, apply when origin is W
-  if (isVizag && normOrigin === "W") {
+  // 4. BOOKING_CONF_COPY - VTZ, Origin: C, F, W, E_TANK
+  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("BOOKING_CONF_COPY");
   }
 
-  // 4. CHK_LIST — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC, GEN, ONION, REF
-  if (isChennaiGroup && ["HAZ", "ODC", "GEN", "ONION", "REF"].includes(normCargoTp)) {
+  // 5. CHK_LIST - Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF
+  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
     addReq("CHK_LIST");
   }
 
-  // 5. CLN_CRTFCT — LIST_A ports | Cargo: HAZ | Container: EMPTY
-  if (isListA && normCargoTp === "HAZ" && normCntnrStatus === "EMPTY") {
+  // 6. CLN_CRTFCT - ListA, Cargo: HAZ, Status: Empty
+  if (ListA.includes(locId) && isHazCargo && normCntnrStatus === "EMPTY") {
     addReq("CLN_CRTFCT");
   }
 
-  // 6. CNTNR_LOAD_PLAN — LIST_A ports | Origin: Dock Stuff (C)
-  if (isListA && normOrigin === "C") {
+  // 7. CNTNR_LOAD_PLAN - ListA, Origin: C
+  if (ListA.includes(locId) && normOrigin === "C") {
     addReq("CNTNR_LOAD_PLAN");
   }
 
-  // 7. CUSTOMS_EXAM_REPORT — LIST_A ports | Origin: On Wheel (W)
-  if (isListA && normOrigin === "W") {
+  // 8. CUSTOMS_EXAM_REPORT - ListA, Origin: W
+  if (ListA.includes(locId) && normOrigin === "W") {
     addReq("CUSTOMS_EXAM_REPORT");
   }
 
-  // 8. DG_DCLRTION — LIST_A + Chennai + Kattupalli + Kandla | Cargo: HAZ, ODC
-  //    ✅ FIX 4: Doc lists specific ports (not Paradip/Kakinada/Ennore)
-  const DG_PORTS = [...LIST_A, "INMAA1", "INKAT1"];
-  if (DG_PORTS.includes(locId) && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 9. DG_DCLRTION - ListA + Chennai + Kattupalli, Cargo: HAZ, ODC
+  if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && isHazOrOdc) {
     addReq("DG_DCLRTION");
   }
 
-  // 9. DLVRY_ORDER — LIST_A + Chennai + Krishnapatnam + Kandla
-  //    Origin: Factory Stuff (F), Dock Stuff (C), Empty Tank (E_TANK)
-  //    ✅ FIX 5: Doc includes Chennai group too
-  const DLVRY_PORTS = [...LIST_A, "INMAA1"];
-  if (DLVRY_PORTS.includes(locId) && ["F", "C", "E_TANK"].includes(normOrigin)) {
+  // 10. DLVRY_ORDER - ListA + Chennai + Kattupalli, Origin: F, C, E_TANK
+  if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && ["F", "C", "E_TANK"].includes(normOrigin)) {
     addReq("DLVRY_ORDER");
   }
 
-  // 10. FIRE_OFC_CRTFCT — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC
-  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 11. FIRE_OFC_CRTFCT - ListChennaiGroup, Cargo: HAZ, ODC
+  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
     addReq("FIRE_OFC_CRTFCT");
   }
 
-  // 11. HAZ_DG_DECLARATION — EXTENDED_PORTS | Cargo: HAZ, ODC
-  if (isExtended && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 12. HAZ_DG_DECLARATION - ListExtended, Cargo: ODC HAZ
+  if (ListExtended.includes(locId) && isOdcHazCargo) {
     addReq("HAZ_DG_DECLARATION");
   }
 
-  // 12. INVOICE — LIST_A + Chennai | Origin: Factory Stuff (F), Empty Tank (E_TANK)
-  if ([...LIST_A, "INMAA1"].includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
+  // 13. INVOICE - ListExtended, Origin: F, E_TANK
+  if (ListExtended.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
     addReq("INVOICE");
   }
 
-  // 13. LASHING_CERTIFICATE — EXTENDED_PORTS | Cargo: HAZ, ODC
-  if (isExtended && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 14. LASHING_CERTIFICATE - ListExtended, Cargo: ODC & HAZ
+  if (ListExtended.includes(locId) && isOdcHazCargo) {
     addReq("LASHING_CERTIFICATE");
   }
 
-  // 14. MMD_APPRVL — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC
-  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 15. MMD_APPRVL - ListChennaiGroup, Cargo: HAZ, ODC
+  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
     addReq("MMD_APPRVL");
   }
 
-  // 15. MSDS — EXTENDED_PORTS | Cargo: HAZ, ODC
-  //    ✅ FIX 6: Was only checking LIST_A — should include Chennai group too
-  if (isExtended && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 16. MSDS - ListExtended, Cargo: ODC HAZ
+  if (ListExtended.includes(locId) && isOdcHazCargo) {
     addReq("MSDS");
   }
 
-  // 16. MSDS_SHEET — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC
-  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 17. MSDS_SHEET - ListChennaiGroup, Cargo: HAZ, ODC
+  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
     addReq("MSDS_SHEET");
   }
 
-  // 17. ODC_SURVEYOR_REPORT_PHOTOS — EXTENDED_PORTS | Cargo: HAZ, ODC
-  if (isExtended && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 18. ODC_SURVEYOR_REPORT_PHOTOS - ListExtended, Cargo: ODC HAZ
+  if (ListExtended.includes(locId) && isOdcHazCargo) {
     addReq("ODC_SURVEYOR_REPORT_PHOTOS");
   }
 
-  // 18. PACK_LIST — LIST_A ports | Origin: Factory Stuff (F)
-  if (isListA && normOrigin === "F") {
+  // 19. PACK_LIST - ListA, Origin: F
+  if (ListA.includes(locId) && normOrigin === "F") {
     addReq("PACK_LIST");
   }
 
-  // 19. PRE_EGM — Chennai only, Optional (N in IS_REQUIRED)
-  // Not added to required list — handle as optional separately if needed
-
-  // 20. SHIP_BILL — LIST_A ports | Origin: C, F, W, E_TANK (all main origins)
-  if (isListA && ALL_ORIGINS.includes(normOrigin)) {
+  // 20. SHIP_BILL - ListA, Origin: C, F, W, E_TANK
+  if (ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("SHIP_BILL");
   }
 
-  // 21. SHIPPING_INSTRUCTION — Vishakapatnam only | All origins
-  if (isVizag && ALL_ORIGINS.includes(normOrigin)) {
+  // 21. SHIPPING_INSTRUCTION - VTZ, Origin: C, F, W, E_TANK
+  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("SHIPPING_INSTRUCTION");
   }
 
-  // 22. SURVY_RPRT — Chennai, Kattupalli, Ennore | Cargo: HAZ, ODC
-  if (isChennaiGroup && ["HAZ", "ODC"].includes(normCargoTp)) {
+  // 22. SURVY_RPRT - ListChennaiGroup, Cargo: HAZ, ODC
+  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
     addReq("SURVY_RPRT");
   }
 
-  // 23. VGM_ANXR1 — EXTENDED_PORTS | All main origins
-  //    ✅ FIX 7: NOT conditional on vgmViaODeX — always required per doc
-  if (isExtended && ALL_ORIGINS.includes(normOrigin)) {
+  // 23. VGM_ANXR1 - ListExtended, Origin: C, F, W, E_TANK
+  if (ListExtended.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("VGM_ANXR1");
   }
 
@@ -922,10 +866,7 @@ export const validateFormData = (formData) => {
       errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required`;
     }
 
-    // Shipping Instruction No - only for MSC
-    if (formData.bnfCode?.toUpperCase() === "MSCU" && !container.shpInstructNo?.trim()) {
-      errors[`container_${index}_shpInstructNo`] = `Container ${index + 1}: Shipping Instruction No is required for MSC`;
-    }
+      // MSC Shipping Instruction Number validation removed (made optional)
 
     // Hazardous fields
     const isHaz = formData.cargoTp?.includes("HAZ") || formData.cargoTp === "HAZ";
@@ -1147,9 +1088,9 @@ export const isFieldVisible = (fieldName, formData) => {
     return ["B", "C", "F_CFS"].includes(origin);
   }
 
-  // Shipping Instruction No - Only for MSC
+  // Shipping Instruction No - Always visible
   if (fieldName === "shpInstructNo") {
-    return bnfCode?.toUpperCase() === "MSCU";
+    return true;
   }
 
   // Booking No - Broadly visible

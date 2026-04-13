@@ -22,7 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Save as SaveIcon, Send as SendIcon } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { form13API } from "../../services/form13API";
-import { vgmAPI } from "../../services/api";
+import { vgmAPI, masterAPI } from "../../services/api";
 import Form13HeaderSection from "./Form13HeaderSection";
 import Form13ContainerSection from "./Form13ContainerSection";
 import Form13ShippingBillSection from "./Form13ShippingBillSection";
@@ -47,6 +47,7 @@ const Form13 = () => {
   // Master Data States
   const [vessels, setVessels] = useState([]);
   const [pods, setPods] = useState([]);
+  const [shippingLines, setShippingLines] = useState([]);
   const [masterDataLoaded, setMasterDataLoaded] = useState(false);
 
   // Form Data State - Complete structure matching API requirements
@@ -211,6 +212,14 @@ const Form13 = () => {
 
       const podResponse = await form13API.getPODMaster(podRequest);
       setPods(podResponse.data || []);
+
+      // Load Shipping Lines from Master Data (New Integration)
+      try {
+        const slResponse = await masterAPI.getShippingLines();
+        setShippingLines(slResponse.data || []);
+      } catch (slErr) {
+        console.warn("Failed to load shipping lines mapping:", slErr);
+      }
 
       setMasterDataLoaded(true);
       setSuccess("Master data loaded successfully");
@@ -748,11 +757,7 @@ const Form13 = () => {
         }
       }
 
-      // MSC Shipping Instruction Number validation
-      if (formData.bnfCode === "MSCU" && !container.shpInstructNo) {
-        errors[`container_${index}_shpInstructNo`] =
-          `Container ${index + 1}: Shipping Instruction No is mandatory for MSC`;
-      }
+      // MSC Shipping Instruction Number validation removed (made optional)
 
       // Shipping Bill Validations (embedded in container)
       const sbDetails = container.sbDtlsVo && container.sbDtlsVo[0];
@@ -819,143 +824,138 @@ const Form13 = () => {
     const required = [];
     const { locId, cargoTp, origin, cntnrStatus, containers } = formData;
 
-    // 0. BOOKING_COPY (Mandatory For All Locations)
-    required.push({ code: "BOOKING_COPY", name: "Booking Copy", required: true });
-
     const normCargoTp = (cargoTp || "").toUpperCase();
     const normOrigin = (origin || "").toUpperCase();
     const normCntnrStatus = (cntnrStatus || "").toUpperCase();
 
-    // Check if any container has manual VGM
-    const hasManualVgm = (containers || []).some(c =>
-      (c.vgmViaODeX || "").toUpperCase() === "N"
-    );
-
-    // Port Lists from Images
-    // ListA: Major Ports excluding Chennai group, Paradip, Kakinada
+    // Port Lists from Excel
+    // ListA: Nhava Sheva to Kandla (Major Ports)
     const ListA = ["INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1", "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1", "INHAL1", "INKRI1", "INIXY1"];
     // ListChennaiGroup: Chennai, Kattupalli, Ennore
     const ListChennaiGroup = ["INMAA1", "INKAT1", "INENN1"];
-    // ListVGM: All ports mentioned for VGM/MSDS/HAZ/LASHING
-    const ListVGM = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
-    // ListInvoiceAndDO: All major ports + Chennai
-    const ListInvoiceAndDO = [...ListA, "INMAA1"];
-    // ListDG: All major ports + Chennai + Kattupalli
-    const ListDG = [...ListA, "INMAA1", "INKAT1"];
+    // ListExtended: ListA + ListChennaiGroup + Paradip + Kakinada
+    const ListExtended = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
 
     // Helper to check cargo types
     const isHazCargo = normCargoTp.includes("HAZ");
     const isOdcCargo = normCargoTp.includes("ODC");
-    const isHazOrOdc = isHazCargo || isOdcCargo;
+    // ODC Hazardous specifically matches the dropdown value ODC(HAZ) or if both flags are present
+    const isOdcHazCargo = normCargoTp === "ODC(HAZ)" || normCargoTp === "ODC HAZARDOUS" || (isHazCargo && isOdcCargo);
+    
+    // For docs referencing "HAZ ODC" or "HAZ & ODC", it usually means either or the combination
+    const isHazOrOdc = isHazCargo || isOdcCargo || isOdcHazCargo;
 
-    // 1. PRE_EGM (Mandatory: N, Chennai)
+    // 0. BOOKING_COPY (Mandatory For All Locations)
+    required.push({ code: "BOOKING_COPY", name: "Booking Copy", required: true });
+
+    // 1. PRE_EGM (Chennai only, Optional/N)
     if (locId === "INMAA1") {
       required.push({ code: "PRE_EGM", name: "Pre-EGM", required: false });
     }
 
-    // 2. SHIP_BILL (Mandatory for ListA, Origin: C, F, W, E_TANK)
-    if (ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
-      required.push({ code: "SHIP_BILL", name: "Shipping Bill", required: true });
-    }
-
-    // 3. SHIPPING_INSTRUCTION (Mandatory for VTZ, Origin: C, F, W, E_TANK)
-    if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
-      required.push({ code: "SHIPPING_INSTRUCTION", name: "Shipping instruction (SI)", required: true });
-    }
-
-    // 4. SURVY_RPRT (Mandatory for Chennai Group, Cargo: HAZ or ODC)
-    if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
-      required.push({ code: "SURVY_RPRT", name: "Survey Report", required: true });
-    }
-
-    // 5. VGM_ANXR1 (Mandatory for ListVGM, Origin: B, C, F, W, E_TANK, has manual VGM)
-    if (ListVGM.includes(locId) && ["B", "C", "F", "W", "E_TANK"].includes(normOrigin) && hasManualVgm) {
-      required.push({ code: "VGM_ANXR1", name: "VGM-Annexure 1", required: true });
-    }
-
-    // 6. MSDS (Mandatory for ListVGM, Cargo: HAZ only)
-    if (ListVGM.includes(locId) && isHazCargo) {
-      required.push({ code: "MSDS", name: "MSDS", required: true });
-    }
-
-    // 7. MSDS_SHEET (Mandatory for Chennai Group, Cargo: HAZ only)
-    if (ListChennaiGroup.includes(locId) && isHazCargo) {
-      required.push({ code: "MSDS_SHEET", name: "MSDS Sheet", required: true });
-    }
-
-    // 8. ODC_SURVEYOR_REPORT_PHOTOS (Mandatory for ListVGM, Cargo: ODC only)
-    if (ListVGM.includes(locId) && isOdcCargo) {
-      required.push({ code: "ODC_SURVEYOR_REPORT_PHOTOS", name: "ODC SURVEYOR REPORT + PHOTOS", required: true });
-    }
-
-    // 9. PACK_LIST (Mandatory for ListA, Origin: Factory Stuff)
-    if (ListA.includes(locId) && normOrigin === "F") {
-      required.push({ code: "PACK_LIST", name: "Packing List", required: true });
-    }
-
-    // 10. HAZ_DG_DECLARATION (Mandatory for ListVGM, Cargo: HAZ only)
-    if (ListVGM.includes(locId) && isHazCargo) {
-      required.push({ code: "HAZ_DG_DECLARATION", name: "HAZ DG DECLARATION", required: true });
-    }
-
-    // 11. INVOICE (Mandatory for ListInvoiceAndDO, Origin: F, E_TANK)
-    if (ListInvoiceAndDO.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
-      required.push({ code: "INVOICE", name: "Invoice", required: true });
-    }
-
-    // 12. LASHING_CERTIFICATE (Mandatory for ListVGM, Cargo: HAZ or ODC)
-    if (ListVGM.includes(locId) && isHazOrOdc) {
-      required.push({ code: "LASHING_CERTIFICATE", name: "LASHING CERTIFICATE", required: true });
-    }
-
-    // 13. MMD_APPRVL (Mandatory for Chennai Group, Cargo: HAZ only)
-    if (ListChennaiGroup.includes(locId) && isHazCargo) {
-      required.push({ code: "MMD_APPRVL", name: "MMD Approval", required: true });
-    }
-
-    // 14. CUSTOMS_EXAM_REPORT (Mandatory for ListA, Origin: ON WHEEL)
-    if (ListA.includes(locId) && normOrigin === "W") {
-      required.push({ code: "CUSTOMS_EXAM_REPORT", name: "Customs Examination Report", required: true });
-    }
-
-    // 15. DG_DCLRTION (Mandatory for ListDG, Cargo: HAZ only)
-    if (ListDG.includes(locId) && isHazCargo) {
-      required.push({ code: "DG_DCLRTION", name: "DG Declaration", required: true });
-    }
-
-    // 16. DLVRY_ORDER (Mandatory for ListInvoiceAndDO, Origin: B, F, C, W, E_TANK)
-    if (ListInvoiceAndDO.includes(locId) && ["B", "F", "C", "W", "E_TANK"].includes(normOrigin)) {
-      required.push({ code: "DLVRY_ORDER", name: "Delivery Order", required: true });
-    }
-
-    // 17. FIRE_OFC_CRTFCT (Mandatory for Chennai Group, Cargo: HAZ only)
-    if (ListChennaiGroup.includes(locId) && isHazCargo) {
-      required.push({ code: "FIRE_OFC_CRTFCT", name: "Fire Office Certificate", required: true });
-    }
-
-    // 18. BOOK_CNFRM_CPY (Mandatory for Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
-    if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF"].some(tp => normCargoTp.includes(tp))) {
+    // 2. BOOK_CNFRM_CPY (Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
+    if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
       required.push({ code: "BOOK_CNFRM_CPY", name: "Booking Confirmation Copy", required: true });
     }
 
-    // 19. BOOKING_CONF_COPY (Mandatory for VTZ, Origin: C, F, W, E_TANK)
+    // 3. BOOKING_CONF_COPY (Vizag, Origin: C, F, W, E_TANK)
     if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
       required.push({ code: "BOOKING_CONF_COPY", name: "Booking confirmation copy", required: true });
     }
 
-    // 20. CHK_LIST (Mandatory for Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
-    if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF"].some(tp => normCargoTp.includes(tp))) {
+    // 4. CHK_LIST (Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF)
+    if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
       required.push({ code: "CHK_LIST", name: "Check List", required: true });
     }
 
-    // 21. CLN_CRTFCT (Mandatory for ListA, Cargo: HAZ, Container: Empty)
+    // 5. CLN_CRTFCT (ListA, Cargo: HAZ, Status: Empty)
     if (ListA.includes(locId) && isHazCargo && normCntnrStatus === "EMPTY") {
       required.push({ code: "CLN_CRTFCT", name: "Cleaning certificate", required: true });
     }
 
-    // 22. CNTNR_LOAD_PLAN (Mandatory for ListA, Origin: Buffer or Dock Stuff)
-    if (ListA.includes(locId) && ["B", "C"].includes(normOrigin)) {
+    // 6. CNTNR_LOAD_PLAN (ListA, Origin: Dock Stuff)
+    if (ListA.includes(locId) && normOrigin === "C") {
       required.push({ code: "CNTNR_LOAD_PLAN", name: "Container Load Plan", required: true });
+    }
+
+    // 7. CUSTOMS_EXAM_REPORT (ListA, Origin: ON WHEEL)
+    if (ListA.includes(locId) && normOrigin === "W") {
+      required.push({ code: "CUSTOMS_EXAM_REPORT", name: "Customs Examination Report", required: true });
+    }
+
+    // 8. DG_DCLRTION (ListA + Chennai + Kattupalli, Cargo: HAZ, ODC)
+    if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && isHazOrOdc) {
+      required.push({ code: "DG_DCLRTION", name: "DG Declaration", required: true });
+    }
+
+    // 9. DLVRY_ORDER (ListA + Chennai + Kattupalli, Origin: F, C, E_TANK)
+    if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && ["F", "C", "E_TANK"].includes(normOrigin)) {
+      required.push({ code: "DLVRY_ORDER", name: "Delivery Order", required: true });
+    }
+
+    // 10. FIRE_OFC_CRTFCT (ListChennaiGroup, Cargo: HAZ, ODC)
+    if (ListChennaiGroup.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "FIRE_OFC_CRTFCT", name: "Fire Office Certificate", required: true });
+    }
+
+    // 11. HAZ_DG_DECLARATION (ListExtended, Cargo: ODC HAZ)
+    if (ListExtended.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "HAZ_DG_DECLARATION", name: "HAZ DG DECLARATION", required: true });
+    }
+
+    // 12. INVOICE (ListExtended, Origin: F, E_TANK)
+    if (ListExtended.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
+      required.push({ code: "INVOICE", name: "Invoice", required: true });
+    }
+
+    // 13. LASHING_CERTIFICATE (ListExtended, Cargo: ODC & HAZ)
+    if (ListExtended.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "LASHING_CERTIFICATE", name: "LASHING CERTIFICATE", required: true });
+    }
+
+    // 14. MMD_APPRVL (ListChennaiGroup, Cargo: HAZ, ODC)
+    if (ListChennaiGroup.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "MMD_APPRVL", name: "MMD Approval", required: true });
+    }
+
+    // 15. MSDS (ListExtended, Cargo: ODC HAZ)
+    if (ListExtended.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "MSDS", name: "MSDS", required: true });
+    }
+
+    // 16. MSDS_SHEET (ListChennaiGroup, Cargo: HAZ, ODC)
+    if (ListChennaiGroup.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "MSDS_SHEET", name: "MSDS Sheet", required: true });
+    }
+
+    // 17. ODC_SURVEYOR_REPORT_PHOTOS (ListExtended, Cargo: ODC HAZ)
+    if (ListExtended.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "ODC_SURVEYOR_REPORT_PHOTOS", name: "ODC SURVEYOR REPORT + PHOTOS", required: true });
+    }
+
+    // 18. PACK_LIST (ListA, Origin: Factory Stuff)
+    if (ListA.includes(locId) && normOrigin === "F") {
+      required.push({ code: "PACK_LIST", name: "Packing List", required: true });
+    }
+
+    // 19. SHIP_BILL (ListA, Origin: C, F, W, E_TANK)
+    if (ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+      required.push({ code: "SHIP_BILL", name: "Shipping Bill", required: true });
+    }
+
+    // 20. SHIPPING_INSTRUCTION (Vizag, Origin: C, F, W, E_TANK)
+    if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+      required.push({ code: "SHIPPING_INSTRUCTION", name: "Shipping instruction (SI)", required: true });
+    }
+
+    // 21. SURVY_RPRT (ListChennaiGroup, Cargo: HAZ, ODC)
+    if (ListChennaiGroup.includes(locId) && isOdcHazCargo) {
+      required.push({ code: "SURVY_RPRT", name: "Survey Report", required: true });
+    }
+
+    // 22. VGM_ANXR1 (ListExtended, Origin: C, F, W, E_TANK)
+    if (ListExtended.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+      required.push({ code: "VGM_ANXR1", name: "VGM-Annexure 1", required: true });
     }
 
     return required;
@@ -964,8 +964,66 @@ const Form13 = () => {
   // Form Data Change Handler
   const handleFormDataChange = (section, field, value, index = null) => {
     setFormData((prev) => {
+      let newData = { ...prev };
+
       if (section === "header") {
-        return { ...prev, [field]: value };
+        newData[field] = value;
+
+        // --- AUTO-FILL LOGIC FOR VESSEL -> VIA -> TERMINAL -> SERVICE ---
+        if (["vesselNm", "viaNo", "terminalCode"].includes(field)) {
+          // Find matching vessels based on current (potentially new) selections
+          const matches = vessels.filter(v =>
+            (!newData.bnfCode || v.bnfCode === newData.bnfCode) &&
+            (!newData.locId || v.locId === newData.locId) &&
+            (!newData.vesselNm || v.vesselNm === newData.vesselNm) &&
+            (!newData.viaNo || v.viaNo === newData.viaNo) &&
+            (!newData.terminalCode || v.terminalCode === newData.terminalCode)
+          );
+
+          // 1. Auto-fill VIA No.
+          if (field === "vesselNm") {
+            const uniqueVias = [...new Set(matches.map(m => m.viaNo))].filter(Boolean);
+            if (uniqueVias.length === 1) {
+              newData.viaNo = uniqueVias[0];
+              // Recalculate matches for next steps
+              const viaMatches = matches.filter(m => m.viaNo === newData.viaNo);
+              
+              const uniqueTerms = [...new Set(viaMatches.map(m => m.terminalCode))].filter(Boolean);
+              if (uniqueTerms.length === 1) {
+                newData.terminalCode = uniqueTerms[0];
+                const termMatches = viaMatches.filter(m => m.terminalCode === newData.terminalCode);
+                
+                const uniqueServices = [...new Set(termMatches.map(m => m.service))].filter(Boolean);
+                if (uniqueServices.length === 1) {
+                  newData.service = uniqueServices[0];
+                }
+              }
+            }
+          }
+          // 2. Auto-fill Terminal if VIA is selected
+          else if (field === "viaNo") {
+            const uniqueTerms = [...new Set(matches.map(m => m.terminalCode))].filter(Boolean);
+            if (uniqueTerms.length === 1) {
+              newData.terminalCode = uniqueTerms[0];
+              const termMatches = matches.filter(m => m.terminalCode === newData.terminalCode);
+              
+              const uniqueServices = [...new Set(termMatches.map(m => m.service))].filter(Boolean);
+              if (uniqueServices.length === 1) {
+                newData.service = uniqueServices[0];
+              }
+            }
+          }
+          // 3. Auto-fill Service if Terminal is selected
+          else if (field === "terminalCode") {
+            const uniqueServices = [...new Set(matches.map(m => m.service))].filter(Boolean);
+            if (uniqueServices.length === 1) {
+              newData.service = uniqueServices[0];
+            }
+          }
+        }
+        // --- END AUTO-FILL LOGIC ---
+
+        return newData;
       } else if (section === "containers") {
         const newContainers = [...prev.containers];
         if (index !== null) {
@@ -1584,6 +1642,7 @@ const Form13 = () => {
             formData={formData}
             vessels={vessels}
             pods={pods}
+            shippingLines={shippingLines}
             masterDataLoaded={masterDataLoaded}
             loading={loading}
             onFormDataChange={handleFormDataChange}

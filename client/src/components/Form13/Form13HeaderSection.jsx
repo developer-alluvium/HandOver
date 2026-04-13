@@ -18,6 +18,7 @@ const Form13HeaderSection = ({
   formData,
   vessels,
   pods,
+  shippingLines = [],
   masterDataLoaded,
   loading,
   onFormDataChange,
@@ -166,7 +167,10 @@ const Form13HeaderSection = ({
     // Map field names to their respective filtered options
     switch (fieldName) {
       case "bnfCode":
-        selectOptions = slOptions.map(opt => ({ value: opt, label: opt }));
+        selectOptions = slOptions.map(opt => {
+          const match = shippingLines.find(sl => sl.value === opt);
+          return { value: opt, label: match ? match.label : opt };
+        });
         break;
       case "locId":
         selectOptions = locOptions;

@@ -5,7 +5,7 @@ import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import axios from "axios";
 import { useFormik, FormikProvider, useFormikContext } from "formik";
 import { useSnackbar } from "notistack";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import AppbarComponent from "./AppbarComponent";
 import { vgmAPI, masterAPI } from "../services/api.js";
@@ -254,6 +254,7 @@ const VGMForm = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { "*": urlJobNo } = useParams();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { userData, shippers } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -539,6 +540,15 @@ const VGMForm = ({
     };
     initializeMode();
   }, [location.state, editMode, existingRequest, VGM_INITIAL_VALUES]);
+
+  // Handle Job No from URL
+  useEffect(() => {
+    if (urlJobNo && shippingLines.length > 0 && !isEditMode && !fetchedJobData && !loadingJob) {
+      console.log("[VGM] Detected Job No in URL:", urlJobNo);
+      setJobNoSearch(urlJobNo);
+      handleJobSearch(urlJobNo);
+    }
+  }, [urlJobNo, shippingLines.length, isEditMode]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -1080,8 +1090,9 @@ const VGMForm = ({
     }
   };
 
-  const handleJobSearch = async () => {
-    if (!jobNoSearch) {
+  const handleJobSearch = async (forcedJobNo) => {
+    const searchVal = typeof forcedJobNo === "string" ? forcedJobNo : jobNoSearch;
+    if (!searchVal) {
       enqueueSnackbar("Please enter a Job No", { variant: "warning" });
       return;
     }
@@ -1093,7 +1104,7 @@ const VGMForm = ({
         {
           params: {
             status: "Pending",
-            search: jobNoSearch,
+            search: searchVal,
             page: 1,
             limit: 20,
           },

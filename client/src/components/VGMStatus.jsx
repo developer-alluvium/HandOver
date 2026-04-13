@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSnackbar } from "notistack";
-import { vgmAPI } from "../services/api";
+import { vgmAPI, masterAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import dayjs from "dayjs";
 import AppbarComponent from "./AppbarComponent";
@@ -136,6 +136,7 @@ const VGMStatus = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
+  const [shippingLines, setShippingLines] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -339,12 +340,23 @@ const VGMStatus = () => {
 
   // Get liner name from liner code
   const getLinerName = (linerCode) => {
+    const match = shippingLines.find(sl => sl.value === linerCode);
+    if (match) return match.label;
     return LINER_MAP[linerCode] || linerCode || "N/A";
   };
 
   // Initial load - with current month dates
   useEffect(() => {
-    fetchVGMRequests(1, "", "", dateFrom, dateTo);
+    const init = async () => {
+      try {
+        const slResponse = await masterAPI.getShippingLines();
+        setShippingLines(slResponse.data || []);
+      } catch (err) {
+        console.warn("Failed to load shipping lines master data:", err);
+      }
+      fetchVGMRequests(1, "", "", dateFrom, dateTo);
+    };
+    init();
   }, []); // dateFrom and dateTo are stable on mount (initial values), but explicit dependency might cause double fetch? 
   // Standard pattern: useEffect with empty array behaves as componentDidMount. 
   // However, dateFrom/dateTo state is initialized synchronously.

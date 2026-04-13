@@ -88,7 +88,7 @@ function App() {
                 }
               />
               <Route
-                path="/vgm"
+                path="/vgm/*"
                 element={
                   <ProtectedRoute>
                     <VGMForm />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSnackbar } from "notistack";
 import { form13API } from "../../services/form13API";
+import { vgmAPI, masterAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import dayjs from "dayjs";
 import AppbarComponent from "../AppbarComponent";
@@ -78,6 +79,7 @@ const TrackF13 = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
+  const [shippingLines, setShippingLines] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [cancelModalData, setCancelModalData] = useState(null);
   const [chaRemark, setChaRemark] = useState("");
@@ -215,6 +217,11 @@ const TrackF13 = () => {
     }
   };
 
+  const getLinerName = (linerCode) => {
+    const match = shippingLines.find(sl => sl.value === linerCode);
+    return match ? match.label : linerCode || "N/A";
+  };
+
   const handleClearFilters = () => {
     const clearedFilters = {
       status: "",
@@ -243,7 +250,16 @@ const TrackF13 = () => {
 
   // Initial load
   useEffect(() => {
-    fetchF13Requests(1);
+    const init = async () => {
+      try {
+        const slResponse = await masterAPI.getShippingLines();
+        setShippingLines(slResponse.data || []);
+      } catch (err) {
+        console.warn("Failed to load shipping lines master data:", err);
+      }
+      fetchF13Requests(1);
+    };
+    init();
   }, []);
 
   return (
@@ -493,6 +509,10 @@ const TrackF13 = () => {
                 <div className="detail-item">
                   <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>VESSEL / VOYAGE</label>
                   <div style={{ fontWeight: 600 }}>{selectedRequest.vesselNm}</div>
+                </div>
+                <div className="detail-item">
+                  <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>SHIPPING LINE</label>
+                  <div style={{ fontWeight: 600 }}>{getLinerName(selectedRequest.bnfCode)}</div>
                 </div>
                 <div className="detail-item">
                   <label className="text-muted" style={{ fontSize: '10px', display: 'block', mb: '4px' }}>BOOKING NUMBER</label>
