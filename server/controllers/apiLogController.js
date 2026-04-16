@@ -11,7 +11,6 @@ export const submitVGM = async (req, res) => {
     const bookNo = req.body.bookNo;
     const cntnrNo = req.body.cntnrNo;
 
-    console.log(`[submitVGM] Checking for existing log: "${bookNo}" / "${cntnrNo}"`);
 
     // Check if a request already exists for this booking + container combination
     // Use whitespace-tolerant regex just in case
@@ -21,9 +20,7 @@ export const submitVGM = async (req, res) => {
       "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
     }).sort({ createdAt: -1 });
 
-    if (existingLog) {
-      console.log(`[submitVGM] Found existing log: ${existingLog._id}`);
-    }
+
 
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
@@ -72,7 +69,6 @@ export const saveVGM = async (req, res) => {
     const bookNo = req.body.bookNo;
     const cntnrNo = req.body.cntnrNo;
 
-    console.log(`[saveVGM] Checking for existing draft: "${bookNo}" / "${cntnrNo}"`);
 
     // Check if a draft or request already exists for this booking + container combination
     const existingDraft = await ApiLog.findOne({
@@ -81,9 +77,7 @@ export const saveVGM = async (req, res) => {
       "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
     }).sort({ createdAt: -1 });
 
-    if (existingDraft) {
-      console.log(`[saveVGM] Found existing draft: ${existingDraft._id}`);
-    }
+
 
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
@@ -113,7 +107,6 @@ export const saveVGM = async (req, res) => {
         },
         { new: true }
       );
-      console.log(`Updated existing draft: ${savedLog._id}`);
     } else {
       // Create new draft
       savedLog = new ApiLog({
@@ -292,7 +285,6 @@ export const autoLogin = async (req, res) => {
       });
     }
 
-    console.log("[AUTO-LOGIN] Attempting auto-login with pyrCode:", pyrCode);
 
     // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
     const now = new Date();
@@ -332,7 +324,6 @@ export const autoLogin = async (req, res) => {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       });
 
-      console.log("[AUTO-LOGIN] Success! Authenticated as:", pyrCode);
 
       res.json({
         success: true,
@@ -724,12 +715,10 @@ export const updateVGMRequest = async (req, res) => {
     if (updateData.bookNo) updateData.bookNo = updateData.bookNo.toString().trim();
     if (updateData.cntnrNo) updateData.cntnrNo = updateData.cntnrNo.toString().trim();
 
-    console.log(`[updateVGMRequest] Received update for vgmId: ${vgmId}, BookNo: ${updateData.bookNo}, CntnrNo: ${updateData.cntnrNo}`);
 
     // Get the original VGM request
     const originalLog = await ApiLog.findById(vgmId);
     if (!originalLog) {
-      console.log(`[updateVGMRequest] CRITICAL: Log not found for ID ${vgmId}`);
       return res.status(404).json({ error: "VGM request not found" });
     }
 

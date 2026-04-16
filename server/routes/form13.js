@@ -39,7 +39,6 @@ const getHashKey = () => {
 
 export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => {
   const url = `${ODEX_CONFIG.baseURL}${endpoint}`;
-  // console.log("📤 Payload:", JSON.stringify(requestData, null, 2));
 
   try {
     const res = await axios.post(url, requestData, {
@@ -51,7 +50,6 @@ export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => 
       timeout: 30000,
     });
 
-    // console.log("📥 ODeX Response:", JSON.stringify(res.data, null, 2));
 
     // ODeX returns JSON even for errors, so no HTML detection needed
     return res.data;
@@ -149,7 +147,6 @@ router.post("/vessel-master", async (req, res) => {
 
     // Return mock data for testing when API is down
     if (process.env.USE_MOCK_DATA === "true") {
-      console.log("Returning mock vessel data");
       const mockData = getMockVesselData();
       return res.json(mockData);
     }
@@ -252,7 +249,6 @@ router.post("/submit", async (req, res) => {
     form13.status = formData.status || (skipOdex ? "SAVED" : "PENDING");
     await form13.save();
 
-    console.log("💾 Saved document ID:", form13._id);
 
     if (skipOdex) {
       return res.json({
@@ -326,26 +322,25 @@ router.post("/status", async (req, res) => {
     // Update the local record with the new status information if available
     try {
       const statusObj = Array.isArray(odexResponse) ? odexResponse[0] : odexResponse;
-      
+
       // Extract status from container list if available, otherwise from root
-      const firstCntrStatus = (statusObj?.cntrList && statusObj.cntrList.length > 0) 
-        ? statusObj.cntrList[0].status 
+      const firstCntrStatus = (statusObj?.cntrList && statusObj.cntrList.length > 0)
+        ? statusObj.cntrList[0].status
         : null;
-      
+
       const newStatus = firstCntrStatus || statusObj?.status || statusObj?.currentStatus || "SUBMITTED";
 
       const updatedDoc = await Form13.findOneAndUpdate(
         { odexRefNo: odexRefNo, bookNo: bookNo },
-        { 
-          $set: { 
+        {
+          $set: {
             statusApiResponse: odexResponse,
             status: newStatus
-          } 
+          }
         },
         { new: true }
       );
-      console.log(`✅ Updated status for ${odexRefNo} to: ${newStatus}`);
-      
+
       // Return the updated status in the response so frontend can use it immediately
       return res.json({
         success: true,

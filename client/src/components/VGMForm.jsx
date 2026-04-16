@@ -402,7 +402,6 @@ const VGMForm = ({
               }
             }
           }
-          console.log('[VGM] weighBridgeWtTs for backend:', payload.weighBridgeWtTs);
         } else {
           // If empty, don't send or keep empty
           payload.weighBridgeWtTs = "";
@@ -490,7 +489,6 @@ const VGMForm = ({
           lines = rawData.data;
         }
 
-        console.log("[VGM] Fetched shipping lines:", lines.length);
 
         if (lines.length > 0) {
           setShippingLines(lines);
@@ -544,7 +542,6 @@ const VGMForm = ({
   // Handle Job No from URL
   useEffect(() => {
     if (urlJobNo && shippingLines.length > 0 && !isEditMode && !fetchedJobData && !loadingJob) {
-      console.log("[VGM] Detected Job No in URL:", urlJobNo);
       setJobNoSearch(urlJobNo);
       handleJobSearch(urlJobNo);
     }
@@ -671,25 +668,21 @@ const VGMForm = ({
 
     // Set new timer - check after 800ms of no typing
     bookingCheckTimerRef.current = setTimeout(() => {
-      console.log('[BOOKING CHECK] Debounce timer fired for:', bookNo);
       checkBookingExists(bookNo, linerId);
     }, 800);
   };
 
   const checkBookingExists = async (bookNo, linerId) => {
-    console.log('[BOOKING CHECK] Check triggered at:', new Date().toISOString());
     const currentBookNo = bookNo || formik.values.bookNo;
     const currentLinerId = linerId || formik.values.linerId;
 
     // Early returns for invalid state
     if (!currentBookNo || !currentLinerId) {
-      console.log('[BOOKING CHECK] Skipped - missing data:', { currentBookNo, currentLinerId });
       return;
     }
 
     // Prevent duplicate checks if already checking
     if (checkingBookingRef.current) {
-      console.log('[BOOKING CHECK] Skipped - already checking');
       return;
     }
 
@@ -698,7 +691,6 @@ const VGMForm = ({
       lastCheckedBookingRef.current.bookNo === currentBookNo &&
       lastCheckedBookingRef.current.linerId === currentLinerId
     ) {
-      console.log('[BOOKING CHECK] Skipped - already checked this combination');
       return;
     }
 
@@ -706,7 +698,6 @@ const VGMForm = ({
       checkingBookingRef.current = true;
       lastCheckedBookingRef.current = { bookNo: currentBookNo, linerId: currentLinerId };
 
-      console.log('[BOOKING CHECK] Starting API call at:', new Date().toISOString());
       const startTime = performance.now();
 
       // Use exact matching to prevent partial matches
@@ -718,7 +709,6 @@ const VGMForm = ({
       });
 
       const endTime = performance.now();
-      console.log(`[BOOKING CHECK] API call completed in ${(endTime - startTime).toFixed(2)}ms`);
 
       if (response.data && response.data.requests && response.data.requests.length > 0) {
         // Filter out current ID if in edit mode
@@ -728,8 +718,6 @@ const VGMForm = ({
 
         if (validRequests.length > 0) {
           const match = validRequests[0];
-          console.log('[BOOKING CHECK] Match found, showing notification at:', new Date().toISOString());
-
           // Close any existing persistent snackbars to prevent maxSnack warning
           closeSnackbar();
 
@@ -796,7 +784,6 @@ const VGMForm = ({
               )
             }
           );
-          console.log('[BOOKING CHECK] Notification enqueued at:', new Date().toISOString());
         } else {
           console.log('[BOOKING CHECK] No valid requests after filtering');
         }
@@ -807,7 +794,6 @@ const VGMForm = ({
       console.error("[BOOKING CHECK] Error:", error);
     } finally {
       checkingBookingRef.current = false;
-      console.log('[BOOKING CHECK] Check completed at:', new Date().toISOString());
     }
   };
 
@@ -1181,25 +1167,21 @@ const VGMForm = ({
 
           // Take first 5 chars for matching (e.g., INMUN, INSBI)
           const normalizedSearch = portCode.substring(0, 5).toLowerCase();
-          console.log("[JOB SEARCH] Searching port with code:", normalizedSearch);
 
           const match = PORTS.find((p) =>
             p.value.toLowerCase().startsWith(normalizedSearch) ||
             p.label.toLowerCase().includes(normalizedSearch)
           );
-          console.log("[JOB SEARCH] Port match found:", match);
           return match ? match.value : "";
         };
 
         // --- Helper to find shipping line (Robust token-based exact match) ---
         const findShippingLine = (shippingLineName) => {
           if (!shippingLineName || !shippingLines || shippingLines.length === 0) {
-            console.log("[JOB SEARCH] Cannot match: No master shipping lines available.");
             return "";
           }
 
           const apiStr = shippingLineName.toLowerCase().trim();
-          console.log(`[JOB SEARCH] Matching "${apiStr}" against ${shippingLines.length} master records.`);
 
           // 1. Try exact match of the whole string against code or label
           let match = shippingLines.find((sl) => {
@@ -1211,7 +1193,6 @@ const VGMForm = ({
 
           // 2. Split by " - " and try exact matches for each part
           const parts = shippingLineName.split(" - ").map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-          console.log("[JOB SEARCH] Checking parts:", parts);
 
           for (const part of parts) {
             match = shippingLines.find((sl) => {
@@ -1221,7 +1202,6 @@ const VGMForm = ({
               return val === part || lab === part;
             });
             if (match) {
-              console.log("[JOB SEARCH] Part match found:", match.value);
               return match.value;
             }
           }
@@ -1239,11 +1219,9 @@ const VGMForm = ({
           });
 
           if (match) {
-            console.log("[JOB SEARCH] Boundary match found:", match.value);
             return match.value;
           }
 
-          console.log("[JOB SEARCH] No match found for:", apiStr);
           return "";
         };
 
@@ -1781,7 +1759,6 @@ const VGMForm = ({
                   }}
                   onPaste={(e) => {
                     const pastedText = e.clipboardData.getData('text').trim();
-                    console.log('Pasted datetime:', pastedText);
 
                     // Support specialized format: 31.03.2026/Time:19:34
                     const specialFormatMatch = pastedText.match(/^(\d{2})\.(\d{2})\.(\d{4})\/Time:(\d{2}):(\d{2})/);

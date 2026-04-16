@@ -181,7 +181,9 @@ const ContainerRow = ({
                   </Box>
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Driver Name <span style={{ color: '#d32f2f' }}>*</span></Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Driver Name {terminalCode === "MICT" && <span style={{ color: '#d32f2f' }}>*</span>}
+                      </Typography>
                       <TextField
                         fullWidth size="small" variant="standard"
                         value={container.driverNm}
@@ -220,7 +222,9 @@ const ContainerRow = ({
                       </Grid>
                     )}
                     <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Haulier</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Haulier {terminalCode !== "MICT" && <span style={{ color: '#d32f2f' }}>*</span>}
+                      </Typography>
                       <Autocomplete
                         size="small"
                         options={hauliers}
@@ -240,6 +244,8 @@ const ContainerRow = ({
                             variant="standard"
                             placeholder="Search or enter haulier..."
                             fullWidth
+                            error={!!validationErrors[`container_${index}_haulier`]}
+                            helperText={validationErrors[`container_${index}_haulier`]}
                           />
                         )}
                       />

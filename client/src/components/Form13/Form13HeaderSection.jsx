@@ -117,25 +117,60 @@ const Form13HeaderSection = ({
   // 8. POD Options (Cascading from pods master data)
   const cascadingPods = React.useMemo(() => {
     if (!pods || !formData.locId) return [];
-    const locationData = pods.find(p => p.locId === formData.locId);
+
+    // Normalize location ID for comparison
+    const targetLocId = formData.locId.trim().toUpperCase();
+    const locationData = pods.find(p => (p.locId || "").trim().toUpperCase() === targetLocId);
+
     if (!locationData) return [];
 
     let filteredPods = [];
+    let allLocationPods = [];
+
     locationData.terminal?.forEach(term => {
-      // Match Terminal
-      if (!formData.terminalCode || term.terminalId === formData.terminalCode) {
+      const termId = (term.terminalId || "").trim().toUpperCase();
+      const termNm = (term.terminalNm || "").trim().toUpperCase();
+      const selectedTerm = (formData.terminalCode || "").trim().toUpperCase();
+
+      // Collect all pods for this location for fallback
+      term.service?.forEach(serv => {
+        if (serv.pod) allLocationPods.push(...serv.pod);
+      });
+
+      // Match Terminal (by ID or Name)
+      if (!selectedTerm || termId === selectedTerm || termNm === selectedTerm) {
         term.service?.forEach(serv => {
+          const servNm = (serv.serviceNm || "").trim().toUpperCase();
+          const selectedServ = (formData.service || "").trim().toUpperCase();
+
           // Match Service
-          if (!formData.service || serv.serviceNm === formData.service) {
+          if (!selectedServ || servNm === selectedServ) {
             if (serv.pod) filteredPods.push(...serv.pod);
           }
         });
       }
     });
 
-    // Unique by podCd
-    return [...new Map(filteredPods.map(p => [p.podCd, p])).values()]
-      .sort((a, b) => a.podNm.localeCompare(b.podNm));
+    // Fallback 1: If terminal/service filter returned nothing, try matching only terminal
+    if (filteredPods.length === 0 && formData.terminalCode) {
+      const selectedTerm = formData.terminalCode.trim().toUpperCase();
+      locationData.terminal?.forEach(term => {
+        const termId = (term.terminalId || "").trim().toUpperCase();
+        const termNm = (term.terminalNm || "").trim().toUpperCase();
+        if (termId === selectedTerm || termNm === selectedTerm) {
+          term.service?.forEach(serv => {
+            if (serv.pod) filteredPods.push(...serv.pod);
+          });
+        }
+      });
+    }
+
+    // Fallback 2: If still no pods found but we have some for this location, show all
+    const podsToUse = filteredPods.length > 0 ? filteredPods : allLocationPods;
+
+    // Unique by podCd and sort
+    return [...new Map(podsToUse.map(p => [p.podCd, p])).values()]
+      .sort((a, b) => (a.podNm || "").localeCompare(b.podNm || ""));
   }, [pods, formData.locId, formData.terminalCode, formData.service]);
 
   // 9. CFS Options

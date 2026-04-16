@@ -20,9 +20,7 @@ export const LOCATION_SPECIFIC_RULES = {
     // Chennai
     name: "Chennai",
     requires: [
-      "consigneeNm",
-      "consigneeAddr",
-      "cargoDesc",
+
       "terminalLoginId",
       "fpod",
     ],
@@ -54,9 +52,6 @@ export const LOCATION_SPECIFIC_RULES = {
     // Paradip
     name: "Paradip",
     requires: [
-      "consigneeNm",
-      "consigneeAddr",
-      "cargoDesc",
       "terminalLoginId",
       "fpod",
     ],
@@ -68,9 +63,6 @@ export const LOCATION_SPECIFIC_RULES = {
     // Kattupalli
     name: "Kattupalli",
     requires: [
-      "consigneeNm",
-      "consigneeAddr",
-      "cargoDesc",
       "terminalLoginId",
       "fpod",
     ],
@@ -82,9 +74,6 @@ export const LOCATION_SPECIFIC_RULES = {
     // Kolkata
     name: "Kolkata",
     requires: [
-      "consigneeNm",
-      "consigneeAddr",
-      "cargoDesc",
       "terminalLoginId",
       "fpod",
     ],
@@ -96,9 +85,6 @@ export const LOCATION_SPECIFIC_RULES = {
     // Ennore
     name: "Ennore",
     requires: [
-      "consigneeNm",
-      "consigneeAddr",
-      "cargoDesc",
       "terminalLoginId",
       "fpod",
     ],
@@ -109,7 +95,7 @@ export const LOCATION_SPECIFIC_RULES = {
   INMUN1: {
     // Mundra
     name: "Mundra",
-    requires: ["consigneeNm", "consigneeAddr", "cargoDesc", "terminalLoginId"],
+    requires: ["terminalLoginId"],
     optional: ["fpod"],
     earlyGateIn: {
       enabled: true,
@@ -587,7 +573,7 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
   const alwaysRequired = [
     'locId', 'bnfCode', 'vesselNm', 'terminalCode', 'service', 'pod', 'cargoTp', 'origin',
     'cntnrStatus', 'mobileNo', 'shipperNm', 'cntnrNo', 'cntnrSize', 'iso', 'agentSealNo',
-    'customSealNo', 'vgmViaODeX', 'formType', 'driverNm'
+    'customSealNo', 'vgmViaODeX', 'formType'
   ];
 
   if (alwaysRequired.includes(fieldName)) {
@@ -625,6 +611,14 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
 
   // 5. Special manual checks
   switch (fieldName) {
+    case 'driverNm':
+      // Driver name is mandatory ONLY if terminal is MICT
+      return formData.terminalCode === "MICT";
+
+    case 'haulier':
+      // Haulier is mandatory if terminal is NOT MICT
+      return formData.terminalCode !== "MICT";
+
     case 'vgmWt':
       return formData.vgmViaODeX === 'N';
 
@@ -640,9 +634,6 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
       // At least one of FF Code, IE code, or CHA code is required for Nhava Sheva
       if (formData.locId === "INNSA1") {
         const hasAny = !!formData.FFCode || !!formData.IECode || !!formData.CHACode;
-        // If none is provided, all are conditionally required initially, or we require at least one.
-        // Returning true here would force all three if none provided.
-        // It's better handled elsewhere but conceptually this implies conditional true if not satisfied.
         return !hasAny;
       }
       return false;
@@ -804,8 +795,8 @@ export const getRequiredAttachments = (formData) => {
     addReq("PACK_LIST");
   }
 
-  // 20. SHIP_BILL - ListA, Origin: C, F, W, E_TANK
-  if (ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  // 20. SHIP_BILL - ListA, Origin: C, F, W, E_TANK (Exclude Mundra)
+  if (locId !== "INMUN1" && ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("SHIP_BILL");
   }
 
@@ -819,8 +810,8 @@ export const getRequiredAttachments = (formData) => {
     addReq("SURVY_RPRT");
   }
 
-  // 23. VGM_ANXR1 - ListExtended, Origin: C, F, W, E_TANK
-  if (ListExtended.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  // 23. VGM_ANXR1 - ListExtended, Origin: C, F, W, E_TANK (Exclude Mundra)
+  if (locId !== "INMUN1" && ListExtended.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("VGM_ANXR1");
   }
 
@@ -846,12 +837,19 @@ export const validateFormData = (formData) => {
   if (!formData.cntnrStatus?.trim())
     errors.cntnrStatus = "Container Status is required";
   if (!formData.mobileNo?.trim()) errors.mobileNo = "Mobile No is required";
-  if (!formData.consigneeNm?.trim())
+  
+  if (isFieldRequired('consigneeNm', formData) && !formData.consigneeNm?.trim())
     errors.consigneeNm = "Consignee Name is required";
-  if (!formData.cargoDesc?.trim())
+    
+  if (isFieldRequired('consigneeAddr', formData) && !formData.consigneeAddr?.trim())
+    errors.consigneeAddr = "Consignee Address is required";
+    
+  if (isFieldRequired('cargoDesc', formData) && !formData.cargoDesc?.trim())
     errors.cargoDesc = "Cargo Description is required";
-  if (!formData.terminalLoginId?.trim())
+    
+  if (isFieldRequired('terminalLoginId', formData) && !formData.terminalLoginId?.trim())
     errors.terminalLoginId = "Terminal Login ID is required";
+
 
   // Conditional Header Field Validations
   if (isFieldRequired('ShipperCity', formData) && !formData.ShipperCity?.trim()) {
@@ -891,10 +889,13 @@ export const validateFormData = (formData) => {
         }: VGM Weight exceeds maximum allowed (999.99 MT). Please enter weight in Metric Tons.`;
     }
 
-    // Conditionally required fields
-    // Driver Name - only if origin is CFS
-    if (formData.origin === "CFS" && !container.driverNm?.trim()) {
-      errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required`;
+    // Driver Name & Haulier conditional mandatory validation
+    if (isFieldRequired('driverNm', formData, index) && !container.driverNm?.trim()) {
+      errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required for ${formData.terminalCode}`;
+    }
+
+    if (isFieldRequired('haulier', formData, index) && !container.haulier?.trim()) {
+      errors[`container_${index}_haulier`] = `Container ${index + 1}: Haulier is required`;
     }
 
     // MSC Shipping Instruction Number validation removed (made optional)
@@ -1094,12 +1095,9 @@ export const isFieldVisible = (fieldName, formData) => {
     "origin",
     "bookNo",
     "shipperNm",
-    "consigneeNm",
-    "consigneeAddr",
     "cntnrStatus",
     "mobileNo",
     "formType",
-    "cargoDesc",
     "terminalLoginId",
     "IsEarlyGateIn"
   ];
@@ -1108,11 +1106,16 @@ export const isFieldVisible = (fieldName, formData) => {
     return true;
   }
 
+  // Hide consignee details and cargo description if not mandatory
+  if (["consigneeNm", "consigneeAddr", "cargoDesc"].includes(fieldName)) {
+    return isFieldRequired(fieldName, formData);
+  }
+
   // Conditional visibility rules
 
-  // FPOD - Only for specific locations
+  // FPOD - Always visible
   if (fieldName === "fpod") {
-    return ["INMAA1", "INPRT1", "INKAT1", "INCCU1", "INENN1"].includes(locId);
+    return true;
   }
 
   // CFS Code - Visible for Buffer and Dock Stuff/CFS origins

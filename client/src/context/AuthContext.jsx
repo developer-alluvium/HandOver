@@ -50,7 +50,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("userData", JSON.stringify(parsedCookie.userData));
             localStorage.setItem("shippers", JSON.stringify(parsedCookie.shippers || []));
 
-            console.log("[AUTH] Restored session from cookie");
             setLoading(false);
           }
         } catch (e) {
@@ -91,13 +90,11 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem("userData", JSON.stringify(meResponse.data.userData));
           localStorage.setItem("shippers", JSON.stringify(freshShippers));
 
-          console.log("[AUTH] Session validated & updated");
           setLoading(false);
           return;
         }
       } catch (error) {
         // Not authenticated on server or error
-        console.log("[AUTH] Server session check failed:", error.message);
 
         // If we have local auth, do we trust it? 
         // If it was a network error (not 401), we might trust it.
@@ -119,7 +116,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("userData", JSON.stringify(meResponse.data.userData));
             localStorage.setItem("shippers", JSON.stringify(meResponse.data.shippers || []));
 
-            console.log("[AUTH] Auto-login successful");
           }
         }
       } catch (error) {

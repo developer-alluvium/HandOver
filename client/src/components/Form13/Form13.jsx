@@ -183,10 +183,12 @@ const Form13 = () => {
         throw new Error("Payor code not found. Please login again.");
       }
 
-      const timestamp = new Date()
-        .toISOString()
-        .replace("T", " ")
-        .split(".")[0];
+      // This sets the timestamp to the exact current time (e.g., "2026-04-16 14:45:30")
+      // This sets the timestamp to today at midnight (e.g., "2026-04-16 00:00:00")
+      const now = new Date();
+      const timestamp = now.toISOString().split('T')[0] + " 00:00:00";
+
+
 
       // Get hashkey
       const hashKeyResponse = await form13API.getHashKey({
@@ -257,13 +259,10 @@ const Form13 = () => {
     if (!bookNo || bookNo.length < 3) return;
 
     try {
-      console.log(`[VGM-AUTOFILL] Searching for Booking: ${bookNo}`);
       const response = await vgmAPI.getRequests({ bookingNo: bookNo, exactMatch: true });
-      console.log("[VGM-AUTOFILL] API Response:", response.data);
       const vgmRequests = response.data?.requests || [];
 
       if (vgmRequests.length > 0) {
-        console.log(`[VGM-AUTOFILL] Found ${vgmRequests.length} VGM records`);
         // Map VGM records to Form 13 container structure
         const vgmContainers = vgmRequests.map(vgm => {
           // Convert weight from KGS to MTS (if exists)
@@ -304,21 +303,24 @@ const Form13 = () => {
         const existingNos = formData.containers.map(c => (c.cntnrNo || "").trim()).filter(Boolean);
         const newVgmContainers = uniqueVgmContainers.filter(c => !existingNos.includes(c.cntnrNo.trim()));
 
-        console.log(`[VGM-AUTOFILL] New containers to add: ${newVgmContainers.length}`);
 
         if (newVgmContainers.length > 0) {
           setFormData(prev => {
             const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
             const finalContainers = isFirstEmpty ? newVgmContainers : [...prev.containers, ...newVgmContainers];
+            
+            // Also populate header-level shipperNm if it's empty, using the first VGM record found
+            const headerShipperNm = prev.shipperNm || vgmRequests[0]?.shipperNm || "";
+
             return {
               ...prev,
+              shipperNm: headerShipperNm,
               containers: finalContainers
             };
           });
-          setSuccess(`Auto-filled ${newVgmContainers.length} containers from VGM data`);
+          setSuccess(`Auto-filled ${newVgmContainers.length} container(s) and Shipper Name from VGM data`);
         }
       } else {
-        console.log("[VGM-AUTOFILL] No matching VGM records found for this booking");
       }
     } catch (err) {
       console.error("[VGM-AUTOFILL] Error:", err);
@@ -327,7 +329,6 @@ const Form13 = () => {
 
   // Trigger VGM Auto-fill when booking number is entered (Debounced)
   useEffect(() => {
-    console.log(`[DEBUG] bookNo effect check: val="${formData.bookNo}", len=${formData.bookNo?.length}, editMode=${isEditMode}`);
     if (formData.bookNo && formData.bookNo.length >= 3 && !isEditMode) {
       const timer = setTimeout(() => {
         handleVGMAutoFill(formData.bookNo);
@@ -386,7 +387,6 @@ const Form13 = () => {
   };
 
   const prefillForm = (data) => {
-    console.log("📝 Prefilling form with data:", data);
 
     // Basic fields mapping
     const newFormData = { ...formData };
@@ -402,16 +402,13 @@ const Form13 = () => {
         !["containers", "attachments", "cntrlist", "attlist"].includes(matchingKey.toLowerCase())
       ) {
         newFormData[matchingKey] = data[key] !== null && data[key] !== undefined ? data[key] : "";
-        console.log(`   - Mapped ${key} to ${matchingKey}: ${newFormData[matchingKey]}`);
       }
     });
 
     // Special handling for Container List (stored as cntrList in DB)
     const sourceContainers = data.cntrList || data.containers || [];
     if (sourceContainers.length > 0) {
-      console.log("📦 Found containers to prefill:", sourceContainers);
       newFormData.containers = sourceContainers.map((c, idx) => {
-        console.log(`   - Pre-filling container ${idx}:`, c.cntnrNo);
         return {
           ...c,
           // Ensure nesting for shipping bills is preserved
@@ -422,18 +419,15 @@ const Form13 = () => {
         };
       });
     } else {
-      console.warn("⚠️ No containers found in the data to prefill");
     }
 
     // Special handling for Attachment List (stored as attList in DB)
     const sourceAttachments = data.attList || data.attachments || [];
     if (sourceAttachments.length > 0) {
-      console.log("📎 Found attachments to prefill:", sourceAttachments.length);
       newFormData.attachments = sourceAttachments;
     }
 
     setFormData(newFormData);
-    console.log("✅ Final Form State set:", newFormData);
     setSuccess("Form pre-filled with existing data");
   };
 
@@ -836,7 +830,6 @@ const Form13 = () => {
     return errors;
   };
 
-  useEffect(() => { console.log(validationErrors); }, [validationErrors]);
 
   // Get Required Attachments based on location, cargo type, and origin as per images
   const getRequiredAttachments = () => {
@@ -1157,12 +1150,10 @@ const Form13 = () => {
 
     if (!businessErrors) return errors;
 
-    console.log("🔧 Raw business errors:", businessErrors);
 
     // Split by number pattern like "1 -", "2 -", etc.
     const errorLines = businessErrors.split(/\d+\s*-\s*/).filter(line => line.trim());
 
-    console.log("🔧 Parsed error lines:", errorLines);
 
     errorLines.forEach((line, index) => {
       const trimmedLine = line.trim();
@@ -1220,7 +1211,6 @@ const Form13 = () => {
       errors.generic = businessErrors;
     }
 
-    console.log("🔧 Formatted errors:", errors);
     return errors;
   };
 
@@ -1230,7 +1220,6 @@ const Form13 = () => {
 
     if (!schemaErrors) return errors;
 
-    console.log("🔧 Raw schema errors:", schemaErrors);
 
     try {
       if (typeof schemaErrors === 'string') {
@@ -1254,7 +1243,6 @@ const Form13 = () => {
       errors.generic = "Schema validation failed";
     }
 
-    console.log("🔧 Formatted schema errors:", errors);
     return errors;
   };
   // Convert file to Base64
@@ -1501,7 +1489,6 @@ const Form13 = () => {
 
       const payload = cleanPayload(rawPayload);
 
-      console.log("📤 Sending payload:", payload);
 
       // Call API
       let response;
@@ -1512,14 +1499,12 @@ const Form13 = () => {
         response = await form13API.submitForm13(payload);
       }
 
-      console.log("📥 Raw API Response:", response);
       const respData = response?.data || {};
 
       const businessFlag = respData.business_validation || respData["business validation"] || respData.data?.["business validation"] || respData.data?.business_validation;
       const businessErrors = respData.business_validations || respData.data?.business_validations;
 
       if (businessFlag === "FAIL" && businessErrors) {
-        console.log("🚨 Business validation failed");
         const formattedErrors = formatBusinessErrors(businessErrors);
         setValidationErrors(formattedErrors);
         setError("Business Validation Failed");
@@ -1532,7 +1517,6 @@ const Form13 = () => {
       const schemaErrors = respData.schema_validations || respData.data?.schema_validations;
 
       if (schemaFlag === "FAIL" && schemaErrors) {
-        console.log("🚨 Schema validation failed");
         const formattedSchemaErrors = formatSchemaErrors(schemaErrors);
         setError("Schema Validation Failed");
         setValidationErrors(formattedSchemaErrors);
@@ -1543,7 +1527,6 @@ const Form13 = () => {
       const odexRefNo = respData.odexRefNo || respData.data?.odexRefNo || response.odexRefNo;
 
       if (odexRefNo) {
-        console.log("✅ Form submitted successfully: ", odexRefNo);
         setSuccess(
           `Form 13 ${isEditMode ? "updated" : "submitted"} successfully! Reference No: ${odexRefNo}`
         );
@@ -1551,7 +1534,6 @@ const Form13 = () => {
           setTimeout(() => navigate("/track-f13"), 2000);
         }
       } else {
-        console.log("❌ Form submission failed or has validation errors");
         setError("Form submission failed. Please check your inputs and try again.");
       }
     } catch (err) {

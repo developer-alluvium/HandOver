@@ -8,13 +8,11 @@ export class ApiLogger {
     let apiLog;
 
     try {
-      console.log(`[ApiLogger] logAndForward: Request for module ${moduleName}, ID hint: ${logId}`);
 
       // 1. If logId provided, strictly use it
       if (logId) {
         apiLog = await ApiLog.findById(logId);
         if (apiLog) {
-          console.log(`[ApiLogger] Found log by ID: ${logId}`);
         } else {
           console.warn(`[ApiLogger] WARNING: ID ${logId} was provided but NOT found. Checking by content...`);
         }
@@ -26,25 +24,17 @@ export class ApiLogger {
         const cntnrNo = requestData.body?.cntnrNo?.toString().trim();
 
         if (bookNo && cntnrNo) {
-          console.log(`[ApiLogger] Searching for existing record by content: ${bookNo} / ${cntnrNo}`);
           apiLog = await ApiLog.findOne({
             moduleName: "VGM_SUBMISSION",
             "request.body.bookNo": { $regex: new RegExp(`^\\s*${bookNo}\\s*$`, "i") },
             "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") },
           }).sort({ createdAt: -1 });
-
-          if (apiLog) {
-            console.log(`[ApiLogger] Found existing log ${apiLog._id} via content match`);
-          }
         }
       }
 
       // 3. Last resort: Create new log
       if (!apiLog) {
-        if (logId) {
-          console.error(`[ApiLogger] CRITICAL: Reached record creation even though logId ${logId} was provided. This usually means a record was deleted or ID is malformed.`);
-        }
-        console.log(`[ApiLogger] Creating a FRESH log entry`);
+
         apiLog = new ApiLog({
           moduleName,
           status: "pending",

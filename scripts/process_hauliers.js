@@ -16,9 +16,8 @@ try {
     }));
 
     const outputContent = `export const HAULIERS = ${JSON.stringify(mapped, null, 4)};`;
-    
+
     fs.writeFileSync('server/controllers/haulier.js', outputContent);
-    console.log('Successfully generated server/controllers/haulier.js');
 } catch (error) {
     console.error('Error generating haulier list:', error);
     process.exit(1);
