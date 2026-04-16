@@ -549,8 +549,6 @@ export const getVGMRequests = async (req, res) => {
       limit = 10,
     } = req.query;
 
-    console.log("getVGMRequests query params:", req.query);
-
     // Build filter query for VGM submissions
     const filterQuery = { moduleName: "VGM_SUBMISSION" };
     const andConditions = [];

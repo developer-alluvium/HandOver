@@ -10,6 +10,7 @@ import {
   Typography,
   Box,
   Paper,
+  Autocomplete,
 } from "@mui/material";
 import { masterData, getCFSCodes } from "../../data/masterData";
 import { isFieldRequired, isFieldVisible } from "../../utils/form13Validations";
@@ -19,6 +20,7 @@ const Form13HeaderSection = ({
   vessels,
   pods,
   shippingLines = [],
+  cfsCodes = [],
   masterDataLoaded,
   loading,
   onFormDataChange,
@@ -136,11 +138,10 @@ const Form13HeaderSection = ({
       .sort((a, b) => a.podNm.localeCompare(b.podNm));
   }, [pods, formData.locId, formData.terminalCode, formData.service]);
 
-  // 9. CFS Options (Filtered by Location)
-  const cfsOptions = React.useMemo(() => {
-    if (!formData.locId) return [];
-    return getCFSCodes(formData.locId).map(code => ({ value: code, label: code }));
-  }, [formData.locId]);
+  // 9. CFS Options
+  const cfsOptionsMapped = React.useMemo(() => {
+    return cfsCodes;
+  }, [cfsCodes]);
 
   // --- RENDERING HELPERS ---
 
@@ -151,7 +152,7 @@ const Form13HeaderSection = ({
   );
 
   const FormLabelCustom = ({ label, required }) => (
-    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', mb: 0.5, fontWeight: 500 }}>
+    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', mb: 0.35, fontWeight: 500 }}>
       {label} {required && <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>}
     </Typography>
   );
@@ -210,7 +211,7 @@ const Form13HeaderSection = ({
         ];
         break;
       case "cfsCode":
-        selectOptions = cfsOptions;
+        selectOptions = cfsOptionsMapped;
         break;
       case "issueTo":
         selectOptions = issueToOptions || [];
@@ -230,6 +231,38 @@ const Form13HeaderSection = ({
     );
 
     if (isSelect) {
+      if (fieldName === "cfsCode") {
+        return (
+          <Grid item xs={12} sm={6} md={md}>
+            <FormLabelCustom label={label} required={required} />
+            <Autocomplete
+              size="small"
+              options={selectOptions}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') return option;
+                return `${option.label} (${option.value})`;
+              }}
+              value={selectOptions.find(opt => opt.value === formData[fieldName]) || formData[fieldName] || null}
+              onChange={(e, newValue) => {
+                const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                onFormDataChange("header", fieldName, val);
+              }}
+              disabled={isDisabled}
+              freeSolo
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="standard"
+                  placeholder="Search CFS..."
+                  fullWidth
+                  error={!!validationErrors[fieldName]}
+                />
+              )}
+            />
+          </Grid>
+        );
+      }
+
       return (
         <Grid item xs={12} sm={6} md={md}>
           <FormLabelCustom label={label} required={required} />
@@ -270,7 +303,7 @@ const Form13HeaderSection = ({
     <Box>
       <div className="panel">
         <SectionHeader title="Basic Information" />
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {renderField("bnfCode", "Shipping Line")}
           {renderField("locId", "Location")}
           {renderField("formType", "Form Type")}
@@ -287,7 +320,7 @@ const Form13HeaderSection = ({
           {renderField("bookNo", "Booking No")}
           {renderField("shpInstructNo", "Shipping Instruction No")}
           {renderField("cntnrStatus", "Container Status")}
-          {renderField("bookCopyBlNo", "Booking/BL No")}
+          {renderField("bookCopyBlNo", "BL No")}
 
           {renderField("mobileNo", "Mobile No")}
           {renderField("emailId", "Email IDs")}
@@ -298,7 +331,7 @@ const Form13HeaderSection = ({
 
       <div className="panel">
         <SectionHeader title="Stakeholder & Additional Info" />
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {renderField("shipperNm", "Shipper Name", 4)}
           {renderField("consigneeNm", "Consignee Name", 4)}
           {renderField("consigneeAddr", "Consignee Address", 4)}

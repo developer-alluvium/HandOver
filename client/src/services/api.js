@@ -41,6 +41,10 @@ export const logAPI = {
 export const masterAPI = {
   getShippingLines: (search) =>
     api.get("master/shipping-lines", { params: { search } }),
+  getHauliers: (search) =>
+    api.get("master/hauliers", { params: { search } }),
+  getCFSCodes: (search) =>
+    api.get("master/cfs-codes", { params: { search } }),
   seedShippingLines: (shippingLines) =>
     api.post("master/shipping-lines/seed", { shippingLines }),
 };

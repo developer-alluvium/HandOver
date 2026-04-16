@@ -1134,6 +1134,17 @@ const VGMForm = ({
             .replace(/[.,]/g, "");
         };
 
+        // --- Helper to Robustly extract field from object ---
+        const getField = (obj, ...fields) => {
+          if (!obj) return "";
+          for (const f of fields) {
+            if (obj[f] !== undefined) return obj[f];
+            const lowerF = f.toLowerCase();
+            if (obj[lowerF] !== undefined) return obj[lowerF];
+          }
+          return "";
+        };
+
         // --- Helper to format Date-Time to DD-MM-YYYY HH:mm ---
         const formatDateTimeForVGM = (dtStr) => {
           if (!dtStr) return "";
@@ -1238,73 +1249,55 @@ const VGMForm = ({
 
         // --- 1. Container Details ---
         // Robust extraction of container data
-        const containers = Array.isArray(job.containers) ? job.containers : [];
-        const operationsContainers = job.operations?.[0]?.containerDetails || [];
-        const firstContainer = containers[0] || operationsContainers[0] || {};
+        const containers = Array.isArray(job.containers) ? job.containers : (job.operations?.[0]?.containerdetails || job.operations?.[0]?.containerDetails || []);
 
-        console.log("[JOB SEARCH] API Job Object:", job);
-        console.log("[JOB SEARCH] Selected Container Object:", firstContainer);
+        const mapContainerToVGM = (c) => {
+          const cNo = getField(c, "containerNo", "cntnrNo", "containerno");
+          const fullType = String(getField(c, "type", "containerType", "containerSize", "size")).toUpperCase();
+          let sz = "", tp = "";
 
-        // Safely get container number
-        const cNo = firstContainer.containerNo || firstContainer.cntnrNo || "";
-        updates.cntnrNo = cNo;
-        console.log("[JOB SEARCH] Container No set to:", updates.cntnrNo);
-
-        // Container Size/Type mapping from "type": "40 High Cube" or "containerSize"
-        const fullType = String(firstContainer.type || firstContainer.containerType || firstContainer.containerSize || firstContainer.size || "").toUpperCase();
-        console.log("[JOB SEARCH] Raw type string for parsing:", fullType);
-
-        if (fullType) {
-          // Size: Looking for 20, 40, or 45 in the string
-          const sizeMatch = fullType.match(/\d{2}/);
-          if (sizeMatch) {
-            const sz = sizeMatch[0];
-            const szOpt = CONTAINER_SIZES.find(s => String(s.label).includes(sz));
-            if (szOpt) {
-              updates.cntnrSize = szOpt.value;
-              console.log("[JOB SEARCH] Matched Size:", szOpt.label);
+          if (fullType) {
+            const sizeMatch = fullType.match(/\d{2}/);
+            if (sizeMatch) {
+              const szOpt = CONTAINER_SIZES.find(s => String(s.label).includes(sizeMatch[0]));
+              if (szOpt) sz = szOpt.value;
             }
+            const typeMatch = CONTAINER_TYPES.find(t =>
+              fullType.includes(String(t.label || "").toUpperCase()) ||
+              fullType.includes(String(t.value || "").toUpperCase())
+            );
+            if (typeMatch) tp = typeMatch.value;
           }
-          // Type: looking for HC, High Cube, GP, etc.
-          const typeMatch = CONTAINER_TYPES.find(t =>
-            fullType.includes(String(t.label || "").toUpperCase()) ||
-            fullType.includes(String(t.value || "").toUpperCase())
-          );
-          if (typeMatch) {
-            updates.cntnrTp = typeMatch.value;
-            console.log("[JOB SEARCH] Matched Type:", typeMatch.label);
-          }
-        }
 
-        // CSC Max Weight
-        updates.cscPlateMaxWtLimit = firstContainer.maxGrossWeightKgs || firstContainer.grossWeight || "";
+          const weighmentDetails = getField(job, "weighmentdetails", "weighmentDetails") || [];
+          const wMatch = (Array.isArray(weighmentDetails) ? weighmentDetails.find(w => getField(w, "containerNo", "containerno") === cNo) : null) || {};
 
-        // Tare Weight
-        updates.tareWt = firstContainer.tareWeightKgs || "";
+          const fullAddr = String(getField(c, "weighmentAddress", "address") || getField(wMatch, "weighmentAddress", "address") || "");
 
-        // VGM Total Weight
-        updates.totWt = firstContainer.vgmWtInvoice || (job.operations?.[0]?.weighmentDetails?.[0]?.tareWeight) || "";
+          return {
+            ...c,
+            containerNo: cNo,
+            cntnrNo: cNo,
+            cntnrSize: sz,
+            cntnrTp: tp,
+            cscPlateMaxWtLimit: getField(c, "maxGrossWeightKgs", "grossWeight", "grossweight", "maxgrossweightkgs"),
+            tareWt: getField(c, "tareWeightKgs", "tareweightkgs", "tareWt"),
+            totWt: getField(c, "vgmWtInvoice", "vgmwtinvoice", "totWt"),
+            sealNo: getField(c, "sealNo", "sealno", "seal_no"),
+            sealTp: getField(c, "sealType", "sealtype", "seal_tp"),
+            weighBridgeRegNo: getField(c, "weighBridgeName", "weighbridgeName") || getField(wMatch, "weighBridgeName", "weighbridgeName") || "",
+            weighBridgeSlipNo: getField(c, "weighmentRegNo", "weighmentSlipNo", "slipNo", "regNo") || getField(wMatch, "weighmentRegNo", "weighmentSlipNo", "slipNo", "regNo") || "",
+            weighBridgeAddrLn1: fullAddr.substring(0, 20).trim(),
+            weighBridgeAddrLn2: fullAddr.substring(20, 40).trim(),
+            weighBridgeAddrLn3: fullAddr.substring(40, 60).trim(),
+            weighBridgeWtTs: formatDateTimeForVGM(getField(c, "weighmentDateTime", "weighmentdatetime") || getField(wMatch, "weighmentDateTime", "weighmentdatetime") || "")
+          };
+        };
 
-        updates.cargoTp = "GEN"; // Default
-
-        // --- 2. Weighbridge Details ---
-        // Weighbridge No = weighBridgeName
-        updates.weighBridgeRegNo = firstContainer.weighBridgeName || (job.operations?.[0]?.weighmentDetails?.[0]?.weighBridgeName) || "";
-
-        // Weighbridge Slip No. = weighmentRegNo
-        updates.weighBridgeSlipNo = firstContainer.weighmentRegNo || firstContainer.weighmentSlipNo || (job.operations?.[0]?.weighmentDetails?.[0]?.slipNo || job.operations?.[0]?.weighmentDetails?.[0]?.regNo) || "";
-
-        // Split Address into 3 parts of 20 chars each
-        const fullAddr = String(firstContainer.weighmentAddress || (job.operations?.[0]?.weighmentDetails?.[0]?.address) || "");
-        updates.weighBridgeAddrLn1 = fullAddr.substring(0, 20).trim();
-        updates.weighBridgeAddrLn2 = fullAddr.substring(20, 40).trim();
-        updates.weighBridgeAddrLn3 = fullAddr.substring(40, 60).trim();
-
-        updates.weighBridgeWtTs = formatDateTimeForVGM(firstContainer.weighmentDateTime || "");
+        const allContainers = containers.map(mapContainerToVGM);
 
         // --- 3. Booking / Liner / Port ---
-        // Booking Number: sb_no in some models, bookingNo in others
-        updates.bookNo = job.sb_no || (job.operations?.[0]?.bookingDetails?.[0]?.bookingNo) || "";
+        updates.bookNo = getField(job, "booking_no", "bookingNo");
 
         // Liner
         if (job.shipping_line_airline) {
@@ -1317,7 +1310,6 @@ const VGMForm = ({
 
         // Port
         const portName = job.port_of_loading || job.custom_house || job.operations?.[0]?.containerDetails?.[0]?.portOfLoading || "";
-        console.log("[JOB SEARCH] Port search string:", portName);
         if (portName) {
           const portMatch = findPortByPrefix(portName);
           if (portMatch) updates.locId = portMatch;
@@ -1329,15 +1321,9 @@ const VGMForm = ({
         updates.shipRegNo = job.ieCode || "";
         updates.shipperTp = "O";
 
-        // --- 5. Authorized Person (Fuzzy Matching) ---
+        // --- 5. Authorized Person ---
         const normalizedExporter = normalizeCompanyName(job.exporter);
-        console.log("[JOB SEARCH] Looking for auth person for:", normalizedExporter);
-
-        const authMatch = AUTHORIZED_PERSONS.find((ap) => {
-          const normalizedAuth = normalizeCompanyName(ap.exporter);
-          return normalizedAuth === normalizedExporter;
-        });
-
+        const authMatch = AUTHORIZED_PERSONS.find((ap) => normalizeCompanyName(ap.exporter) === normalizedExporter);
         if (authMatch) {
           updates.authPrsnNm = authMatch.authPerson;
           updates.authDesignation = authMatch.designation;
@@ -1345,22 +1331,37 @@ const VGMForm = ({
         }
 
         // --- Store containers for selection if multiple ---
-        const allContainers = job.containers || job.operations?.[0]?.containerDetails || [];
         const uniqueContainers = allContainers.filter(
           (c, idx, self) => c.containerNo && self.findIndex(x => x.containerNo === c.containerNo) === idx
         );
 
-        console.log("[JOB SEARCH] Found unique containers:", uniqueContainers.length);
+        if (uniqueContainers.length >= 1) {
+          const firstVGM = uniqueContainers[0];
+          Object.assign(updates, {
+            cntnrNo: firstVGM.cntnrNo,
+            cntnrSize: firstVGM.cntnrSize,
+            cntnrTp: firstVGM.cntnrTp,
+            cscPlateMaxWtLimit: firstVGM.cscPlateMaxWtLimit,
+            tareWt: firstVGM.tareWt,
+            totWt: firstVGM.totWt,
+            weighBridgeRegNo: firstVGM.weighBridgeRegNo,
+            weighBridgeSlipNo: firstVGM.weighBridgeSlipNo,
+            weighBridgeAddrLn1: firstVGM.weighBridgeAddrLn1,
+            weighBridgeAddrLn2: firstVGM.weighBridgeAddrLn2,
+            weighBridgeAddrLn3: firstVGM.weighBridgeAddrLn3,
+            weighBridgeWtTs: firstVGM.weighBridgeWtTs
+          });
 
-        if (uniqueContainers.length > 1) {
-          setFetchedJobData(job);
-          setContainersList(uniqueContainers);
-          setSelectedContainerNo(uniqueContainers[0].containerNo);
-          enqueueSnackbar(`Found ${uniqueContainers.length} containers. Please select one.`, { variant: "info" });
-        } else {
-          setFetchedJobData(null);
-          setContainersList([]);
-          setSelectedContainerNo("");
+          if (uniqueContainers.length > 1) {
+            setFetchedJobData(job);
+            setContainersList(uniqueContainers);
+            setSelectedContainerNo(firstVGM.containerNo);
+            enqueueSnackbar(`Found ${uniqueContainers.length} containers. Please select one.`, { variant: "info" });
+          } else {
+            setFetchedJobData(null);
+            setContainersList([]);
+            setSelectedContainerNo("");
+          }
         }
 
         formik.setValues(updates);
@@ -1380,49 +1381,35 @@ const VGMForm = ({
 
   // Handler for container selection change
   const handleContainerSelect = (containerNo) => {
-    if (!fetchedJobData || !containerNo) return;
+    if (!containerNo || containersList.length === 0) return;
 
-    setSelectedContainerNo(containerNo);
-
-    const allContainers = fetchedJobData.containers || fetchedJobData.operations?.[0]?.containerDetails || [];
-    const container = allContainers.find(c => c.containerNo === containerNo);
-    const weighmentDetails = fetchedJobData.operations?.[0]?.weighmentDetails || [];
+    // We can rely on containersList since we normalize it in handleJobSearch
+    const container = containersList.find(c => c.containerNo === containerNo);
 
     if (container) {
-      const updates = { ...formik.values };
+      setSelectedContainerNo(containerNo);
+
+      const updates = { ...formValues }; // Use current form state as base
 
       // Update container-specific fields
-      updates.cntnrNo = container.containerNo || container.cntnrNo || "";
-      updates.cscPlateMaxWtLimit = container.maxGrossWeightKgs || container.grossWeight || "";
-      updates.tareWt = container.tareWeightKgs || "";
-      updates.totWt = container.vgmWtInvoice || "";
+      updates.cntnrNo = container.containerNo || "";
+      updates.cscPlateMaxWtLimit = container.cscPlateMaxWtLimit || "";
+      updates.tareWt = container.tareWt || "";
+      updates.totWt = container.totWt || "";
+      updates.cntnrSize = container.cntnrSize || "";
+      updates.cntnrTp = container.cntnrTp || "";
 
-      // Size/Type mapping
-      const fullType = String(container.type || container.containerType || container.containerSize || container.size || "").toUpperCase();
-      if (fullType) {
-        const sizeMatch = fullType.match(/\d{2}/);
-        if (sizeMatch) {
-          const sz = sizeMatch[0];
-          const szOpt = CONTAINER_SIZES.find(s => s.label.includes(sz));
-          if (szOpt) updates.cntnrSize = szOpt.value;
-        }
-        const typeMatch = CONTAINER_TYPES.find(t =>
-          fullType.includes((t.label || "").toUpperCase()) ||
-          fullType.includes((t.value || "").toUpperCase())
-        );
-        if (typeMatch) updates.cntnrTp = typeMatch.value;
-      }
+      // Seal Details if available
+      updates.sealNo = container.sealNo || "";
+      updates.sealTp = container.sealType || "";
 
       // Weighbridge details for this container
-      updates.weighBridgeRegNo = container.weighBridgeName || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).weighBridgeName || "";
-      updates.weighBridgeSlipNo = container.weighmentRegNo || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).slipNo || "";
-
-      const fullAddr = String(container.weighmentAddress || (weighmentDetails.find(w => w.containerNo === containerNo) || weighmentDetails[0] || {}).address || "");
-      updates.weighBridgeAddrLn1 = fullAddr.substring(0, 20).trim();
-      updates.weighBridgeAddrLn2 = fullAddr.substring(20, 40).trim();
-      updates.weighBridgeAddrLn3 = fullAddr.substring(40, 60).trim();
-
-      updates.weighBridgeWtTs = formatDateTimeForVGM(container.weighmentDateTime || "");
+      updates.weighBridgeRegNo = container.weighBridgeRegNo || "";
+      updates.weighBridgeSlipNo = container.weighBridgeSlipNo || "";
+      updates.weighBridgeAddrLn1 = container.weighBridgeAddrLn1 || "";
+      updates.weighBridgeAddrLn2 = container.weighBridgeAddrLn2 || "";
+      updates.weighBridgeAddrLn3 = container.weighBridgeAddrLn3 || "";
+      updates.weighBridgeWtTs = container.weighBridgeWtTs || "";
 
       formik.setValues(updates);
       setFormValues(updates);

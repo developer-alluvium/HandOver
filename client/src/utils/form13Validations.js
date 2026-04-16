@@ -113,8 +113,6 @@ export const LOCATION_SPECIFIC_RULES = {
     optional: ["fpod"],
     earlyGateIn: {
       enabled: true,
-      shippingLines: ["CMA"],
-      note: "Early gate-in available for CMA line only, storage and line charges applicable",
     },
     originRules: {
       F: ["vehicleNo"], // Factory Stuffed requires vehicle number
@@ -238,9 +236,10 @@ export const LOCATION_SPECIFIC_RULES = {
  * Based on Section 7.2 of API documentation
  */
 export const SHIPPING_LINE_RULES = {
+  // MSC Agency India
   MSCU: {
     name: "MSC",
-    requires: ["bookNo"],
+    requires: ["bookNo", "shpInstructNo"],
     containerRequires: [],
     specialNotes:
       "Booking No and Shipping Instruction No are mandatory for MSC",
@@ -249,8 +248,15 @@ export const SHIPPING_LINE_RULES = {
       shpInstructNo: "Shipping Instruction No is mandatory for MSC",
     },
   },
+  // MSC Mediterranean Shipping Company S.A
+  MSCME: {
+    name: "MSC",
+    requires: ["bookNo", "shpInstructNo"],
+    specialNotes: "Booking No and Shipping Instruction No are mandatory for MSC",
+  },
 
-  HapagLlyod: {
+  // Hapag Lloyd India Pvt Ltd
+  HLCU: {
     name: "Hapag Lloyd",
     blNumberRule: {
       requires: ["bookCopyBlNo"],
@@ -263,29 +269,54 @@ export const SHIPPING_LINE_RULES = {
     },
     specialNotes: "For Hapag Lloyd, BL number is required for non-reefer cargo",
   },
+  // HAPAG LLOYD AG
+  HAPAG: {
+    name: "Hapag Lloyd",
+    blNumberRule: {
+      requires: ["bookCopyBlNo"],
+      condition: (cargoTp) => cargoTp !== "REF",
+      note: 'BL Number is required when cargo type is not "Reefer"',
+    },
+    siCheck: {
+      enabled: true,
+    },
+    specialNotes: "For Hapag Lloyd, BL number is required for non-reefer cargo",
+  },
 
+  // CMA CGM Agencies
+  CMDU: {
+    name: "CMA CGM",
+    earlyGateIn: {
+      enabled: true,
+    },
+  },
+  // CMA CGM LOGISTICS PARK
+  CMACG: {
+    name: "CMA CGM",
+    earlyGateIn: {
+      enabled: true,
+    },
+  },
+  // CMA (Legacy/Generic)
   CMA: {
     name: "CMA CGM",
     earlyGateIn: {
       enabled: true,
-      location: "INMUN1", // Only for Mundra
-      note: "Early gate-in available for Mundra location only",
     },
   },
 
+  // MAERSK LINE INDIA
   MAEU: {
     name: "Maersk",
     requires: [],
     specialNotes: "",
   },
-
-  CMDU: {
-    name: "CMA CGM",
+  // Maersk A/S
+  MAERS: {
+    name: "Maersk",
     requires: [],
     specialNotes: "",
   },
-
-  // Add more shipping lines as needed
 };
 
 // ==============================================
@@ -601,7 +632,7 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
       return false;
 
     case 'IsEarlyGateIn':
-      return formData.locId === "INMUN1" && (formData.bnfCode || "").toUpperCase() === "CMA";
+      return false; // Always visible but not mandatory by default
 
     case 'FFCode':
     case 'IECode':
@@ -866,7 +897,7 @@ export const validateFormData = (formData) => {
       errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required`;
     }
 
-      // MSC Shipping Instruction Number validation removed (made optional)
+    // MSC Shipping Instruction Number validation removed (made optional)
 
     // Hazardous fields
     const isHaz = formData.cargoTp?.includes("HAZ") || formData.cargoTp === "HAZ";
@@ -1069,7 +1100,8 @@ export const isFieldVisible = (fieldName, formData) => {
     "mobileNo",
     "formType",
     "cargoDesc",
-    "terminalLoginId"
+    "terminalLoginId",
+    "IsEarlyGateIn"
   ];
 
   if (ALWAYS_VISIBLE.includes(fieldName)) {
@@ -1100,12 +1132,8 @@ export const isFieldVisible = (fieldName, formData) => {
 
   // BL Number - Hapag Lloyd for non-reefer
   if (fieldName === "bookCopyBlNo") {
-    return bnfCode?.toUpperCase().includes("HAPAG") && cargoTp !== "REF";
-  }
-
-  // Early Gate In - CMA at Mundra
-  if (fieldName === "IsEarlyGateIn") {
-    return locId === "INMUN1" && bnfCode?.toUpperCase() === "CMA";
+    const hapagCodes = ["HAPAG", "HLCU"];
+    return hapagCodes.includes(bnfCode?.toUpperCase()) && cargoTp !== "REF";
   }
 
   // Shipper City - Tuticorin DBGT terminal
@@ -1174,8 +1202,7 @@ export const needsNhavashevaCodeValidation = (formData) => {
  * @returns {boolean} - True if early gate in is applicable
  */
 export const isEarlyGateInApplicable = (formData) => {
-  const { locId, bnfCode } = formData;
-  return locId === "INMUN1" && bnfCode?.toUpperCase() === "CMA";
+  return true; // Always applicable as per request
 };
 
 /**

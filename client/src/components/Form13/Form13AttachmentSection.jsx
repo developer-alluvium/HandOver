@@ -60,22 +60,31 @@ const Form13AttachmentSection = ({
   const mandatoryCodes = requiredAttachments.filter(req => req.required).map(r => r.code);
   const displayDocs = requiredAttachments.filter(req => req.required);
 
-  // Identify any other attachments that are uploaded but NOT in mandatory list
-  const customAttachments = formData.attachments.filter(att => {
+  // Combine mandatory slots and custom uploaded files
+  // mandatoryDocs are the base slots
+  // customFiles are entries for each file that is NOT a mandatory slot
+  const customFiles = formData.attachments.filter(att => {
     const attTitle = att.title || att.attTitle;
     return !mandatoryCodes.includes(attTitle);
-  }).map(att => {
+  }).map((att, idx) => {
     const attTitle = att.title || att.attTitle;
     return {
       code: attTitle,
       name: ALL_DOC_TYPES[attTitle] || attTitle,
       required: false,
-      isCustom: true
+      isCustom: true,
+      file: att,
+      uniqueKey: `custom_${attTitle}_${idx}_${att.name || att.attNm}`
     };
   });
 
-  // Combine them for display
-  const allDisplayDocs = [...displayDocs, ...customAttachments];
+  const allDisplayRows = [
+    ...displayDocs.map(d => ({ ...d, uniqueKey: `mandatory_${d.code}` })),
+    ...customFiles
+  ];
+
+  const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
+  const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
 
   const handleFileSelect = (event, docCode) => {
     const file = event.target.files[0];
@@ -94,39 +103,55 @@ const Form13AttachmentSection = ({
     const fileWithTitle = new File([file], file.name, { type: file.type });
     fileWithTitle.title = docCode;
 
-    // IMPORTANT: Concept-aware replacement
-    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
-    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
+    // Check if it's a mandatory slot
+    const isMandatory = mandatoryCodes.includes(docCode);
 
-    const otherAttachments = formData.attachments.filter(att => {
-      const attTitle = att.title || att.attTitle;
-      if (isPackingList(docCode) && isPackingList(attTitle)) return false;
-      if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
-      return attTitle !== docCode;
-    });
+    let otherAttachments;
+    if (isMandatory) {
+      // For mandatory slots, replace the existing file of that type
+      otherAttachments = formData.attachments.filter(att => {
+        const attTitle = att.title || att.attTitle;
+        if (isPackingList(docCode) && isPackingList(attTitle)) return false;
+        if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
+        return attTitle !== docCode;
+      });
+    } else {
+      // For custom uploads, check if the exact same file (name and type) is already there to avoid duplicates
+      const alreadyExists = formData.attachments.some(att =>
+        (att.title || att.attTitle) === docCode && (att.name || att.attNm) === file.name
+      );
+      if (alreadyExists) {
+        alert("This file is already attached for this document type.");
+        return;
+      }
+      otherAttachments = formData.attachments;
+    }
 
     onFormDataChange('attachments', '', [...otherAttachments, fileWithTitle]);
     if (event.target) event.target.value = '';
-    setSelectedNewType(''); // Reset dropdown if it was a new upload
+    setSelectedNewType('');
   };
 
-  const handleRemoveFile = (docCode) => {
-    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
-    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
+  const handleRemoveFile = (docCode, fileName) => {
+    const isMandatory = mandatoryCodes.includes(docCode);
 
     const newFiles = formData.attachments.filter(att => {
       const attTitle = att.title || att.attTitle;
-      if (isPackingList(docCode) && isPackingList(attTitle)) return false;
-      if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
-      return attTitle !== docCode;
+      const attNm = att.name || att.attNm;
+
+      if (isMandatory) {
+        if (isPackingList(docCode) && isPackingList(attTitle)) return false;
+        if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return false;
+        return attTitle !== docCode;
+      } else {
+        // Specific removal for custom files
+        return !(attTitle === docCode && attNm === fileName);
+      }
     });
     onFormDataChange('attachments', '', newFiles);
   };
 
   const getUploadedFileForType = (docCode) => {
-    const isPackingList = (code) => ['PACK_LIST', 'PACKING_LIST', 'PL', 'PACKING_LIST_COPY'].includes(code);
-    const isCNTRLoadPlan = (code) => ['CNTR_LOAD_PLAN', 'CNTNR_LOAD_PLAN'].includes(code);
-
     return formData.attachments.find(att => {
       const attTitle = att.title || att.attTitle;
       if (isPackingList(docCode) && isPackingList(attTitle)) return true;
@@ -161,17 +186,20 @@ const Form13AttachmentSection = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {allDisplayDocs.map((doc) => {
-              const uploadedFile = getUploadedFileForType(doc.code);
-              const isRequired = doc.required;
+            {allDisplayRows.map((row) => {
+              const docCode = row.code;
+              const isMandatory = !row.isCustom;
+              const uploadedFile = isMandatory ? getUploadedFileForType(docCode) : row.file;
+
+              const isRequired = row.required;
               const fileName = uploadedFile ? (uploadedFile.name || uploadedFile.attNm || "File Attached") : "";
 
               return (
-                <TableRow key={doc.code} hover>
+                <TableRow key={row.uniqueKey} hover>
                   <TableCell sx={{ minWidth: 200 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {doc.name}
+                        {row.name}
                       </Typography>
                       {isRequired && <Typography sx={{ color: '#d32f2f', ml: 0.5 }}>*</Typography>}
                     </Box>
@@ -207,7 +235,7 @@ const Form13AttachmentSection = ({
                               type="file"
                               hidden
                               accept=".pdf"
-                              onChange={(e) => handleFileSelect(e, doc.code)}
+                              onChange={(e) => handleFileSelect(e, docCode)}
                             />
                           </Button>
                           <Typography variant="caption" sx={{ color: '#9e9e9e' }}>
@@ -223,7 +251,7 @@ const Form13AttachmentSection = ({
                       size="small"
                       color="error"
                       disabled={!uploadedFile}
-                      onClick={() => handleRemoveFile(doc.code)}
+                      onClick={() => handleRemoveFile(docCode, fileName)}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -244,7 +272,7 @@ const Form13AttachmentSection = ({
                   >
                     <MenuItem value="" disabled>Select Document Type</MenuItem>
                     {Object.entries(ALL_DOC_TYPES)
-                      .filter(([code]) => !allDisplayDocs.some(d => d.code === code))
+                      .filter(([code]) => !mandatoryCodes.includes(code))
                       .map(([code, name]) => (
                         <MenuItem key={code} value={code}>{name}</MenuItem>
                       ))

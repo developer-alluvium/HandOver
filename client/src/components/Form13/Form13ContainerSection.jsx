@@ -20,6 +20,7 @@ import {
   Collapse,
   Grid,
   Divider,
+  Autocomplete,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -47,6 +48,7 @@ const ContainerRow = ({
   terminalCode,
   bnfCode,
   origin,
+  hauliers = [],
   submitted = false
 }) => {
   const [open, setOpen] = useState(false);
@@ -219,10 +221,27 @@ const ContainerRow = ({
                     )}
                     <Grid item xs={12}>
                       <Typography variant="caption" color="text.secondary">Haulier</Typography>
-                      <TextField
-                        fullWidth size="small" variant="standard"
-                        value={container.haulier}
-                        onChange={(e) => handleContainerChange("haulier", e.target.value)}
+                      <Autocomplete
+                        size="small"
+                        options={hauliers}
+                        getOptionLabel={(option) => {
+                          if (typeof option === 'string') return option;
+                          return option.label || option.value || "";
+                        }}
+                        value={hauliers.find(h => h.value === container.haulier) || container.haulier || null}
+                        onChange={(e, newValue) => {
+                          const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                          handleContainerChange("haulier", val);
+                        }}
+                        freeSolo
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            variant="standard"
+                            placeholder="Search or enter haulier..."
+                            fullWidth
+                          />
+                        )}
                       />
                     </Grid>
                   </Grid>
@@ -444,6 +463,7 @@ const Form13ContainerSection = ({
   onFormDataChange,
   onAddContainer,
   onRemoveContainer,
+  hauliers = [],
   validationErrors = {},
   submitted = false
 }) => {
@@ -506,6 +526,7 @@ const Form13ContainerSection = ({
                 terminalCode={formData.terminalCode}
                 bnfCode={formData.bnfCode}
                 origin={formData.origin}
+                hauliers={hauliers}
                 submitted={submitted}
               />
             ))}

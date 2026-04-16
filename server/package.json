@@ -17,7 +17,8 @@
     "force": "^0.0.3",
     "helmet": "^7.0.0",
     "mongoose": "^8.0.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
