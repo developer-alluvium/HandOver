@@ -29,6 +29,7 @@ import Form13ShippingBillSection from "./Form13ShippingBillSection";
 import Form13AttachmentSection from "./Form13AttachmentSection";
 
 import AppbarComponent from "../AppbarComponent";
+import "../../styles/Form13.scss";
 
 const Form13 = () => {
   const { userData } = useAuth();
@@ -48,6 +49,8 @@ const Form13 = () => {
   const [vessels, setVessels] = useState([]);
   const [pods, setPods] = useState([]);
   const [shippingLines, setShippingLines] = useState([]);
+  const [hauliers, setHauliers] = useState([]);
+  const [cfsCodes, setCfsCodes] = useState([]);
   const [masterDataLoaded, setMasterDataLoaded] = useState(false);
 
   // Form Data State - Complete structure matching API requirements
@@ -213,12 +216,28 @@ const Form13 = () => {
       const podResponse = await form13API.getPODMaster(podRequest);
       setPods(podResponse.data || []);
 
-      // Load Shipping Lines from Master Data (New Integration)
+      // Load Shipping Lines from Master Data
       try {
         const slResponse = await masterAPI.getShippingLines();
         setShippingLines(slResponse.data || []);
       } catch (slErr) {
         console.warn("Failed to load shipping lines mapping:", slErr);
+      }
+
+      // Load Hauliers from Master Data
+      try {
+        const hResponse = await masterAPI.getHauliers();
+        setHauliers(hResponse.data || []);
+      } catch (hErr) {
+        console.warn("Failed to load hauliers mapping:", hErr);
+      }
+
+      // Load CFS Codes from Master Data
+      try {
+        const cfsResponse = await masterAPI.getCFSCodes();
+        setCfsCodes(cfsResponse.data || []);
+      } catch (cfsErr) {
+        console.warn("Failed to load CFS codes mapping:", cfsErr);
       }
 
       setMasterDataLoaded(true);
@@ -292,8 +311,8 @@ const Form13 = () => {
             const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
             const finalContainers = isFirstEmpty ? newVgmContainers : [...prev.containers, ...newVgmContainers];
             return {
-               ...prev,
-               containers: finalContainers
+              ...prev,
+              containers: finalContainers
             };
           });
           setSuccess(`Auto-filled ${newVgmContainers.length} containers from VGM data`);
@@ -841,7 +860,7 @@ const Form13 = () => {
     const isOdcCargo = normCargoTp.includes("ODC");
     // ODC Hazardous specifically matches the dropdown value ODC(HAZ) or if both flags are present
     const isOdcHazCargo = normCargoTp === "ODC(HAZ)" || normCargoTp === "ODC HAZARDOUS" || (isHazCargo && isOdcCargo);
-    
+
     // For docs referencing "HAZ ODC" or "HAZ & ODC", it usually means either or the combination
     const isHazOrOdc = isHazCargo || isOdcCargo || isOdcHazCargo;
 
@@ -987,12 +1006,12 @@ const Form13 = () => {
               newData.viaNo = uniqueVias[0];
               // Recalculate matches for next steps
               const viaMatches = matches.filter(m => m.viaNo === newData.viaNo);
-              
+
               const uniqueTerms = [...new Set(viaMatches.map(m => m.terminalCode))].filter(Boolean);
               if (uniqueTerms.length === 1) {
                 newData.terminalCode = uniqueTerms[0];
                 const termMatches = viaMatches.filter(m => m.terminalCode === newData.terminalCode);
-                
+
                 const uniqueServices = [...new Set(termMatches.map(m => m.service))].filter(Boolean);
                 if (uniqueServices.length === 1) {
                   newData.service = uniqueServices[0];
@@ -1006,7 +1025,7 @@ const Form13 = () => {
             if (uniqueTerms.length === 1) {
               newData.terminalCode = uniqueTerms[0];
               const termMatches = matches.filter(m => m.terminalCode === newData.terminalCode);
-              
+
               const uniqueServices = [...new Set(termMatches.map(m => m.service))].filter(Boolean);
               if (uniqueServices.length === 1) {
                 newData.service = uniqueServices[0];
@@ -1283,19 +1302,19 @@ const Form13 = () => {
       try {
         const bookNo = formData.bookNo;
         const bnfCode = formData.bnfCode;
-        
+
         // Search for existing requests with same booking and shipping line
         const response = await form13API.getRequests({ bookNo, bnfCode });
         const existingRequests = response.data?.requests || [];
-        
+
         // Check if any container in the current form matches an existing (non-cancelled) request
         const duplicateContainers = [];
         formData.containers.forEach(currCont => {
           const isDuplicate = existingRequests.some(extReq => {
             // Find container in existing request's cntrList
             const containersInExt = extReq.cntrList || extReq.containers || [];
-            return containersInExt.some(extCont => 
-              extCont.cntnrNo === currCont.cntnrNo && 
+            return containersInExt.some(extCont =>
+              extCont.cntnrNo === currCont.cntnrNo &&
               extReq.status !== 'CANCELLED' &&
               extReq._id !== requestId // Allow current request if editing
             );
@@ -1558,12 +1577,15 @@ const Form13 = () => {
   };
 
   return (
-    <Container maxWidth={false} sx={{ py: 4, pt: 12 }}>
+    <Container
+      maxWidth={false}
+      sx={{ py: { xs: 2, md: 2.5 }, pt: { xs: 10, md: 11 } }}
+    >
       <AppbarComponent />
-      <Paper elevation={3} sx={{ p: 4 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, md: 3 } }}>
         {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" gutterBottom fontWeight="bold">
+        <Box sx={{ mb: 2.5 }}>
+          <Typography variant="h5" gutterBottom fontWeight="bold">
             FORM 13 - Export Gate Pass
           </Typography>
           <Typography variant="body1" color="text.secondary">
@@ -1572,10 +1594,10 @@ const Form13 = () => {
           </Typography>
         </Box>
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ mb: 1.5 }} />
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
+          <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError("")}>
             <Typography variant="subtitle1" fontWeight="bold">
               {error}
             </Typography>
@@ -1588,20 +1610,20 @@ const Form13 = () => {
         )}
 
         {isSaved && !success && (
-          <Alert severity="info" sx={{ mb: 2 }}>
+          <Alert severity="info" sx={{ mb: 1.5 }}>
             Form data is saved to DB. Don't forget to <strong>Submit to ODeX</strong> once finalized.
           </Alert>
         )}
 
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
+          <Alert severity="success" sx={{ mb: 1.5 }} onClose={() => setSuccess("")}>
             {success}
           </Alert>
         )}
 
         {/* API Validation Errors Summary */}
         {Object.keys(validationErrors).length > 0 && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning" sx={{ mb: 1.5 }}>
             <Typography variant="subtitle1" fontWeight="bold">
               API Validation Errors ({Object.keys(validationErrors).length} found)
             </Typography>
@@ -1627,7 +1649,7 @@ const Form13 = () => {
 
         {/* Master Data Loading Status */}
         {!masterDataLoaded && (
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
             <CircularProgress size={20} sx={{ mr: 2 }} />
             <Typography>
               Loading master data (Vessels, PODs, Terminals)...
@@ -1643,6 +1665,8 @@ const Form13 = () => {
             vessels={vessels}
             pods={pods}
             shippingLines={shippingLines}
+            hauliers={hauliers}
+            cfsCodes={cfsCodes}
             masterDataLoaded={masterDataLoaded}
             loading={loading}
             onFormDataChange={handleFormDataChange}
@@ -1653,6 +1677,7 @@ const Form13 = () => {
           {/* Container Information */}
           <Form13ContainerSection
             formData={formData}
+            hauliers={hauliers}
             onFormDataChange={handleFormDataChange}
             onAddContainer={handleAddContainer}
             onRemoveContainer={handleRemoveContainer}
@@ -1670,8 +1695,8 @@ const Form13 = () => {
 
           {/* Bottom Action Bar */}
           <Box sx={{
-            mt: 4,
-            py: 3,
+            mt: 3,
+            py: 2,
             borderTop: "1px solid #e0e0e0",
             display: "flex",
             justifyContent: "center",
