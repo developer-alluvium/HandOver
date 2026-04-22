@@ -326,7 +326,15 @@ const VGMForm = ({
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const payload = { ...values };
+        // Filter payload to only include fields defined in initial values
+        // This prevents unrecognized field errors from ODeX (like sealNo, sealTp)
+        const payload = {};
+        Object.keys(VGM_INITIAL_VALUES).forEach((key) => {
+          if (values[key] !== undefined) {
+            payload[key] = values[key];
+          }
+        });
+
         // Manual Transformations
         payload.cscPlateMaxWtLimit = values.cscPlateMaxWtLimit?.toString();
         payload.totWt = values.totWt?.toString();
@@ -992,7 +1000,13 @@ const VGMForm = ({
     setLoading(true);
     try {
       const values = formik.values;
-      const payload = { ...values };
+      // Filter payload to only include fields defined in initial values
+      const payload = {};
+      Object.keys(VGM_INITIAL_VALUES).forEach((key) => {
+        if (values[key] !== undefined) {
+          payload[key] = values[key];
+        }
+      });
 
       // Manual Transformations
       payload.cscPlateMaxWtLimit = values.cscPlateMaxWtLimit?.toString();

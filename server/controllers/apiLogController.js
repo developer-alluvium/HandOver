@@ -2,6 +2,33 @@ import { ApiLogger } from "../services/apiLogger.js";
 import ApiLog from "../models/ApiLog.js";
 import config from "../config.js";
 
+const sanitizeVGMPayload = (body) => {
+  if (!body) return body;
+  
+  // List of fields recognized by ODeX VGM API (IVGMWBVo)
+  const allowedFields = [
+    "linerId", "vesselNm", "voyageNo", "bookNo", "locId", "handoverLoc", 
+    "shipperTp", "authPrsnNm", "authDesignation", "authMobNo", "odexRefNo", 
+    "vgmEvalMethod", "cntnrNo", "cntnrSize", "cntnrTp", "cargoTp", 
+    "cscPlateMaxWtLimit", "cscPlateMaxWtUom", "cargoWt", "cargoWtUom", 
+    "tareWt", "tareWtUom", "totWt", "totWtUom", "imoNo1", "unNo1", 
+    "shipId", "shipperNm", "shipRegTP", "shipRegNo", "weighBridgeRegNo", 
+    "weighBridgeAddrLn1", "weighBridgeAddrLn2", "weighBridgeAddrLn3", 
+    "weighBridgeSlipNo", "weighBridgeWtTs", "terminalCode", "vgmWbAttList",
+    "hashKey", "vgmId", "status"
+  ];
+
+  const cleaned = {};
+  allowedFields.forEach(field => {
+    if (body[field] !== undefined) {
+      cleaned[field] = body[field];
+    }
+  });
+
+  return cleaned;
+};
+
+
 export const submitVGM = async (req, res) => {
   try {
     // Sanitize input
@@ -29,7 +56,7 @@ export const submitVGM = async (req, res) => {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: req.body,
+      body: sanitizeVGMPayload(req.body),
     };
 
     const result = await ApiLogger.logAndForward(
@@ -86,7 +113,7 @@ export const saveVGM = async (req, res) => {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: req.body,
+      body: sanitizeVGMPayload(req.body),
       timestamp: new Date()
     };
 
@@ -725,10 +752,10 @@ export const updateVGMRequest = async (req, res) => {
     // Create updated request data
     const updatedRequestData = {
       ...originalLog.request.toObject(),
-      body: {
+      body: sanitizeVGMPayload({
         ...originalLog.request.body,
         ...updateData,
-      },
+      }),
     };
 
     // Update the existing log with pending status
