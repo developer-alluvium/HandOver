@@ -209,9 +209,13 @@ const Form13 = () => {
       setVessels(vesselResponse.data || []);
 
       // Load POD Master Data
+      const past2Days = new Date(now);
+      past2Days.setDate(past2Days.getDate() - 2);
+      const podTimestamp = past2Days.toISOString().split('T')[0] + " 00:00:00";
+
       const podRequest = {
         pyrCode: pyrCode,
-        fromTs: timestamp,
+        fromTs: podTimestamp,
         hashKey,
       };
 
