@@ -14,8 +14,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Select,
-  MenuItem,
   Checkbox,
   Collapse,
   Grid,
@@ -105,30 +103,54 @@ const ContainerRow = ({
           />
         </TableCell>
         <TableCell sx={{ p: 0.5 }}>
-          <Select
+          <Autocomplete
             fullWidth
             size="small"
-            variant="standard"
-            value={container.cntnrSize}
-            onChange={(e) => handleContainerChange("cntnrSize", e.target.value)}
-          >
-            {containerSizes.map((size) => (
-              <MenuItem key={size.value} value={size.value}>{size.label}</MenuItem>
-            ))}
-          </Select>
+            options={containerSizes}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.label || "";
+            }}
+            value={containerSizes.find(opt => opt.value === container.cntnrSize) || null}
+            onChange={(e, newValue) => {
+              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+              handleContainerChange("cntnrSize", val);
+            }}
+            noOptionsText="Size is not present"
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="standard"
+                placeholder="Size"
+                error={!!validationErrors[`container_${index}_cntnrSize`]}
+              />
+            )}
+          />
         </TableCell>
         <TableCell sx={{ p: 0.5, minWidth: 120 }}>
-          <Select
+          <Autocomplete
             fullWidth
             size="small"
-            variant="standard"
-            value={container.iso}
-            onChange={(e) => handleContainerChange("iso", e.target.value)}
-          >
-            {availableIsoCodes.map((iso) => (
-              <MenuItem key={iso.value} value={iso.value}>{iso.label}</MenuItem>
-            ))}
-          </Select>
+            options={availableIsoCodes}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.label || "";
+            }}
+            value={availableIsoCodes.find(opt => opt.value === container.iso) || null}
+            onChange={(e, newValue) => {
+              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+              handleContainerChange("iso", val);
+            }}
+            noOptionsText="ISO is not present"
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="standard"
+                placeholder="ISO"
+                error={!!validationErrors[`container_${index}_iso`]}
+              />
+            )}
+          />
         </TableCell>
         <TableCell sx={{ p: 0.5 }}>
           <TextField
@@ -230,6 +252,9 @@ const ContainerRow = ({
                         options={hauliers}
                         getOptionLabel={(option) => {
                           if (typeof option === 'string') return option;
+                          if (option.value && option.label) {
+                            return `${option.value} - ${option.label}`;
+                          }
                           return option.label || option.value || "";
                         }}
                         value={hauliers.find(h => h.value === container.haulier) || container.haulier || null}
@@ -325,18 +350,28 @@ const ContainerRow = ({
                       <Grid container spacing={1}>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">IMO No 1 <span style={{ color: '#d32f2f' }}>*</span></Typography>
-                          <Select
+                          <Autocomplete
                             fullWidth
                             size="small"
-                            variant="standard"
-                            value={container.imoNo1 || ""}
-                            onChange={(e) => handleContainerChange("imoNo1", e.target.value)}
-                            error={!!validationErrors[`container_${index}_imoNo1`]}
-                          >
-                            {masterData.imoNumbers.map((imo) => (
-                              <MenuItem key={imo.value} value={imo.value}>{imo.label}</MenuItem>
-                            ))}
-                          </Select>
+                            options={masterData.imoNumbers}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option;
+                              return option.label || "";
+                            }}
+                            value={masterData.imoNumbers.find(opt => opt.value === container.imoNo1) || null}
+                            onChange={(e, newValue) => {
+                              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                              handleContainerChange("imoNo1", val);
+                            }}
+                            noOptionsText="IMO is not present"
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                variant="standard"
+                                error={!!validationErrors[`container_${index}_imoNo1`]}
+                              />
+                            )}
+                          />
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">UN No 1 <span style={{ color: '#d32f2f' }}>*</span></Typography>
@@ -344,17 +379,27 @@ const ContainerRow = ({
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">IMO No 2</Typography>
-                          <Select
+                          <Autocomplete
                             fullWidth
                             size="small"
-                            variant="standard"
-                            value={container.imoNo2 || ""}
-                            onChange={(e) => handleContainerChange("imoNo2", e.target.value)}
-                          >
-                            {masterData.imoNumbers.map((imo) => (
-                              <MenuItem key={imo.value} value={imo.value}>{imo.label}</MenuItem>
-                            ))}
-                          </Select>
+                            options={masterData.imoNumbers}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option;
+                              return option.label || "";
+                            }}
+                            value={masterData.imoNumbers.find(opt => opt.value === container.imoNo2) || null}
+                            onChange={(e, newValue) => {
+                              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                              handleContainerChange("imoNo2", val);
+                            }}
+                            noOptionsText="IMO is not present"
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                variant="standard"
+                              />
+                            )}
+                          />
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">UN No 2</Typography>
@@ -412,18 +457,28 @@ const ContainerRow = ({
                         </Grid>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">ODC Units</Typography>
-                          <Select
+                          <Autocomplete
                             fullWidth
                             size="small"
-                            variant="standard"
-                            value={container.odcUnits || ""}
-                            onChange={(e) => handleContainerChange("odcUnits", e.target.value)}
-                            error={!!validationErrors[`container_${index}_odcUnits`]}
-                          >
-                            {masterData.odcUnits.map((opt) => (
-                              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                            ))}
-                          </Select>
+                            options={masterData.odcUnits}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option;
+                              return option.label || "";
+                            }}
+                            value={masterData.odcUnits.find(opt => opt.value === container.odcUnits) || null}
+                            onChange={(e, newValue) => {
+                              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                              handleContainerChange("odcUnits", val);
+                            }}
+                            noOptionsText="Unit is not present"
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                variant="standard"
+                                error={!!validationErrors[`container_${index}_odcUnits`]}
+                              />
+                            )}
+                          />
                         </Grid>
                       </Grid>
                     </Box>
@@ -432,18 +487,28 @@ const ContainerRow = ({
                   {isSpecialStowNeeded && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">Special Stow <span style={{ color: '#d32f2f' }}>*</span></Typography>
-                      <Select
+                      <Autocomplete
                         fullWidth
                         size="small"
-                        variant="standard"
-                        value={container.spclStow || ""}
-                        onChange={(e) => handleContainerChange("spclStow", e.target.value)}
-                        error={!!validationErrors[`container_${index}_spclStow`]}
-                      >
-                        {masterData.specialStowOptions.map((opt) => (
-                          <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                        ))}
-                      </Select>
+                        options={masterData.specialStowOptions}
+                        getOptionLabel={(option) => {
+                          if (typeof option === 'string') return option;
+                          return option.label || "";
+                        }}
+                        value={masterData.specialStowOptions.find(opt => opt.value === container.spclStow) || null}
+                        onChange={(e, newValue) => {
+                          const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+                          handleContainerChange("spclStow", val);
+                        }}
+                        noOptionsText="Option is not present"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            variant="standard"
+                            error={!!validationErrors[`container_${index}_spclStow`]}
+                          />
+                        )}
+                      />
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Special Stow Remark <span style={{ color: '#d32f2f' }}>*</span></Typography>
                       <TextField fullWidth size="small" variant="standard" value={container.spclStowRemark} onChange={(e) => handleContainerChange("spclStowRemark", e.target.value)} error={!!validationErrors[`container_${index}_spclStowRemark`]} />
                     </Box>

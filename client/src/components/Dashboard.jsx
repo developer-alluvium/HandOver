@@ -1,9 +1,25 @@
 // src/components/Dashboard/Dashboard.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AppbarComponent from "./AppbarComponent";
 import "../styles/Dashboard.scss";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  FormControl,
+  Select,
+  MenuItem,
+  Typography,
+  Box as MuiBox,
+  Autocomplete,
+  TextField,
+} from "@mui/material";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import { masterData } from "../data/masterData";
 
 // --- Inline SVG Icons ---
 const Icons = {
@@ -131,6 +147,23 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { userData, shippers, logout } = useAuth();
 
+  // --- Location Dialog State ---
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [selectedLocId, setSelectedLocId] = useState("");
+
+  const handleOpenLocationDialog = () => {
+    setLocationDialogOpen(true);
+  };
+
+  const handleLocationDialogClose = () => {
+    setLocationDialogOpen(false);
+  };
+
+  const handleLocationConfirm = () => {
+    setLocationDialogOpen(false);
+    navigate("/form13", { state: { presetLocId: selectedLocId || null } });
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -240,7 +273,7 @@ const Dashboard = () => {
             title="Form 13 Submission"
             description="Generate Export Gate Pass (Form 13) for container authorization. Direct API submission to lines."
             buttonText="Submit Form 13"
-            onClick={() => navigate("/form13")}
+            onClick={handleOpenLocationDialog}
           />
           <FeatureCard
             icon={<Icons.Status />}
@@ -292,7 +325,7 @@ const Dashboard = () => {
                   New VGM Submission <span>&rarr;</span>
                 </button>
                 <button
-                  onClick={() => navigate("/form13")}
+                  onClick={handleOpenLocationDialog}
                   className="action-link"
                 >
                   New Form 13 <span>&rarr;</span>
@@ -316,6 +349,74 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Location Selection Dialog */}
+      <Dialog
+        open={locationDialogOpen}
+        onClose={handleLocationDialogClose}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pb: 0.5 }}>
+          <LocationOnIcon sx={{ color: "#1976d2" }} />
+          <Typography variant="h6" fontWeight="bold">
+            Select Port / Location
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: "12px !important" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose the port for this Form 13 submission. Shipping lines will be
+            filtered based on your selection.
+          </Typography>
+          <Autocomplete
+            fullWidth
+            size="small"
+            options={masterData.portIds}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.label ? `${option.value} - ${option.label}` : "";
+            }}
+            value={masterData.portIds.find(p => p.value === selectedLocId) || null}
+            onChange={(e, newValue) => {
+              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+              setSelectedLocId(val);
+            }}
+            noOptionsText="Location is not present"
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                placeholder="Search location..."
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+              />
+            )}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={handleLocationDialogClose}
+            variant="outlined"
+            color="inherit"
+            sx={{ borderRadius: "8px", textTransform: "none" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleLocationConfirm}
+            variant="contained"
+            color="primary"
+            sx={{ borderRadius: "8px", textTransform: "none", minWidth: 120 }}
+          >
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

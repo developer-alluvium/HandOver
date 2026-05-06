@@ -198,25 +198,54 @@ const Form13 = () => {
 
       const hashKey = hashKeyResponse.data.hashKey;
 
-      // Load Vessel Master Data
+      // --- Load Vessel Master Data (1 Month Before Today) ---
+      const oneMonthAgo = new Date(now);
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const vesselTimestamp = oneMonthAgo.toISOString().split('T')[0] + " 00:00:00";
+
+      // Need a hashkey matching the vessel timestamp
+      const vHashKeyResponse = await form13API.getHashKey({
+        pyrCode: pyrCode,
+        timestamp: vesselTimestamp,
+      });
+      const vHashKey = vHashKeyResponse.data.hashKey;
+
       const vesselRequest = {
         pyrCode: pyrCode,
-        fromTs: timestamp,
-        hashKey,
+        fromTs: vesselTimestamp,
+        hashKey: vHashKey,
       };
 
       const vesselResponse = await form13API.getVesselMaster(vesselRequest);
-      setVessels(vesselResponse.data || []);
+      
+      // Filter out past vessels (chaValidTo < today midnight)
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
 
-      // Load POD Master Data
-      const past2Days = new Date(now);
-      past2Days.setDate(past2Days.getDate() - 2);
-      const podTimestamp = past2Days.toISOString().split('T')[0] + " 00:00:00";
+      const vesselsData = (vesselResponse.data || []).filter(v => {
+        if (!v.chaValidTo) return true;
+        const vToDate = new Date(v.chaValidTo.replace(' ', 'T'));
+        return vToDate >= todayStart;
+      });
+      
+      setVessels(vesselsData);
+
+      // --- Load POD Master Data (1 Year Before Today) ---
+      const oneYearAgo = new Date(now);
+      oneYearAgo.setFullYear(now.getFullYear() - 1);
+      const podTimestamp = oneYearAgo.toISOString().split('T')[0] + " 00:00:00";
+
+      // Need a hashkey matching the POD timestamp
+      const pHashKeyResponse = await form13API.getHashKey({
+        pyrCode: pyrCode,
+        timestamp: podTimestamp,
+      });
+      const pHashKey = pHashKeyResponse.data.hashKey;
 
       const podRequest = {
         pyrCode: pyrCode,
         fromTs: podTimestamp,
-        hashKey,
+        hashKey: pHashKey,
       };
 
       const podResponse = await form13API.getPODMaster(podRequest);
@@ -312,7 +341,7 @@ const Form13 = () => {
           setFormData(prev => {
             const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
             const finalContainers = isFirstEmpty ? newVgmContainers : [...prev.containers, ...newVgmContainers];
-            
+
             // Also populate header-level shipperNm if it's empty, using the first VGM record found
             const headerShipperNm = prev.shipperNm || vgmRequests[0]?.shipperNm || "";
 
@@ -365,7 +394,14 @@ const Form13 = () => {
         // Reset form for fresh request
         setIsEditMode(false);
         setRequestId(null);
-        setFormData(initialFormData);
+
+        // Pre-fill locId if user selected a location from Dashboard
+        const presetLocId = location.state?.presetLocId || "";
+        setFormData({
+          ...initialFormData,
+          locId: presetLocId,
+        });
+
         setError("");
         setSuccess("");
         setValidationErrors({});

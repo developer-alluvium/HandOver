@@ -4,9 +4,6 @@ import React from "react";
 import {
   Grid,
   TextField,
-  FormControl,
-  Select,
-  MenuItem,
   Typography,
   Box,
   Paper,
@@ -42,10 +39,14 @@ const Form13HeaderSection = ({
     return vessels || [];
   }, [vessels]);
 
-  // 2. Shipping Line Options
+  // 2. Shipping Line Options (filtered by locId if pre-selected, so only lines serving that port show)
   const slOptions = React.useMemo(() => {
-    return [...new Set(allActiveVessels.map(v => v.bnfCode))].sort();
-  }, [allActiveVessels]);
+    return [...new Set(
+      allActiveVessels
+        .filter(v => !formData.locId || v.locId === formData.locId)
+        .map(v => v.bnfCode)
+    )].sort();
+  }, [allActiveVessels, formData.locId]);
 
   // 3. Location Options (Filtered by Shipping Line)
   const locOptions = React.useMemo(() => {
@@ -56,7 +57,7 @@ const Form13HeaderSection = ({
     )];
     return locIds.map(id => {
       const port = portIds.find(p => p.value === id);
-      return { value: id, label: port ? port.label : id };
+      return { value: id, label: port ? `${id} - ${port.label}` : id };
     }).sort((a, b) => a.label.localeCompare(b.label));
   }, [allActiveVessels, formData.bnfCode, portIds]);
 
@@ -177,6 +178,16 @@ const Form13HeaderSection = ({
   const cfsOptionsMapped = React.useMemo(() => {
     return cfsCodes;
   }, [cfsCodes]);
+  
+  // 10. Selected Vessel Details (for Cut-off display)
+  const selectedVesselData = React.useMemo(() => {
+    if (!formData.vesselNm) return null;
+    return allActiveVessels.find(v => 
+      v.vesselNm === formData.vesselNm &&
+      (!formData.locId || v.locId === formData.locId) &&
+      (!formData.viaNo || v.viaNo === formData.viaNo)
+    );
+  }, [allActiveVessels, formData.vesselNm, formData.locId, formData.viaNo]);
 
   // --- RENDERING HELPERS ---
 
@@ -231,7 +242,7 @@ const Form13HeaderSection = ({
         break;
       case "pod":
       case "fpod":
-        selectOptions = cascadingPods.map(p => ({ value: p.podCd, label: `${p.podNm} (${p.podCd})` }));
+        selectOptions = cascadingPods.map(p => ({ value: p.podCd, label: `${p.podCd} - ${p.podNm}` }));
         break;
       case "cargoTp":
         selectOptions = cargoTypes;
@@ -256,7 +267,6 @@ const Form13HeaderSection = ({
     }
 
     const isDisabled = loading || (
-      (fieldName === "locId" && !formData.bnfCode) ||
       (fieldName === "vesselNm" && !formData.locId) ||
       (fieldName === "viaNo" && !formData.vesselNm) ||
       (fieldName === "terminalCode" && !formData.vesselNm) ||
@@ -266,54 +276,42 @@ const Form13HeaderSection = ({
     );
 
     if (isSelect) {
-      if (fieldName === "cfsCode") {
-        return (
-          <Grid item xs={12} sm={6} md={md}>
-            <FormLabelCustom label={label} required={required} />
-            <Autocomplete
-              size="small"
-              options={selectOptions}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return `${option.label} (${option.value})`;
-              }}
-              value={selectOptions.find(opt => opt.value === formData[fieldName]) || formData[fieldName] || null}
-              onChange={(e, newValue) => {
-                const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
-                onFormDataChange("header", fieldName, val);
-              }}
-              disabled={isDisabled}
-              freeSolo
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  variant="standard"
-                  placeholder="Search CFS..."
-                  fullWidth
-                  error={!!validationErrors[fieldName]}
-                />
-              )}
-            />
-          </Grid>
-        );
-      }
-
       return (
         <Grid item xs={12} sm={6} md={md}>
           <FormLabelCustom label={label} required={required} />
-          <FormControl fullWidth size="small" variant="standard" error={!!validationErrors[fieldName]}>
-            <Select
-              value={formData[fieldName] || ""}
-              onChange={(e) => onFormDataChange("header", fieldName, e.target.value)}
-              disabled={isDisabled}
+          <Autocomplete
+            size="small"
+            options={selectOptions}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.label || "";
+            }}
+            value={selectOptions.find(opt => opt.value === formData[fieldName]) || (fieldName === "cfsCode" ? formData[fieldName] : null) || null}
+            onChange={(e, newValue) => {
+              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+              onFormDataChange("header", fieldName, val);
+            }}
+            disabled={isDisabled}
+            freeSolo={fieldName === "cfsCode"}
+            noOptionsText={`${label} is not present`}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="standard"
+                placeholder={`Search ${label}...`}
+                fullWidth
+                error={!!validationErrors[fieldName]}
+              />
+            )}
+          />
+          {fieldName === "vesselNm" && selectedVesselData?.chaValidTo && (
+            <Typography 
+              variant="caption" 
+              sx={{ color: "#d32f2f", fontWeight: "bold", display: "block", mt: 0.5 }}
             >
-              {selectOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              Cut-off: {selectedVesselData.chaValidTo}
+            </Typography>
+          )}
         </Grid>
       );
     }
