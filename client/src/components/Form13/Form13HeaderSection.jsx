@@ -48,7 +48,10 @@ const Form13HeaderSection = ({
         setLoadingPods(true);
         setLoadingFpods(true);
         const res = await masterAPI.getPODCodes("");
-        const data = res.data || [];
+        const data = (res.data || []).map(item => ({
+          value: item.value,
+          label: `${item.value} - ${item.label}`
+        }));
         setPodOptions(data);
         setFpodOptions(data);
       } catch (err) {
@@ -67,7 +70,11 @@ const Form13HeaderSection = ({
       try {
         setLoadingPods(true);
         const res = await masterAPI.getPODCodes(podSearchText);
-        setPodOptions(res.data || []);
+        const data = (res.data || []).map(item => ({
+          value: item.value,
+          label: `${item.value} - ${item.label}`
+        }));
+        setPodOptions(data);
       } catch (err) {
         console.error("Error searching PODs:", err);
       } finally {
@@ -84,7 +91,11 @@ const Form13HeaderSection = ({
       try {
         setLoadingFpods(true);
         const res = await masterAPI.getPODCodes(fpodSearchText);
-        setFpodOptions(res.data || []);
+        const data = (res.data || []).map(item => ({
+          value: item.value,
+          label: `${item.value} - ${item.label}`
+        }));
+        setFpodOptions(data);
       } catch (err) {
         console.error("Error searching FPODs:", err);
       } finally {
@@ -103,7 +114,11 @@ const Form13HeaderSection = ({
           const res = await masterAPI.getPODCodes(formData.pod);
           const found = (res.data || []).find(opt => opt.value === formData.pod);
           if (found) {
-            setPodOptions(prev => [found, ...prev.filter(opt => opt.value !== found.value)]);
+            const formatted = {
+              value: found.value,
+              label: `${found.value} - ${found.label}`
+            };
+            setPodOptions(prev => [formatted, ...prev.filter(opt => opt.value !== found.value)]);
           }
         } catch (err) {
           console.error("Error resolving selected POD:", err);
@@ -120,7 +135,11 @@ const Form13HeaderSection = ({
           const res = await masterAPI.getPODCodes(formData.fpod);
           const found = (res.data || []).find(opt => opt.value === formData.fpod);
           if (found) {
-            setFpodOptions(prev => [found, ...prev.filter(opt => opt.value !== found.value)]);
+            const formatted = {
+              value: found.value,
+              label: `${found.value} - ${found.label}`
+            };
+            setFpodOptions(prev => [formatted, ...prev.filter(opt => opt.value !== found.value)]);
           }
         } catch (err) {
           console.error("Error resolving selected FPOD:", err);
