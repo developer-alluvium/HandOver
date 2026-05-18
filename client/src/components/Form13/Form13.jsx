@@ -230,26 +230,13 @@ const Form13 = () => {
       
       setVessels(vesselsData);
 
-      // --- Load POD Master Data (2 Years Before Today) ---
-      const twoYearsAgo = new Date(now);
-      twoYearsAgo.setFullYear(now.getFullYear() - 2);
-      const podTimestamp = twoYearsAgo.toISOString().split('T')[0] + " 00:00:00";
-
-      // Need a hashkey matching the POD timestamp
-      const pHashKeyResponse = await form13API.getHashKey({
-        pyrCode: pyrCode,
-        timestamp: podTimestamp,
-      });
-      const pHashKey = pHashKeyResponse.data.hashKey;
-
-      const podRequest = {
-        pyrCode: pyrCode,
-        fromTs: podTimestamp,
-        hashKey: pHashKey,
-      };
-
-      const podResponse = await form13API.getPODMaster(podRequest);
-      setPods(podResponse.data || []);
+      // --- Load POD Master Data from local POD_CODES ---
+      try {
+        const podResponse = await masterAPI.getPODCodes("");
+        setPods(podResponse.data || []);
+      } catch (podErr) {
+        console.warn("Failed to load local POD codes:", podErr);
+      }
 
       // Load Shipping Lines from Master Data
       try {

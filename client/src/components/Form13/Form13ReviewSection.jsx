@@ -25,8 +25,12 @@ const Form13ReviewSection = ({ formData, vessels, pods }) => {
   };
 
   const getPODName = (podCode) => {
-    const pod = pods.find((p) => p.podCd === podCode);
-    return pod ? `${pod.podNm} (${pod.podCd})` : podCode;
+    if (!podCode) return "";
+    const pod = pods.find((p) => p.podCd === podCode || p.value === podCode);
+    if (pod) {
+      return pod.label ? pod.label : `${pod.podNm} (${pod.podCd})`;
+    }
+    return podCode;
   };
 
   const getCargoTypeLabel = (cargoType) => {

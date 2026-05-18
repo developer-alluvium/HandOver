@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { masterData, getCFSCodes } from "../../data/masterData";
 import { isFieldRequired, isFieldVisible } from "../../utils/form13Validations";
+import { masterAPI } from "../../services/api";
 
 const Form13HeaderSection = ({
   formData,
@@ -31,6 +32,103 @@ const Form13HeaderSection = ({
     portIds,
     issueToOptions
   } = masterData;
+
+  // --- DYNAMIC POD / FPOD OPTIONS FROM local master data ---
+  const [podSearchText, setPodSearchText] = React.useState("");
+  const [fpodSearchText, setFpodSearchText] = React.useState("");
+  const [podOptions, setPodOptions] = React.useState([]);
+  const [fpodOptions, setFpodOptions] = React.useState([]);
+  const [loadingPods, setLoadingPods] = React.useState(false);
+  const [loadingFpods, setLoadingFpods] = React.useState(false);
+
+  // Fetch initial options
+  React.useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        setLoadingPods(true);
+        setLoadingFpods(true);
+        const res = await masterAPI.getPODCodes("");
+        const data = res.data || [];
+        setPodOptions(data);
+        setFpodOptions(data);
+      } catch (err) {
+        console.error("Error fetching initial PODs:", err);
+      } finally {
+        setLoadingPods(false);
+        setLoadingFpods(false);
+      }
+    };
+    fetchInitial();
+  }, []);
+
+  // Search POD
+  React.useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setLoadingPods(true);
+        const res = await masterAPI.getPODCodes(podSearchText);
+        setPodOptions(res.data || []);
+      } catch (err) {
+        console.error("Error searching PODs:", err);
+      } finally {
+        setLoadingPods(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [podSearchText]);
+
+  // Search FPOD
+  React.useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      try {
+        setLoadingFpods(true);
+        const res = await masterAPI.getPODCodes(fpodSearchText);
+        setFpodOptions(res.data || []);
+      } catch (err) {
+        console.error("Error searching FPODs:", err);
+      } finally {
+        setLoadingFpods(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [fpodSearchText]);
+
+  // Resolve selected values
+  React.useEffect(() => {
+    if (formData.pod && !podOptions.some(opt => opt.value === formData.pod)) {
+      const resolve = async () => {
+        try {
+          const res = await masterAPI.getPODCodes(formData.pod);
+          const found = (res.data || []).find(opt => opt.value === formData.pod);
+          if (found) {
+            setPodOptions(prev => [found, ...prev.filter(opt => opt.value !== found.value)]);
+          }
+        } catch (err) {
+          console.error("Error resolving selected POD:", err);
+        }
+      };
+      resolve();
+    }
+  }, [formData.pod]);
+
+  React.useEffect(() => {
+    if (formData.fpod && !fpodOptions.some(opt => opt.value === formData.fpod)) {
+      const resolve = async () => {
+        try {
+          const res = await masterAPI.getPODCodes(formData.fpod);
+          const found = (res.data || []).find(opt => opt.value === formData.fpod);
+          if (found) {
+            setFpodOptions(prev => [found, ...prev.filter(opt => opt.value !== found.value)]);
+          }
+        } catch (err) {
+          console.error("Error resolving selected FPOD:", err);
+        }
+      };
+      resolve();
+    }
+  }, [formData.fpod]);
 
   // --- CASCADING DROPDOWN LOGIC ---
 
@@ -241,8 +339,10 @@ const Form13HeaderSection = ({
         selectOptions = srvOptions.map(opt => ({ value: opt, label: opt }));
         break;
       case "pod":
+        selectOptions = podOptions;
+        break;
       case "fpod":
-        selectOptions = cascadingPods.map(p => ({ value: p.podCd, label: `${p.podCd} - ${p.podNm}` }));
+        selectOptions = fpodOptions;
         break;
       case "cargoTp":
         selectOptions = cargoTypes;
@@ -291,6 +391,14 @@ const Form13HeaderSection = ({
               const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
               onFormDataChange("header", fieldName, val);
             }}
+            onInputChange={(e, newInputValue) => {
+              if (fieldName === "pod") {
+                setPodSearchText(newInputValue);
+              } else if (fieldName === "fpod") {
+                setFpodSearchText(newInputValue);
+              }
+            }}
+            loading={fieldName === "pod" ? loadingPods : fieldName === "fpod" ? loadingFpods : false}
             disabled={isDisabled}
             freeSolo={fieldName === "cfsCode"}
             noOptionsText={`${label} is not present`}

@@ -55065,7 +55065,7 @@ export const POD_CODES = [
         "value": "PAVAC"
     },
     {
-        "label": "VERACRUZ",
+        "label": "",
         "value": "PAVCZ"
     },
     {
