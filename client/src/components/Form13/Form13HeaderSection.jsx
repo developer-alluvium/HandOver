@@ -410,11 +410,13 @@ const Form13HeaderSection = ({
               const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
               onFormDataChange("header", fieldName, val);
             }}
-            onInputChange={(e, newInputValue) => {
-              if (fieldName === "pod") {
-                setPodSearchText(newInputValue);
-              } else if (fieldName === "fpod") {
-                setFpodSearchText(newInputValue);
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === "input" || reason === "clear") {
+                if (fieldName === "pod") {
+                  setPodSearchText(newInputValue);
+                } else if (fieldName === "fpod") {
+                  setFpodSearchText(newInputValue);
+                }
               }
             }}
             loading={fieldName === "pod" ? loadingPods : fieldName === "fpod" ? loadingFpods : false}
