@@ -20,9 +20,11 @@ export const LOCATION_SPECIFIC_RULES = {
     // Chennai
     name: "Chennai",
     requires: [
-
       "terminalLoginId",
       "fpod",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
     ],
     optional: [],
     terminalCodes: ["DBGT", "CT1", "CT2", "CT3"],
@@ -54,6 +56,9 @@ export const LOCATION_SPECIFIC_RULES = {
     requires: [
       "terminalLoginId",
       "fpod",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
     ],
     optional: [],
     specialNotes: "FPOD is mandatory for Paradip location",
@@ -65,6 +70,9 @@ export const LOCATION_SPECIFIC_RULES = {
     requires: [
       "terminalLoginId",
       "fpod",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
     ],
     optional: [],
     specialNotes: "FPOD is mandatory for Kattupalli location",
@@ -76,6 +84,9 @@ export const LOCATION_SPECIFIC_RULES = {
     requires: [
       "terminalLoginId",
       "fpod",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
     ],
     optional: [],
     specialNotes: "FPOD is mandatory for Kolkata location",
@@ -87,6 +98,9 @@ export const LOCATION_SPECIFIC_RULES = {
     requires: [
       "terminalLoginId",
       "fpod",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
     ],
     optional: [],
     specialNotes: "FPOD is mandatory for Ennore location",
@@ -95,7 +109,12 @@ export const LOCATION_SPECIFIC_RULES = {
   INMUN1: {
     // Mundra
     name: "Mundra",
-    requires: ["terminalLoginId"],
+    requires: [
+      "terminalLoginId",
+      "consigneeNm",
+      "consigneeAddr",
+      "cargoDesc",
+    ],
     optional: ["fpod"],
     earlyGateIn: {
       enabled: true,
