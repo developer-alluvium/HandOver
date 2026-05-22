@@ -1943,7 +1943,7 @@ const VGMForm = ({
                 type="button"
                 className="btn btn-outline"
                 onClick={handleCancel}
-                disabled={loading}
+                disabled={loading || formik.isSubmitting}
               >
                 Cancel
               </button>
@@ -1952,7 +1952,7 @@ const VGMForm = ({
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSave}
-                disabled={loading}
+                disabled={loading || formik.isSubmitting}
                 style={{ backgroundColor: "#0d6efd", borderColor: "#0d6efd" }}
               >
                 Save
@@ -1962,7 +1962,7 @@ const VGMForm = ({
                 type="button"
                 className="btn btn-secondary"
                 onClick={generatePDF}
-                disabled={loading}
+                disabled={loading || formik.isSubmitting}
               >
                 Download PDF
               </button>
@@ -1970,9 +1970,9 @@ const VGMForm = ({
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={loading || !isPdfDownloaded}
+                disabled={loading || formik.isSubmitting || !isPdfDownloaded}
               >
-                {loading
+                {loading || formik.isSubmitting
                   ? "Processing..."
                   : isEditMode
                     ? "Update VGM"
