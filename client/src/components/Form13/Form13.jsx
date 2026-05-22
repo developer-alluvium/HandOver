@@ -847,7 +847,7 @@ const Form13 = () => {
     const requiredAttachments = getRequiredAttachments();
     requiredAttachments.forEach((reqAtt) => {
       const hasAttachment = formData.attachments.some(
-        (att) => (att.title === reqAtt.code || att.attTitle === reqAtt.code)
+        (att) => (att.title === reqAtt.code || att.attTitle === reqAtt.code) && (att.attData || att.attNm || att instanceof Blob)
       );
       if (reqAtt.required && !hasAttachment) {
         errors[`attachment_${reqAtt.code}`] = `${reqAtt.name} is required`;
@@ -1349,27 +1349,29 @@ const Form13 = () => {
 
       // Prepare attachments with base64 encoding
       const attList = await Promise.all(
-        formData.attachments.map(async (file) => {
-          // If it's already from the DB, it will have attData and no name property (likely)
-          // or it will be an object with attData.
-          if (file.attData) {
-            return {
-              attReqId: file.attReqId || "",
-              attNm: file.attNm,
-              attData: file.attData,
-              attTitle: file.attTitle,
-            };
-          }
+        formData.attachments
+          .filter(file => file.attData || file.attNm || (file instanceof Blob))
+          .map(async (file) => {
+            // If it's already from the DB, it will have attData and no name property (likely)
+            // or it will be an object with attData.
+            if (file.attData) {
+              return {
+                attReqId: file.attReqId || "",
+                attNm: file.attNm || (file.attTitle || file.title || "BOOKING_COPY").toLowerCase() + ".pdf",
+                attData: file.attData,
+                attTitle: file.attTitle || file.title || "BOOKING_COPY",
+              };
+            }
 
-          // It's a new File object from the frontend
-          const attName = (file.title || "BOOKING_COPY").toLowerCase() + ".pdf";
-          return {
-            attReqId: "",
-            attNm: attName,
-            attData: await fileToBase64(file),
-            attTitle: file.title || "BOOKING_COPY",
-          };
-        })
+            // It's a new File object from the frontend
+            const attName = file.name || (file.title || "BOOKING_COPY").toLowerCase() + ".pdf";
+            return {
+              attReqId: "",
+              attNm: attName,
+              attData: await fileToBase64(file),
+              attTitle: file.title || "BOOKING_COPY",
+            };
+          })
       );
 
       let backendHashKey = "";

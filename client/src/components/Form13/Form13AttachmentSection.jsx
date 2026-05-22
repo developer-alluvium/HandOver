@@ -65,7 +65,8 @@ const Form13AttachmentSection = ({
   // customFiles are entries for each file that is NOT a mandatory slot
   const customFiles = formData.attachments.filter(att => {
     const attTitle = att.title || att.attTitle;
-    return !mandatoryCodes.includes(attTitle);
+    const hasContent = att.attData || att.attNm || (att instanceof Blob);
+    return hasContent && !mandatoryCodes.includes(attTitle);
   }).map((att, idx) => {
     const attTitle = att.title || att.attTitle;
     return {
@@ -154,6 +155,9 @@ const Form13AttachmentSection = ({
   const getUploadedFileForType = (docCode) => {
     return formData.attachments.find(att => {
       const attTitle = att.title || att.attTitle;
+      const hasContent = att.attData || att.attNm || (att instanceof Blob);
+      if (!hasContent) return false;
+
       if (isPackingList(docCode) && isPackingList(attTitle)) return true;
       if (isCNTRLoadPlan(docCode) && isCNTRLoadPlan(attTitle)) return true;
       return attTitle === docCode;

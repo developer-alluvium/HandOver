@@ -270,17 +270,23 @@ const Form13ReviewSection = ({ formData, vessels, pods }) => {
         <Card variant="outlined">
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Document Attachments ({formData.attachments.length} file(s))
+              Document Attachments ({formData.attachments.filter(f => f.attData || f.attNm || f instanceof Blob).length} file(s))
             </Typography>
             <List dense>
-              {formData.attachments.map((file, index) => (
-                <ListItem key={index}>
-                  <ListItemText
-                    primary={file.name}
-                    secondary={`${(file.size / 1024 / 1024).toFixed(2)} MB`}
-                  />
-                </ListItem>
-              ))}
+              {formData.attachments
+                .filter(file => file.attData || file.attNm || file instanceof Blob)
+                .map((file, index) => {
+                  const name = file.name || file.attNm || file.title || file.attTitle || "Attachment";
+                  const size = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Existing Document";
+                  return (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={name}
+                        secondary={size}
+                      />
+                    </ListItem>
+                  );
+                })}
             </List>
           </CardContent>
         </Card>
