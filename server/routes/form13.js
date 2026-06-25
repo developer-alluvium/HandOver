@@ -164,33 +164,51 @@ router.post("/vessel-master", async (req, res) => {
 // POD Master API - Calls actual ODeX API
 router.post("/pod-master", async (req, res) => {
   try {
-    const { pyrCode } = req.body;
+    let odexResponse;
+    let success = false;
 
-    // Validate required fields
-    if (!pyrCode) {
-      return res.status(400).json({
-        success: false,
-        error: "pyrCode is required",
-      });
+    if (config.odex.baseUrl && config.odex.hashKey) {
+      try {
+        const { pyrCode } = req.body;
+        if (!pyrCode) {
+          return res.status(400).json({
+            success: false,
+            error: "pyrCode is required",
+          });
+        }
+        const fromTs = req.body.fromTs || getCurrentTimestamp();
+        const hashKey = getHashKey();
+        const podRequest = {
+          pyrCode,
+          fromTs,
+          hashKey,
+        };
+
+        odexResponse = await callOdexAPI(
+          ODEX_CONFIG.endpoints.podMaster,
+          podRequest
+        );
+        success = true;
+      } catch (configErr) {
+        console.warn("ODeX pod-master API call with config failed, trying proxy API fallback:", configErr.message);
+      }
     }
 
-    // Get current timestamp and hashkey
-    // Use fromTs from request or default to current timestamp
-    const fromTs = req.body.fromTs || getCurrentTimestamp();
-    const hashKey = getHashKey();
-
-    // Prepare request for ODeX API
-    const podRequest = {
-      pyrCode,
-      fromTs,
-      hashKey,
-    };
-
-    // Call actual ODeX POD Master API
-    const odexResponse = await callOdexAPI(
-      ODEX_CONFIG.endpoints.podMaster,
-      podRequest
-    );
+    if (!success) {
+      const proxyUrl = "https://in.odexglobal.com/RS/iForm13Service/json/getForm13PODInfo";
+      const response = await axios.post(proxyUrl, {
+        pyrCode: "ODeX/IN/SHP/2511/00001",
+        fromTs: "2026-04-27 00:00:00",
+        hashKey: "9HTKQ7LWMZRP"
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        timeout: 30000,
+      });
+      odexResponse = response.data;
+    }
 
     res.json({
       success: true,
@@ -494,7 +512,11 @@ router.get("/requests", async (req, res) => {
 
     const skip = (page - 1) * parseInt(limit);
 
-    const requests = await Form13.find(filterQuery)
+    // Fetch paginated results (exclude the large base64 attachments field for list performance)
+    const requests = await Form13.find(filterQuery, {
+      attList: 0,
+      attachments: 0
+    })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))

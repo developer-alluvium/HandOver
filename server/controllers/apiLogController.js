@@ -635,8 +635,10 @@ export const getVGMRequests = async (req, res) => {
 
     const skip = (page - 1) * parseInt(limit);
 
-    // Fetch paginated results
-    const requests = await ApiLog.find(filterQuery)
+    // Fetch paginated results (exclude the large base64 attachments field for list performance)
+    const requests = await ApiLog.find(filterQuery, {
+      "request.body.vgmWbAttList": 0
+    })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))

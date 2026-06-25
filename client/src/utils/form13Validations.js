@@ -7,6 +7,37 @@
  * based on the ODeX API documentation version 4.0 (28-06-2025)
  */
 
+// Regex Patterns based on API Spreadsheet Validation
+export const alphanumericPattern = /^[A-Za-z0-9+./_ -]*$/;
+export const alphanumericNoSpacePattern = /^[A-Za-z0-9+./_-]*$/;
+export const lettersOnlyPattern = /^[A-Za-z+./_() -]*$/;
+export const digitsOnlyPattern = /^\d*$/;
+export const datePattern = /^(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/; // YYYY-MM-DD (1900-2099)
+
+export const validatePattern = (value, pattern, allowEmpty = true) => {
+  if (value === null || value === undefined || value === "") {
+    return allowEmpty;
+  }
+  return pattern.test(value.toString());
+};
+
+export const validateLength = (value, maxLen, minLen = 0) => {
+  if (value === null || value === undefined) {
+    return minLen === 0;
+  }
+  const len = value.toString().length;
+  return len >= minLen && len <= maxLen;
+};
+
+export const validateEmail = (value) => {
+  if (!value) return true;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const emails = value.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+  if (emails.length === 0) return false;
+  return emails.every(email => emailRegex.test(email));
+};
+
+
 // ==============================================
 // 1. LOCATION-SPECIFIC VALIDATION RULES
 // ==============================================
@@ -665,13 +696,15 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
     case 'noOfPkg':
       return true; // Usually mandatory for all exports
 
-    case 'chaNm':
+    case 'chaNm': {
       const hiddenChaTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
       return !hiddenChaTerminals.includes(formData.terminalCode);
+    }
 
-    case 'issueTo':
+    case 'issueTo': {
       const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
       return !hiddenTerminals.includes(formData.terminalCode);
+    }
 
     case 'leoDt':
       return !!formData.containers?.[containerIndex]?.sbDtlsVo?.[0]?.leoNo;
@@ -842,9 +875,31 @@ export const getRequiredAttachments = (formData) => {
  * @param {Object} formData - Complete form data
  * @returns {Object} - Validation errors object
  */
-// In form13Validations.js, add or update:
 export const validateFormData = (formData) => {
   const errors = {};
+
+  // Helper validation functions
+  const checkPattern = (field, label, value, pattern, allowEmpty = true) => {
+    if (!validatePattern(value, pattern, allowEmpty)) {
+      errors[field] = `${label} contains invalid characters`;
+      return false;
+    }
+    return true;
+  };
+
+  const checkLength = (field, label, value, max, min = 0, isRequired = false) => {
+    if (isRequired && (value === null || value === undefined || value.toString().trim() === "")) {
+      errors[field] = `${label} is required`;
+      return false;
+    }
+    if (value !== null && value !== undefined && value.toString().trim() !== "") {
+      if (!validateLength(value, max, min)) {
+        errors[field] = `${label} length must be between ${min} and ${max} characters`;
+        return false;
+      }
+    }
+    return true;
+  };
 
   // Basic required fields (always required)
   if (!formData.locId?.trim()) errors.locId = "Location is required";
@@ -853,117 +908,417 @@ export const validateFormData = (formData) => {
   if (!formData.pod?.trim()) errors.pod = "POD is required";
   if (!formData.cargoTp?.trim()) errors.cargoTp = "Cargo Type is required";
   if (!formData.origin?.trim()) errors.origin = "Origin is required";
-  if (!formData.cntnrStatus?.trim())
-    errors.cntnrStatus = "Container Status is required";
+  if (!formData.cntnrStatus?.trim()) errors.cntnrStatus = "Container Status is required";
   if (!formData.mobileNo?.trim()) errors.mobileNo = "Mobile No is required";
-  
-  if (isFieldRequired('consigneeNm', formData) && !formData.consigneeNm?.trim())
-    errors.consigneeNm = "Consignee Name is required";
-    
-  if (isFieldRequired('consigneeAddr', formData) && !formData.consigneeAddr?.trim())
-    errors.consigneeAddr = "Consignee Address is required";
-    
-  if (isFieldRequired('cargoDesc', formData) && !formData.cargoDesc?.trim())
-    errors.cargoDesc = "Cargo Description is required";
-    
-  if (isFieldRequired('terminalLoginId', formData) && !formData.terminalLoginId?.trim())
-    errors.terminalLoginId = "Terminal Login ID is required";
+  if (!formData.bookNo?.trim()) errors.bookNo = "Booking No. is required";
+  if (!formData.formType?.trim()) errors.formType = "Form Type is required";
 
+  // Validate lengths & formats for Header fields
+  checkLength("odexRefNo", "ODeX Reference No", formData.odexRefNo, 50, 0, false);
+  checkPattern("odexRefNo", "ODeX Reference No", formData.odexRefNo, alphanumericPattern, true);
 
-  // Conditional Header Field Validations
-  if (isFieldRequired('ShipperCity', formData) && !formData.ShipperCity?.trim()) {
-    errors.ShipperCity = "Shipper City is required";
+  checkLength("bnfCode", "Shipping Line", formData.bnfCode, 8, 1, true);
+  checkPattern("bnfCode", "Shipping Line", formData.bnfCode, alphanumericNoSpacePattern, false);
+
+  checkLength("locId", "Location ID", formData.locId, 8, 1, true);
+  checkPattern("locId", "Location ID", formData.locId, alphanumericNoSpacePattern, false);
+
+  checkLength("vesselNm", "Vessel Name", formData.vesselNm, 50, 1, true);
+  checkPattern("vesselNm", "Vessel Name", formData.vesselNm, alphanumericPattern, false);
+
+  checkPattern("viaNo", "Voyage / Via No", formData.viaNo, alphanumericNoSpacePattern, !formData.viaNo);
+
+  checkLength("terminalCode", "Terminal Code", formData.terminalCode, 50, 1, true);
+  checkPattern("terminalCode", "Terminal Code", formData.terminalCode, alphanumericNoSpacePattern, false);
+
+  checkLength("service", "Service", formData.service, 100, 1, true);
+  checkPattern("service", "Service", formData.service, alphanumericPattern, false);
+
+  checkLength("pod", "Port of Discharge", formData.pod, 50, 1, true);
+  checkPattern("pod", "Port of Discharge", formData.pod, alphanumericNoSpacePattern, false);
+
+  if (formData.fpod) {
+    checkLength("fpod", "Final Port of Discharge", formData.fpod, 50, 0, false);
+    checkPattern("fpod", "Final Port of Discharge", formData.fpod, alphanumericNoSpacePattern, true);
   }
 
-  if (isFieldRequired('IsEarlyGateIn', formData) && !formData.IsEarlyGateIn?.trim()) {
-    errors.IsEarlyGateIn = "Early Gate In selection is required";
+  checkLength("cargoTp", "Cargo Type", formData.cargoTp, 50, 1, true);
+  checkPattern("cargoTp", "Cargo Type", formData.cargoTp, lettersOnlyPattern, false);
+
+  checkLength("origin", "Origin", formData.origin, 50, 1, true);
+  checkPattern("origin", "Origin", formData.origin, alphanumericNoSpacePattern, false);
+
+  if (formData.shpInstructNo) {
+    checkPattern("shpInstructNo", "Shipping Instruction No", formData.shpInstructNo, alphanumericNoSpacePattern, true);
   }
 
+  checkLength("bookNo", "Booking No", formData.bookNo, 20, 1, true);
+  checkPattern("bookNo", "Booking No", formData.bookNo, alphanumericNoSpacePattern, false);
 
-  // Conditional Header Field Validations
-  if (isFieldRequired('cfsCode', formData) && !formData.cfsCode?.trim()) {
-    errors.cfsCode = "CFS Code is required";
+  checkLength("mobileNo", "Mobile No", formData.mobileNo, 80, 1, true);
+  checkPattern("mobileNo", "Mobile No", formData.mobileNo, digitsOnlyPattern, false);
+
+  if (isFieldRequired('cfsCode', formData)) {
+    checkLength("cfsCode", "CFS Code", formData.cfsCode, 20, 1, true);
+    checkPattern("cfsCode", "CFS Code", formData.cfsCode, alphanumericNoSpacePattern, false);
+  } else if (formData.cfsCode) {
+    checkLength("cfsCode", "CFS Code", formData.cfsCode, 20, 0, false);
+    checkPattern("cfsCode", "CFS Code", formData.cfsCode, alphanumericNoSpacePattern, true);
   }
 
-  if (isFieldRequired('issueTo', formData) && !formData.issueTo?.trim()) {
-    errors.issueTo = "Issue To is required";
+  if (isFieldRequired('issueTo', formData)) {
+    checkLength("issueTo", "Issue To", formData.issueTo, 50, 1, true);
+    checkPattern("issueTo", "Issue To", formData.issueTo, lettersOnlyPattern, false);
+  } else if (formData.issueTo) {
+    checkLength("issueTo", "Issue To", formData.issueTo, 50, 0, false);
+    checkPattern("issueTo", "Issue To", formData.issueTo, lettersOnlyPattern, true);
+  }
+
+  checkLength("shipperNm", "Shipper Name", formData.shipperNm, 100, 1, true);
+  checkPattern("shipperNm", "Shipper Name", formData.shipperNm, alphanumericPattern, false);
+
+  if (isFieldRequired('consigneeNm', formData)) {
+    checkLength("consigneeNm", "Consignee Name", formData.consigneeNm, 35, 1, true);
+    checkPattern("consigneeNm", "Consignee Name", formData.consigneeNm, lettersOnlyPattern, false);
+  } else if (formData.consigneeNm) {
+    checkLength("consigneeNm", "Consignee Name", formData.consigneeNm, 35, 0, false);
+    checkPattern("consigneeNm", "Consignee Name", formData.consigneeNm, lettersOnlyPattern, true);
+  }
+
+  if (isFieldRequired('consigneeAddr', formData)) {
+    checkLength("consigneeAddr", "Consignee Address", formData.consigneeAddr, 200, 1, true);
+    checkPattern("consigneeAddr", "Consignee Address", formData.consigneeAddr, alphanumericPattern, false);
+  } else if (formData.consigneeAddr) {
+    checkLength("consigneeAddr", "Consignee Address", formData.consigneeAddr, 200, 0, false);
+    checkPattern("consigneeAddr", "Consignee Address", formData.consigneeAddr, alphanumericPattern, true);
+  }
+
+  if (isFieldRequired('cargoDesc', formData)) {
+    checkLength("cargoDesc", "Cargo Description", formData.cargoDesc, 250, 1, true);
+    checkPattern("cargoDesc", "Cargo Description", formData.cargoDesc, alphanumericPattern, false);
+  } else if (formData.cargoDesc) {
+    checkLength("cargoDesc", "Cargo Description", formData.cargoDesc, 250, 0, false);
+    checkPattern("cargoDesc", "Cargo Description", formData.cargoDesc, alphanumericPattern, true);
+  }
+
+  if (isFieldRequired('terminalLoginId', formData)) {
+    checkLength("terminalLoginId", "Terminal Login ID", formData.terminalLoginId, 200, 1, true);
+    checkPattern("terminalLoginId", "Terminal Login ID", formData.terminalLoginId, alphanumericNoSpacePattern, false);
+  } else if (formData.terminalLoginId) {
+    checkLength("terminalLoginId", "Terminal Login ID", formData.terminalLoginId, 200, 0, false);
+    checkPattern("terminalLoginId", "Terminal Login ID", formData.terminalLoginId, alphanumericNoSpacePattern, true);
+  }
+
+  if (formData.emailId) {
+    checkLength("emailId", "Email ID", formData.emailId, 50, 0, false);
+    if (!validateEmail(formData.emailId)) {
+      errors.emailId = "Email ID contains an invalid email address";
+    }
+  }
+
+  if (formData.bookCopyBlNo) {
+    checkLength("bookCopyBlNo", "Booking Copy / BL No", formData.bookCopyBlNo, 20, 0, false);
+    checkPattern("bookCopyBlNo", "Booking Copy / BL No", formData.bookCopyBlNo, alphanumericNoSpacePattern, true);
+  }
+
+  checkLength("cntnrStatus", "Container Status", formData.cntnrStatus, 7, 1, true);
+  checkPattern("cntnrStatus", "Container Status", formData.cntnrStatus, alphanumericNoSpacePattern, false);
+
+  if (formData.exportCutOffDt) {
+    if (!validatePattern(formData.exportCutOffDt, datePattern, true)) {
+      errors.exportCutOffDt = "Export Cut-Off Date must be in YYYY-MM-DD format (1900-2099)";
+    }
+  }
+
+  if (formData.outsideDate) {
+    if (!validatePattern(formData.outsideDate, datePattern, true)) {
+      errors.outsideDate = "Outside Date must be in YYYY-MM-DD format (1900-2099)";
+    }
+  }
+
+  if (isFieldRequired('ShipperCity', formData)) {
+    checkLength("ShipperCity", "Shipper City", formData.ShipperCity, 100, 1, true);
   }
 
   // Validate each container
   formData.containers.forEach((container, index) => {
-    // Always required container fields
-    if (!container.cntnrNo?.trim()) {
-      errors[`container_${index}_cntnrNo`] = `Container ${index + 1
-        }: Container No is required`;
-    }
-    if (!container.cntnrSize?.trim()) {
-      errors[`container_${index}_cntnrSize`] = `Container ${index + 1
-        }: Container Size is required`;
-    }
-    if (!container.vgmWt || isNaN(parseFloat(container.vgmWt))) {
-      errors[`container_${index}_vgmWt`] = `Container ${index + 1
-        }: VGM Weight is required`;
-    } else if (parseFloat(container.vgmWt) > 999.99) {
-      errors[`container_${index}_vgmWt`] = `Container ${index + 1
-        }: VGM Weight exceeds maximum allowed (999.99 MT). Please enter weight in Metric Tons.`;
+    const checkContPattern = (field, label, value, pattern, allowEmpty = true) => {
+      if (!validatePattern(value, pattern, allowEmpty)) {
+        errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} contains invalid characters`;
+        return false;
+      }
+      return true;
+    };
+
+    const checkContLength = (field, label, value, max, min = 0, isRequired = false) => {
+      if (isRequired && (value === null || value === undefined || value.toString().trim() === "")) {
+        errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} is required`;
+        return false;
+      }
+      if (value !== null && value !== undefined && value.toString().trim() !== "") {
+        if (!validateLength(value, max, min)) {
+          errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} length must be between ${min} and ${max} characters`;
+          return false;
+        }
+      }
+      return true;
+    };
+
+    // Container No
+    checkContLength("cntnrNo", "Container No", container.cntnrNo, 20, 1, true);
+    checkContPattern("cntnrNo", "Container No", container.cntnrNo, alphanumericNoSpacePattern, false);
+
+    // Container Size
+    checkContLength("cntnrSize", "Container Size", container.cntnrSize, 20, 1, true);
+    checkContPattern("cntnrSize", "Container Size", container.cntnrSize, alphanumericNoSpacePattern, false);
+
+    // ISO
+    checkContLength("iso", "ISO Code", container.iso, 50, 1, true);
+    checkContPattern("iso", "ISO Code", container.iso, alphanumericNoSpacePattern, false);
+
+    // Agent Seal No
+    checkContLength("agentSealNo", "Agent Seal No", container.agentSealNo, 20, 1, true);
+    checkContPattern("agentSealNo", "Agent Seal No", container.agentSealNo, alphanumericNoSpacePattern, false);
+
+    // Custom Seal No
+    checkContLength("customSealNo", "Custom Seal No", container.customSealNo, 20, 1, true);
+    checkContPattern("customSealNo", "Custom Seal No", container.customSealNo, alphanumericNoSpacePattern, false);
+
+    // VGM Weight
+    if (container.vgmViaODeX === 'N') {
+      if (container.vgmWt === null || container.vgmWt === undefined || container.vgmWt === "") {
+        errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight is required`;
+      } else {
+        const wtStr = container.vgmWt.toString();
+        if (!/^\d{1,3}(\.\d{1,2})?$/.test(wtStr)) {
+          errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight must be a valid number up to 3 digits and optional 2 decimals (e.g. 25.50)`;
+        }
+      }
     }
 
-    // Driver Name & Haulier conditional mandatory validation
-    if (isFieldRequired('driverNm', formData, index) && !container.driverNm?.trim()) {
-      errors[`container_${index}_driverNm`] = `Container ${index + 1}: Driver Name is required for ${formData.terminalCode}`;
+    // DO No
+    if (container.doNo) {
+      checkContLength("doNo", "DO Number", container.doNo, 50, 0, false);
+      checkContPattern("doNo", "DO Number", container.doNo, alphanumericNoSpacePattern, true);
     }
 
-    if (isFieldRequired('haulier', formData, index) && !container.haulier?.trim()) {
-      errors[`container_${index}_haulier`] = `Container ${index + 1}: Haulier is required`;
-    }
-
-    // MSC Shipping Instruction Number validation removed (made optional)
-
-    // Hazardous fields
-    const isHaz = formData.cargoTp?.includes("HAZ") || formData.cargoTp === "HAZ";
-    if (isHaz) {
-      if (!container.imoNo1?.trim()) errors[`container_${index}_imoNo1`] = `Container ${index + 1}: IMO No 1 is required for hazardous cargo`;
-      if (!container.unNo1?.trim()) errors[`container_${index}_unNo1`] = `Container ${index + 1}: UN No 1 is required for hazardous cargo`;
-    }
-
-    // Temperature - only for reefer cargo
+    // Temperature
     const isRef = formData.cargoTp?.includes("REF") || formData.cargoTp === "REF";
-    if (isRef && !container.temp?.trim()) {
-      errors[`container_${index}_temp`] = `Container ${index + 1}: Temperature is required for reefer cargo`;
+    if (isRef) {
+      if (container.temp === null || container.temp === undefined || container.temp === "") {
+        errors[`container_${index}_temp`] = `Container ${index + 1}: Temperature is required for reefer cargo`;
+      } else {
+        const tempStr = container.temp.toString();
+        if (!/^-?\d{1,3}(\.\d{1,2})?$/.test(tempStr)) {
+          errors[`container_${index}_temp`] = `Container ${index + 1}: Temperature must be numeric (optional minus, up to 3 digits and optional 2 decimals)`;
+        }
+      }
+    }
+
+    // Voltage
+    if (container.volt !== null && container.volt !== undefined && container.volt !== "") {
+      const voltStr = container.volt.toString();
+      if (!/^\d{1,7}(\.\d{1,2})?$/.test(voltStr)) {
+        errors[`container_${index}_volt`] = `Container ${index + 1}: Voltage must be numeric up to 7 digits and optional 2 decimals`;
+      }
+    }
+
+    // Remarks
+    if (container.chaRemarks) {
+      checkContLength("chaRemarks", "Remarks", container.chaRemarks, 50, 0, false);
+      checkContPattern("chaRemarks", "Remarks", container.chaRemarks, alphanumericPattern, true);
+    }
+
+    // Driver Licence
+    if (container.driverLicNo) {
+      checkContLength("driverLicNo", "Driver Licence No", container.driverLicNo, 100, 0, false);
+      checkContPattern("driverLicNo", "Driver Licence No", container.driverLicNo, alphanumericNoSpacePattern, true);
+    }
+
+    // Driver Name
+    if (isFieldRequired('driverNm', formData, index)) {
+      checkContLength("driverNm", "Driver Name", container.driverNm, 100, 1, true);
+      checkContPattern("driverNm", "Driver Name", container.driverNm, lettersOnlyPattern, false);
+    } else if (container.driverNm) {
+      checkContLength("driverNm", "Driver Name", container.driverNm, 100, 0, false);
+      checkContPattern("driverNm", "Driver Name", container.driverNm, lettersOnlyPattern, true);
+    }
+
+    // Haulier
+    if (isFieldRequired('haulier', formData, index)) {
+      checkContLength("haulier", "Haulier", container.haulier, 100, 1, true);
+      checkContPattern("haulier", "Haulier", container.haulier, alphanumericPattern, false);
+    } else if (container.haulier) {
+      checkContLength("haulier", "Haulier", container.haulier, 100, 0, false);
+      checkContPattern("haulier", "Haulier", container.haulier, alphanumericPattern, true);
+    }
+
+    // IMO & UN No 1-4
+    const isHaz = formData.cargoTp?.includes("HAZ") || formData.cargoTp === "HAZ";
+    for (let i = 1; i <= 4; i++) {
+      const imoKey = `imoNo${i}`;
+      const unKey = `unNo${i}`;
+      const isReq = isHaz && i === 1;
+
+      if (isReq) {
+        checkContLength(imoKey, `IMO No ${i}`, container[imoKey], 50, 1, true);
+        checkContPattern(imoKey, `IMO No ${i}`, container[imoKey], alphanumericNoSpacePattern, false);
+        checkContLength(unKey, `UN No ${i}`, container[unKey], 50, 1, true);
+        checkContPattern(unKey, `UN No ${i}`, container[unKey], alphanumericNoSpacePattern, false);
+      } else {
+        if (container[imoKey]) {
+          checkContLength(imoKey, `IMO No ${i}`, container[imoKey], 50, 0, false);
+          checkContPattern(imoKey, `IMO No ${i}`, container[imoKey], alphanumericNoSpacePattern, true);
+        }
+        if (container[unKey]) {
+          checkContLength(unKey, `UN No ${i}`, container[unKey], 50, 0, false);
+          checkContPattern(unKey, `UN No ${i}`, container[unKey], alphanumericNoSpacePattern, true);
+        }
+      }
     }
 
     // ODC dimensions
     const isOdc = formData.cargoTp?.includes("ODC") || formData.cargoTp === "ODC";
-    if (isOdc) {
-      const dimFields = ["topDimensions", "frontDimensions", "backDimensions", "leftDimensions", "rightDimensions", "odcUnits"];
-      dimFields.forEach(f => {
-        if (!container[f]?.trim()) {
+    const dimFields = ["topDimensions", "frontDimensions", "backDimensions", "leftDimensions", "rightDimensions"];
+    dimFields.forEach(f => {
+      if (isOdc) {
+        if (container[f] === null || container[f] === undefined || container[f] === "") {
           errors[`container_${index}_${f}`] = `Container ${index + 1}: ${getFieldLabel(f)} is required for ODC cargo`;
+        } else {
+          const dimStr = container[f].toString();
+          if (!/^\d{1,3}(\.\d{1,2})?$/.test(dimStr)) {
+            errors[`container_${index}_${f}`] = `Container ${index + 1}: ${getFieldLabel(f)} must be numeric up to 3 digits and optional 2 decimals`;
+          }
         }
-      });
+      }
+    });
+
+    if (isOdc) {
+      checkContLength("odcUnits", "ODC Units", container.odcUnits, 50, 1, true);
+      checkContPattern("odcUnits", "ODC Units", container.odcUnits, alphanumericNoSpacePattern, false);
     }
 
-    // Special Stow for Nhava Sheva terminals
+    // Vehicle No
+    const isMundraFactoryOrRoad = formData.locId === "INMUN1" && (formData.origin === "F" || formData.origin === "R");
+    if (isMundraFactoryOrRoad) {
+      checkContLength("vehicleNo", "Vehicle No", container.vehicleNo, 50, 1, true);
+      checkContPattern("vehicleNo", "Vehicle No", container.vehicleNo, alphanumericPattern, false);
+    } else if (container.vehicleNo) {
+      checkContLength("vehicleNo", "Vehicle No", container.vehicleNo, 50, 0, false);
+      checkContPattern("vehicleNo", "Vehicle No", container.vehicleNo, alphanumericPattern, true);
+    }
+
+    // Status
+    if (container.status) {
+      checkContLength("status", "Status", container.status, 50, 0, false);
+      checkContPattern("status", "Status", container.status, alphanumericNoSpacePattern, true);
+    }
+
+    // Special Stow
     if (isSpecialStowRequired(formData.locId, formData.terminalCode)) {
-      if (!container.spclStow?.trim()) errors[`container_${index}_spclStow`] = `Container ${index + 1}: Special Stow is required`;
-      if (!container.spclStowRemark?.trim()) errors[`container_${index}_spclStowRemark`] = `Container ${index + 1}: Special Stow Remark is required`;
+      if (!container.spclStow?.trim()) {
+        errors[`container_${index}_spclStow`] = `Container ${index + 1}: Special Stow is required`;
+      }
+      checkContLength("spclStowRemark", "Special Stow Remark", container.spclStowRemark, 100, 1, true);
+      checkContPattern("spclStowRemark", "Special Stow Remark", container.spclStowRemark, alphanumericPattern, false);
     }
 
-    // Shipping Bill fields - mandatory if present
+    // Double numbers
+    if (container.cntnrTareWgt !== null && container.cntnrTareWgt !== undefined && container.cntnrTareWgt !== "") {
+      const wt = parseFloat(container.cntnrTareWgt);
+      if (isNaN(wt) || wt < 0 || wt > 999.999) {
+        errors[`container_${index}_cntnrTareWgt`] = `Container ${index + 1}: Container Tare Weight must be a number between 0 and 999.999`;
+      }
+    }
+
+    if (container.cargoVal !== null && container.cargoVal !== undefined && container.cargoVal !== "") {
+      const val = parseFloat(container.cargoVal);
+      if (isNaN(val) || val < 0 || val > 999.999) {
+        errors[`container_${index}_cargoVal`] = `Container ${index + 1}: Cargo Value must be a number between 0 and 999.999`;
+      }
+    }
+
+    if (container.commodityName) {
+      checkContPattern("commodityName", "Commodity Name", container.commodityName, alphanumericPattern, true);
+    }
+
+    if (container.shpInstructNo) {
+      checkContPattern("shpInstructNo", "Shipping Instruction No", container.shpInstructNo, alphanumericNoSpacePattern, true);
+    }
+
+    // Shipping Bill Section
     if (container.sbDtlsVo?.[0]) {
       const sbDetails = container.sbDtlsVo[0];
-      if (!sbDetails.shipBillInvNo?.trim()) errors[`container_${index}_shipBillInvNo`] = `Container ${index + 1}: Shipping Bill No is required`;
-      if (!sbDetails.shipBillDt) errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date is required`;
-      if (!sbDetails.exporterNm?.trim()) errors[`container_${index}_exporterNm`] = `Container ${index + 1}: Exporter Name is required`;
-      if (!sbDetails.exporterIec?.trim()) errors[`container_${index}_exporterIec`] = `Container ${index + 1}: Exporter IEC is required`;
-      if (!sbDetails.chaNm?.trim()) errors[`container_${index}_chaNm`] = `Container ${index + 1}: CHA Name is required`;
-      if (!sbDetails.chaPan?.trim()) {
-        errors[`container_${index}_chaPan`] = `Container ${index + 1}: CHA PAN is required`;
-      } else if (!/^[A-Z]{5}\d{4}[A-Z]{1}$/.test(sbDetails.chaPan)) {
-        errors[`container_${index}_chaPan`] = `Container ${index + 1}: Invalid CHA PAN format`;
+
+      const checkSbPattern = (field, label, value, pattern, allowEmpty = true) => {
+        if (!validatePattern(value, pattern, allowEmpty)) {
+          errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} contains invalid characters`;
+          return false;
+        }
+        return true;
+      };
+
+      const checkSbLength = (field, label, value, max, min = 0, isRequired = false) => {
+        if (isRequired && (value === null || value === undefined || value.toString().trim() === "")) {
+          errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} is required`;
+          return false;
+        }
+        if (value !== null && value !== undefined && value.toString().trim() !== "") {
+          if (!validateLength(value, max, min)) {
+            errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} length must be between ${min} and ${max} characters`;
+            return false;
+          }
+        }
+        return true;
+      };
+
+      // shipBillInvNo
+      checkSbLength("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, 22, 1, true);
+      checkSbPattern("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, alphanumericNoSpacePattern, false);
+
+      // shipBillDt
+      if (!sbDetails.shipBillDt) {
+        errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date is required`;
+      } else if (!validatePattern(sbDetails.shipBillDt, datePattern, false)) {
+        errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date must be in YYYY-MM-DD format (1900-2099)`;
       }
+
+      // chaNm
+      checkSbLength("chaNm", "CHA Name", sbDetails.chaNm, 200, 1, true);
+      checkSbPattern("chaNm", "CHA Name", sbDetails.chaNm, alphanumericPattern, false);
+
+      // chaPan
+      checkSbLength("chaPan", "CHA PAN", sbDetails.chaPan, 10, 1, true);
+      checkSbPattern("chaPan", "CHA PAN", sbDetails.chaPan, alphanumericNoSpacePattern, false);
+
+      // exporterNm
+      checkSbLength("exporterNm", "Exporter Name", sbDetails.exporterNm, 50, 1, true);
+      checkSbPattern("exporterNm", "Exporter Name", sbDetails.exporterNm, alphanumericPattern, false);
+
+      // exporterIec
+      checkSbLength("exporterIec", "Exporter IEC", sbDetails.exporterIec, 10, 1, true);
+      checkSbPattern("exporterIec", "Exporter IEC", sbDetails.exporterIec, alphanumericNoSpacePattern, false);
+
+      // noOfPkg
+      if (sbDetails.noOfPkg === null || sbDetails.noOfPkg === undefined || sbDetails.noOfPkg === "") {
+        errors[`container_${index}_noOfPkg`] = `Container ${index + 1}: Number of Packages is required`;
+      } else {
+        const pkgVal = parseInt(sbDetails.noOfPkg, 10);
+        if (isNaN(pkgVal) || pkgVal <= 0 || !/^\d+$/.test(sbDetails.noOfPkg.toString())) {
+          errors[`container_${index}_noOfPkg`] = `Container ${index + 1}: Number of Packages must be a positive integer`;
+        }
+      }
+
+      // LEO No
+      if (sbDetails.leoNo) {
+        checkSbLength("leoNo", "LEO No", sbDetails.leoNo, 50, 0, false);
+      }
+
+      // LEO Date
       if (sbDetails.leoNo && !sbDetails.leoDt) {
         errors[`container_${index}_leoDt`] = `Container ${index + 1}: LEO Date is required when LEO No is provided`;
+      } else if (sbDetails.leoDt && !validatePattern(sbDetails.leoDt, datePattern, true)) {
+        errors[`container_${index}_leoDt`] = `Container ${index + 1}: LEO Date must be in YYYY-MM-DD format (1900-2099)`;
       }
     }
   });
@@ -1176,20 +1531,14 @@ export const isFieldVisible = (fieldName, formData) => {
 
   // Stakeholder details - Always visible to ensure mandatory fields are not hidden
   return true;
-
-  // For container-specific fields, we handle in the container component
-  return true;
 };
 
 /**
  * Get validation error message for a field
  * @param {string} fieldName - Field name
- * @param {Object} formData - Form data
  * @returns {string} - Error message
  */
-export const getValidationMessage = (fieldName, formData) => {
-  const { cargoTp, origin } = formData;
-
+export const getValidationMessage = (fieldName) => {
   const messages = {
     cntnrNo: "Container No must be in format: 4 letters + 7 numbers",
     mobileNo: "Mobile No must be 10-12 digits",
@@ -1220,10 +1569,9 @@ export const needsNhavashevaCodeValidation = (formData) => {
 
 /**
  * Check if Early Gate In is applicable
- * @param {Object} formData - Form data
  * @returns {boolean} - True if early gate in is applicable
  */
-export const isEarlyGateInApplicable = (formData) => {
+export const isEarlyGateInApplicable = () => {
   return true; // Always applicable as per request
 };
 

@@ -56,6 +56,107 @@ const Form13AttachmentSection = ({
 }) => {
   const [selectedNewType, setSelectedNewType] = React.useState('');
 
+  React.useEffect(() => {
+    // Find the booking copy attachment (with valid content)
+    const bookingCopy = formData.attachments.find(att => {
+      const title = att.title || att.attTitle;
+      return title === 'BOOKING_COPY' && (att.attData || att.name || att.attNm || att instanceof Blob);
+    });
+
+    const isDOMandatory = requiredAttachments.some(req => req.code === 'DLVRY_ORDER' && req.required);
+
+    // Find the delivery order attachment (with valid content)
+    const deliveryOrder = formData.attachments.find(att => {
+      const title = att.title || att.attTitle;
+      return title === 'DLVRY_ORDER' && (att.attData || att.name || att.attNm || att instanceof Blob);
+    });
+
+    if (isDOMandatory) {
+      if (bookingCopy) {
+        // If booking copy exists, check if delivery order is missing or different
+        let needsUpdate = false;
+        
+        if (!deliveryOrder) {
+          needsUpdate = true;
+        } else {
+          // Check if they are different files
+          const isBCFile = bookingCopy instanceof File;
+          const isDOFile = deliveryOrder instanceof File;
+          
+          if (isBCFile && isDOFile) {
+            if (bookingCopy.name !== deliveryOrder.name || bookingCopy.size !== deliveryOrder.size) {
+              needsUpdate = true;
+            }
+          } else if (!isBCFile && !isDOFile) {
+            // DB/JSON objects
+            if (bookingCopy.attNm !== deliveryOrder.attNm || bookingCopy.attData !== deliveryOrder.attData) {
+              needsUpdate = true;
+            }
+          } else {
+            // Mixed types (one file, other database object)
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate) {
+          let copiedFile;
+          if (bookingCopy instanceof File) {
+            copiedFile = new File([bookingCopy], bookingCopy.name, { type: bookingCopy.type });
+            copiedFile.title = 'DLVRY_ORDER';
+          } else if (bookingCopy instanceof Blob) {
+            copiedFile = new Blob([bookingCopy], { type: bookingCopy.type });
+            copiedFile.title = 'DLVRY_ORDER';
+          } else {
+            copiedFile = {
+              ...bookingCopy,
+              attReqId: deliveryOrder ? (deliveryOrder.attReqId || "") : "",
+              attTitle: 'DLVRY_ORDER',
+              title: 'DLVRY_ORDER',
+              attNm: bookingCopy.attNm ? bookingCopy.attNm.replace(/^booking_copy/i, 'delivery_order') : 'delivery_order.pdf',
+            };
+          }
+
+          // Replace or add delivery order
+          const updatedAttachments = formData.attachments.filter(att => {
+            const title = att.title || att.attTitle;
+            return title !== 'DLVRY_ORDER';
+          });
+          onFormDataChange('attachments', '', [...updatedAttachments, copiedFile]);
+        }
+      } else {
+        // If booking copy does not exist but delivery order does, remove it to keep them in sync
+        if (deliveryOrder) {
+          const updatedAttachments = formData.attachments.filter(att => {
+            const title = att.title || att.attTitle;
+            return title !== 'DLVRY_ORDER';
+          });
+          onFormDataChange('attachments', '', updatedAttachments);
+        }
+      }
+    } else {
+      // If delivery order is NOT mandatory, check if an auto-copied delivery order exists and remove it
+      if (deliveryOrder) {
+        const isBCFile = bookingCopy instanceof File;
+        const isDOFile = deliveryOrder instanceof File;
+        let isSame = false;
+        if (bookingCopy) {
+          if (isBCFile && isDOFile) {
+            isSame = bookingCopy.name === deliveryOrder.name && bookingCopy.size === deliveryOrder.size;
+          } else if (!isBCFile && !isDOFile) {
+            isSame = bookingCopy.attNm === deliveryOrder.attNm && bookingCopy.attData === deliveryOrder.attData;
+          }
+        }
+        if (isSame || !bookingCopy) {
+          const updatedAttachments = formData.attachments.filter(att => {
+            const title = att.title || att.attTitle;
+            return title !== 'DLVRY_ORDER';
+          });
+          onFormDataChange('attachments', '', updatedAttachments);
+        }
+      }
+    }
+  }, [formData.attachments, requiredAttachments, onFormDataChange]);
+
   // Only show what is mandatory from the requiredAttachments passed from parent
   const mandatoryCodes = requiredAttachments.filter(req => req.required).map(r => r.code);
   const displayDocs = requiredAttachments.filter(req => req.required);

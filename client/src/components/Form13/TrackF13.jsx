@@ -252,8 +252,15 @@ const TrackF13 = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const slResponse = await masterAPI.getShippingLines();
-        setShippingLines(slResponse.data || []);
+        const cachedLines = localStorage.getItem("shippingLinesMaster");
+        if (cachedLines) {
+          setShippingLines(JSON.parse(cachedLines));
+        } else {
+          const slResponse = await masterAPI.getShippingLines();
+          const data = slResponse.data || [];
+          setShippingLines(data);
+          localStorage.setItem("shippingLinesMaster", JSON.stringify(data));
+        }
       } catch (err) {
         console.warn("Failed to load shipping lines master data:", err);
       }

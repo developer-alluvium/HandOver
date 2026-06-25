@@ -336,7 +336,7 @@ export const generateVGMPdf = async (vgmData, exporter) => {
     const vgmMethod = values.vgmEvalMethod === "M1" ? "METHOD-1" : "METHOD-2";
     const cargoWtInfo = values.cargoWt ? `${values.cargoWt} ${values.cargoWtUom || "KGS"}` : "";
     const tareWtInfo = values.tareWt ? `TARE WT : ${values.tareWt} ${values.tareWtUom || "KGS"}` : "";
-    const vgmInfo = `${vgmMethod}, ${values.totWt || ""}.000 KGS${cargoWtInfo ? ` (CARGO WT: ${cargoWtInfo}${tareWtInfo ? ` + ${tareWtInfo}` : ""})` : ""}`;
+    const vgmInfo = `${vgmMethod}, ${values.totWt || ""} ${values.totWtUom || "KGS"}${cargoWtInfo ? ` (CARGO WT: ${cargoWtInfo}${tareWtInfo ? ` + ${tareWtInfo}` : ""})` : ""}`;
 
     // Format weighing date/time
     const weighingDateTime = values.weighBridgeWtTs || "";

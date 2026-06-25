@@ -115,7 +115,14 @@ export class ApiLogger {
   static async getLogsByModule(moduleName, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
 
-    return await ApiLog.find({ moduleName })
+    return await ApiLog.find({ moduleName }, {
+      "request.body.vgmWbAttList": 0,
+      "request.body.attachments": 0,
+      "request.body.attList": 0,
+      "response.data.vgmWbAttList": 0,
+      "response.data.attachments": 0,
+      "response.data.attList": 0,
+    })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

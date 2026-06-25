@@ -45,8 +45,7 @@ export const masterAPI = {
     api.get("master/hauliers", { params: { search } }),
   getCFSCodes: (search) =>
     api.get("master/cfs-codes", { params: { search } }),
-  getPODCodes: (search) =>
-    api.get("master/pod-codes", { params: { search } }),
+  getPODCodes: () => api.get("master/pod-codes"),
   seedShippingLines: (shippingLines) =>
     api.post("master/shipping-lines/seed", { shippingLines }),
 };

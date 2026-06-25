@@ -483,6 +483,12 @@ const VGMForm = ({
   useEffect(() => {
     const fetchShippingLines = async () => {
       try {
+        const cachedLines = localStorage.getItem("shippingLinesMaster");
+        if (cachedLines) {
+          setShippingLines(JSON.parse(cachedLines));
+          return;
+        }
+
         const response = await masterAPI.getShippingLines();
         // API returns { success: true, data: [...] }, and interceptor extracts data
         const rawData = response.data;
@@ -500,6 +506,7 @@ const VGMForm = ({
 
         if (lines.length > 0) {
           setShippingLines(lines);
+          localStorage.setItem("shippingLinesMaster", JSON.stringify(lines));
         } else {
           console.warn("[VGM] API returned 0 lines. Response:", rawData);
           enqueueSnackbar("No shipping lines found in API response", { variant: "warning" });

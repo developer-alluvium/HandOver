@@ -34,5 +34,10 @@ const apiLogSchema = new mongoose.Schema({
   collection: 'apilogs' // Explicitly set collection name
 });
 
+// Indexes for query optimization
+apiLogSchema.index({ moduleName: 1, createdAt: -1 });
+apiLogSchema.index({ "request.body.cntnrNo": 1 });
+apiLogSchema.index({ "request.body.bookNo": 1 });
+
 // Use singular model name and let Mongoose pluralize it
 export default mongoose.model('ApiLog', apiLogSchema);
