@@ -29,32 +29,27 @@ const Login = () => {
 
   const formik = useFormik({
     initialValues: {
-      pyrCode: "",
+      username: "",
+      password: "",
     },
     validationSchema: loginValidationSchema,
     onSubmit: async (values) => {
       setLoading(true);
       try {
         const payload = {
-          pyrCode: values.pyrCode,
-      
+          username: values.username,
+          password: values.password,
         };
 
         const response = await authAPI.login(payload);
 
-        if (response.data && Array.isArray(response.data)) {
-          login({ pyrCode: values.pyrCode }, response.data);
+        if (response.data && response.data.user) {
+          const { user, shippers } = response.data;
+          login(user, shippers);
           enqueueSnackbar("Login successful!", { variant: "success" });
           navigate("/dashboard");
         } else {
-          const shippersData = response.data?.data || response.data;
-          if (Array.isArray(shippersData)) {
-            login({ pyrCode: values.pyrCode }, shippersData);
-            enqueueSnackbar("Login successful!", { variant: "success" });
-            navigate("/dashboard");
-          } else {
-            throw new Error("Invalid response format from server");
-          }
+          throw new Error("Invalid response format from server");
         }
       } catch (error) {
         console.error("Login error:", error);
@@ -164,16 +159,44 @@ const Login = () => {
                     margin="normal"
                     required
                     fullWidth
-                    id="pyrCode"
-                    label="Payor Code / CHA Name"
-                    name="pyrCode"
+                    id="username"
+                    label="Username"
+                    name="username"
                     autoComplete="username"
                     autoFocus
-                    value={formik.values.pyrCode}
+                    value={formik.values.username}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    error={formik.touched.pyrCode && Boolean(formik.errors.pyrCode)}
-                    helperText={formik.touched.pyrCode && formik.errors.pyrCode}
+                    error={formik.touched.username && Boolean(formik.errors.username)}
+                    helperText={formik.touched.username && formik.errors.username}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        backgroundColor: "rgba(255, 255, 255, 0.6)",
+                        "&:hover fieldset": {
+                          borderColor: "#1565c0",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#1565c0",
+                        },
+                      },
+                    }}
+                  />
+
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="password"
+                    label="Password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.password && Boolean(formik.errors.password)}
+                    helperText={formik.touched.password && formik.errors.password}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: "12px",

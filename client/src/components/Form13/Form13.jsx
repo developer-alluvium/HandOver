@@ -163,7 +163,7 @@ const Form13 = () => {
             shipBillDt: "",
             leoNo: "",
             leoDt: "",
-            chaNm: userData?.pyrName || "",
+            chaNm: "",
             chaPan: "",
             exporterNm: "",
             exporterIec: "",
@@ -230,7 +230,7 @@ const Form13 = () => {
       };
 
       const vesselResponse = await form13API.getVesselMaster(vesselRequest);
-      
+
       // Filter out past vessels (chaValidTo < today midnight)
       const todayStart = new Date(now);
       todayStart.setHours(0, 0, 0, 0);
@@ -240,7 +240,7 @@ const Form13 = () => {
         const vToDate = new Date(v.chaValidTo.replace(' ', 'T'));
         return vToDate >= todayStart;
       });
-      
+
       setVessels(vesselsData);
 
       // --- Load POD Master Data from ODeX API ---
@@ -1399,7 +1399,7 @@ const Form13 = () => {
               shipBillDt: "",
               leoNo: "",
               leoDt: "",
-              chaNm: userData?.pyrName || "",
+              chaNm: "",
               chaPan: "",
               exporterNm: "",
               exporterIec: "",

@@ -23,7 +23,7 @@ const apiLogSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['success', 'failed', 'pending', 'saved'],
+    enum: ['success', 'failed', 'pending', 'saved', 'cancelled'],
     default: 'pending'
   },
   remarks: { type: String },

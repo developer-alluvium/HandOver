@@ -15,6 +15,7 @@ import {
   getVGMRequestById,
   logout,
   getCurrentUser,
+  cancelVGMRequest,
 } from "../controllers/apiLogController.js";
 
 const router = express.Router();
@@ -35,6 +36,7 @@ router.patch("/logs/:logId/edit", editApiLog); // Edit specific fields
 router.put("/logs/:logId/update", updateApiLog); // Complete update
 router.get("/vgm/requests", getVGMRequests);
 router.put("/vgm/requests/:vgmId", updateVGMRequest);
+router.put("/vgm/requests/:vgmId/cancel", cancelVGMRequest);
 router.get("/vgm/requests/:vgmId", getVGMRequestById);
 
 export default router;

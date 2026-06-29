@@ -4,6 +4,7 @@ import config from "../config.js";
 import { SHIPPING_LINES } from "./shippingLine.js";
 import { HAULIERS } from "./haulier.js";
 import { CFS_CODES } from "./cfsCodes.js";
+import Fpod from "../models/Fpod.js";
 
 
 export const getShippingLines = async (req, res) => {
@@ -203,6 +204,40 @@ export const getPODCodes = async (req, res) => {
         res.status(500).json({
             success: false,
             error: `ODeX API call failed: ${error.message}`
+        });
+    }
+};
+
+export const getFpodCodes = async (req, res) => {
+    try {
+        const { search } = req.query;
+        let query = {};
+        let limit = 5;
+
+        if (search && search.trim() !== "") {
+            const searchRegex = new RegExp(search.trim(), "i");
+            query = {
+                $or: [
+                    { PORT_CODE: searchRegex },
+                    { PORT_NAME: searchRegex }
+                ]
+            };
+            limit = 20; // Return up to 20 results when searching for better usability
+        }
+
+        const results = await Fpod.find(query, { _id: 0, PORT_CODE: 1, PORT_NAME: 1 })
+            .limit(limit)
+            .lean();
+
+        res.json({
+            success: true,
+            data: results,
+        });
+    } catch (error) {
+        console.error("Get Fpod Codes Error:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
         });
     }
 };

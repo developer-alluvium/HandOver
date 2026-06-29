@@ -57,7 +57,10 @@ const TopNavDropdown = ({ sx = {} }) => {
   const handleClose = () => setAnchorEl(null);
 
   const handleNav = (path) => {
-    if (location.pathname === path) {
+    const isSamePage = location.pathname === path || 
+      (path === "/vgm" && (location.pathname === "/vgm" || location.pathname.startsWith("/vgm/")));
+
+    if (isSamePage) {
       // Force a full reset state
       navigate(path, { state: { reset: Date.now() }, replace: true });
     } else {

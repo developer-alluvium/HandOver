@@ -332,9 +332,11 @@ export const vgmValidationSchema = Yup.object({
     .max(100, "Max 100 characters allowed"),
 });
 
-// Context validation for login (unchanged)
 export const loginValidationSchema = Yup.object({
-  pyrCode: Yup.string()
-    .required("CHA Name is required")
-    .max(200, "Max 200 characters allowed"),
+  username: Yup.string()
+    .required("Username is required")
+    .max(100, "Max 100 characters allowed"),
+  password: Yup.string()
+    .required("Password is required")
+    .max(100, "Max 100 characters allowed"),
 });

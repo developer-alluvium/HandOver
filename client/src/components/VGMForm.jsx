@@ -258,6 +258,7 @@ const VGMForm = ({
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { userData, shippers } = useAuth();
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
   const [shippingLines, setShippingLines] = useState([]);
   const [jobNoSearch, setJobNoSearch] = useState("");
   const [loadingJob, setLoadingJob] = useState(false);
@@ -324,6 +325,8 @@ const VGMForm = ({
     enableReinitialize: true,
     validationSchema: vgmValidationSchema,
     onSubmit: async (values) => {
+      if (submittingRef.current) return;
+      submittingRef.current = true;
       setLoading(true);
       try {
         // Filter payload to only include fields defined in initial values
@@ -475,6 +478,7 @@ const VGMForm = ({
         enqueueSnackbar(msg, { variant: "error" });
       } finally {
         setLoading(false);
+        submittingRef.current = false;
       }
     },
   });
@@ -647,23 +651,47 @@ const VGMForm = ({
       const responseData = response.data;
       const targetBody = responseData.request?.body || responseData;
 
-      // Clear specific fields as requested
-      targetBody.cntnrNo = "";
-      targetBody.cscPlateMaxWtLimit = "";
-      targetBody.tareWt = "";
-      targetBody.totWt = "";
-      // Clear additional fields when copying
-      targetBody.weighBridgeSlipNo = "";
-      targetBody.weighBridgeWtTs = "";
-      targetBody.vgmWbAttList = []; // Clear attachments
+      // Check if container matches the currently filled container in the form
+      const currentContainerNo = (formik.values.cntnrNo || "").trim().toUpperCase();
+      const dbContainerNo = (targetBody.cntnrNo || "").trim().toUpperCase();
+      const isContainerMatch = currentContainerNo && dbContainerNo && currentContainerNo === dbContainerNo;
 
-      // Clear attachments state
-      setAttachments([]);
+      if (isContainerMatch) {
+        // When container and booking match, copy only the Authorization Letter by Shipper (AUTH_LETTER) from attachments, if it exists
+        const authLetter = (targetBody.vgmWbAttList || []).find(
+          (att) => att && (att.attTitle === "AUTH_LETTER" || att.title === "AUTH_LETTER")
+        );
+        if (authLetter) {
+          targetBody.vgmWbAttList = [authLetter];
+          setAttachments([authLetter]);
+        } else {
+          targetBody.vgmWbAttList = [];
+          setAttachments([]);
+        }
+      } else {
+        // Clear specific fields as requested when only booking matches
+        targetBody.cntnrNo = "";
+        targetBody.cscPlateMaxWtLimit = "";
+        targetBody.tareWt = "";
+        targetBody.totWt = "";
+        // Clear additional fields when copying
+        targetBody.weighBridgeSlipNo = "";
+        targetBody.weighBridgeWtTs = "";
+        targetBody.vgmWbAttList = []; // Clear attachments
+
+        // Clear attachments state
+        setAttachments([]);
+      }
 
       prefillForm(responseData);
-      enqueueSnackbar("Form data copied from existing booking.", {
-        variant: "success",
-      });
+      enqueueSnackbar(
+        isContainerMatch
+          ? "Form data copied from existing booking & container."
+          : "Form data copied from existing booking.",
+        {
+          variant: "success",
+        }
+      );
     } catch (error) {
       console.error(error);
       enqueueSnackbar("Failed to load existing booking details", {
@@ -732,7 +760,15 @@ const VGMForm = ({
         );
 
         if (validRequests.length > 0) {
-          const match = validRequests[0];
+          // Prioritize finding a request where the container number also matches the container number currently in the form
+          const currentContainerNo = (formik.values.cntnrNo || "").trim().toUpperCase();
+          const containerMatch = validRequests.find(r => {
+            const body = r.request?.body || r;
+            const bodyCntnrNo = (body.cntnrNo || "").trim().toUpperCase();
+            return currentContainerNo && bodyCntnrNo && bodyCntnrNo === currentContainerNo;
+          });
+          const match = containerMatch || validRequests[0];
+
           // Close any existing persistent snackbars to prevent maxSnack warning
           closeSnackbar();
 

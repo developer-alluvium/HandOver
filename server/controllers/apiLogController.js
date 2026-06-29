@@ -1,6 +1,9 @@
 import { ApiLogger } from "../services/apiLogger.js";
 import ApiLog from "../models/ApiLog.js";
 import config from "../config.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import UserModel from "../models/User.js";
 
 const sanitizeVGMPayload = (body) => {
   if (!body) return body;
@@ -47,7 +50,14 @@ export const submitVGM = async (req, res) => {
       "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
     }).sort({ createdAt: -1 });
 
-
+    if (existingLog && ApiLogger.isLogVerified(existingLog)) {
+      return res.json({
+        success: true,
+        data: { ...existingLog.response?.data, logId: existingLog._id },
+        logId: existingLog._id,
+        message: "VGM request is already verified",
+      });
+    }
 
     const requestData = {
       url: `${config.odex.baseUrl}/RS/iVGMService/json/saveVgmWb`,
@@ -209,20 +219,46 @@ export const getVGMStatus = async (req, res) => {
 
 export const getAuthorization = async (req, res) => {
   try {
-    const requestBody = { ...req.body };
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: "Username and password are required" });
+    }
+
+    // Connect to User DB and check credentials
+    const user = await UserModel.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ success: false, error: "Invalid username or password" });
+    }
+
+    const passwordMatch = bcrypt.compareSync(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ success: false, error: "Invalid username or password" });
+    }
+
+    // Get credentials from environment config
+    const pyrCode = config.odex.pyrCode;
+    const hashKey = config.odex.hashKey;
+
+    if (!pyrCode) {
+      return res.status(500).json({ success: false, error: "ODeX Payor Code (pyrCode) is not configured in backend" });
+    }
 
     // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
     const now = new Date();
     const pad = (n) => n.toString().padStart(2, '0');
     const fromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    requestBody.fromTs = fromTs;
+    const requestBody = {
+      pyrCode,
+      hashKey,
+      fromTs,
+    };
 
     // Pass secret key automatically
     if (!requestBody.hashKey) {
       if (config.odex.secretKey) {
         requestBody.hashKey = config.odex.secretKey;
-
       } else {
         console.warn("ODeX Secret Key is missing in server config");
       }
@@ -241,14 +277,25 @@ export const getAuthorization = async (req, res) => {
     const result = await ApiLogger.logAndForward("AUTHORIZATION", requestData);
 
     if (result.success) {
-      // Set authentication cookie
-      const authData = {
-        userData: { pyrCode: req.body.pyrCode },
-        shippers: result.data,
-        timestamp: new Date().toISOString(),
-      };
+      const shippers = result.data || [];
+      
+      // Create JWT token containing user details and shippers list
+      const token = jwt.sign(
+        {
+          id: user._id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          role: user.role,
+          pyrCode: pyrCode,
+          pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+          shippers: shippers
+        },
+        config.jwt.secret,
+        { expiresIn: config.jwt.expiration }
+      );
 
-      res.cookie("odex_auth", JSON.stringify(authData), {
+      res.cookie("odex_auth", token, {
         httpOnly: true,
         secure: config.isProduction, // True for HTTPS in production, false for HTTP in dev
         sameSite: config.isProduction ? "None" : "Lax", // None for HTTPS cross-site support, Lax for HTTP localhost
@@ -257,7 +304,18 @@ export const getAuthorization = async (req, res) => {
 
       res.json({
         success: true,
-        data: result.data,
+        data: {
+          user: {
+            id: user._id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            role: user.role,
+            pyrCode: pyrCode,
+            pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim()
+          },
+          shippers: shippers
+        },
         logId: result.logId,
       });
     } else {
@@ -283,15 +341,26 @@ export const logout = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const authCookie = req.cookies.odex_auth;
-    if (!authCookie) {
+    const token = req.cookies.odex_auth;
+    if (!token) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
-    const authData = JSON.parse(authCookie);
+    const decoded = jwt.verify(token, config.jwt.secret);
     res.json({
       success: true,
-      data: authData,
+      data: {
+        userData: {
+          id: decoded.id,
+          username: decoded.username,
+          first_name: decoded.first_name,
+          last_name: decoded.last_name,
+          role: decoded.role,
+          pyrCode: decoded.pyrCode,
+          pyrName: decoded.pyrName
+        },
+        shippers: decoded.shippers
+      }
     });
   } catch (error) {
     res.status(401).json({ success: false, message: "Invalid session" });
@@ -312,6 +381,14 @@ export const autoLogin = async (req, res) => {
       });
     }
 
+    // Find the first user in the DB to associate with auto-login
+    const user = await UserModel.findOne({ username: "arpit_singhal" }) || await UserModel.findOne();
+    if (!user) {
+      return res.status(500).json({
+        success: false,
+        error: "No users found in user database to associate with auto-login",
+      });
+    }
 
     // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
     const now = new Date();
@@ -337,24 +414,34 @@ export const autoLogin = async (req, res) => {
     const result = await ApiLogger.logAndForward("AUTHORIZATION", requestData);
 
     if (result.success) {
-      // Set authentication cookie
-      const authData = {
-        userData: { pyrCode },
-        shippers: result.data,
-        timestamp: new Date().toISOString(),
-      };
+      const shippers = result.data || [];
+      
+      // Create JWT token containing user details and shippers list
+      const token = jwt.sign(
+        {
+          id: user._id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          role: user.role,
+          pyrCode: pyrCode,
+          pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+          shippers: shippers
+        },
+        config.jwt.secret,
+        { expiresIn: config.jwt.expiration }
+      );
 
-      res.cookie("odex_auth", JSON.stringify(authData), {
+      res.cookie("odex_auth", token, {
         httpOnly: true,
         secure: config.isProduction,
         sameSite: config.isProduction ? "None" : "Lax",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       });
 
-
       res.json({
         success: true,
-        data: result.data,
+        data: shippers,
         logId: result.logId,
         message: "Auto-login successful",
       });
@@ -617,15 +704,23 @@ export const getVGMRequests = async (req, res) => {
     // Date range filter
     if (dateFrom || dateTo) {
       const dateQuery = {};
-      if (dateFrom) {
-        dateQuery.$gte = new Date(dateFrom);
+      if (dateFrom && dateFrom !== "null" && dateFrom !== "undefined") {
+        const parsedFrom = new Date(dateFrom);
+        if (!isNaN(parsedFrom.getTime())) {
+          dateQuery.$gte = parsedFrom;
+        }
       }
-      if (dateTo) {
-        const endOfDay = new Date(dateTo);
-        endOfDay.setHours(23, 59, 59, 999);
-        dateQuery.$lte = endOfDay;
+      if (dateTo && dateTo !== "null" && dateTo !== "undefined") {
+        const parsedTo = new Date(dateTo);
+        if (!isNaN(parsedTo.getTime())) {
+          const endOfDay = new Date(parsedTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          dateQuery.$lte = endOfDay;
+        }
       }
-      andConditions.push({ createdAt: dateQuery });
+      if (Object.keys(dateQuery).length > 0) {
+        andConditions.push({ createdAt: dateQuery });
+      }
     }
 
     // Combine all conditions
@@ -751,6 +846,13 @@ export const updateVGMRequest = async (req, res) => {
       return res.status(404).json({ error: "VGM request not found" });
     }
 
+    if (ApiLogger.isLogVerified(originalLog)) {
+      return res.status(400).json({
+        success: false,
+        error: "Cannot update a verified VGM request. You must cancel it manually first.",
+      });
+    }
+
     // Create updated request data
     const updatedRequestData = {
       ...originalLog.request.toObject(),
@@ -831,6 +933,42 @@ export const updateVGMRequest = async (req, res) => {
 
     res.status(500).json({
       error: "Failed to update VGM request",
+      details: error.message,
+    });
+  }
+};
+
+export const cancelVGMRequest = async (req, res) => {
+  try {
+    const { vgmId } = req.params;
+
+    const log = await ApiLog.findById(vgmId);
+    if (!log) {
+      return res.status(404).json({ error: "VGM request not found" });
+    }
+
+    log.status = "cancelled";
+    log.remarks = `Cancelled manually by user on ${new Date().toISOString()}`;
+    
+    if (log.response && log.response.data) {
+      log.response.data.cntnrStatus = "cancelled";
+    } else {
+      log.response = {
+        data: { cntnrStatus: "cancelled" }
+      };
+    }
+
+    await log.save();
+
+    res.json({
+      success: true,
+      message: "VGM request cancelled successfully",
+      data: log,
+    });
+  } catch (error) {
+    console.error("Cancel VGM request error:", error);
+    res.status(500).json({
+      error: "Failed to cancel VGM request",
       details: error.message,
     });
   }

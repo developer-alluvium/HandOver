@@ -156,6 +156,48 @@ body {
       background: color.adjust($warning, $alpha: -0.9);
       border: 1px solid color.adjust($warning, $alpha: -0.8);
     }
+
+    &.badge-secondary {
+      color: $text-muted;
+      background: color.adjust($text-muted, $alpha: -0.9);
+      border: 1px solid color.adjust($text-muted, $alpha: -0.8);
+    }
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+
+    &:hover {
+      background: #f8fafc;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    &.btn-view:hover { color: #2563eb; border-color: #2563eb33; background: #eff6ff; }
+    &.btn-edit:hover { color: #0891b2; border-color: #0891b233; background: #ecfeff; }
+    &.btn-status:hover { color: #059669; border-color: #05966933; background: #f0fdf4; }
+    &.btn-cancel:hover { color: #e11d48; border-color: #e11d4833; background: #fff1f2; }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 }
 

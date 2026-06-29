@@ -499,14 +499,23 @@ router.get("/requests", async (req, res) => {
     }
 
     if (dateFrom || dateTo) {
-      filterQuery.createdAt = {};
-      if (dateFrom) {
-        filterQuery.createdAt.$gte = new Date(dateFrom);
+      const dateQuery = {};
+      if (dateFrom && dateFrom !== "null" && dateFrom !== "undefined") {
+        const parsedFrom = new Date(dateFrom);
+        if (!isNaN(parsedFrom.getTime())) {
+          dateQuery.$gte = parsedFrom;
+        }
       }
-      if (dateTo) {
-        const endOfDay = new Date(dateTo);
-        endOfDay.setHours(23, 59, 59, 999);
-        filterQuery.createdAt.$lte = endOfDay;
+      if (dateTo && dateTo !== "null" && dateTo !== "undefined") {
+        const parsedTo = new Date(dateTo);
+        if (!isNaN(parsedTo.getTime())) {
+          const endOfDay = new Date(parsedTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          dateQuery.$lte = endOfDay;
+        }
+      }
+      if (Object.keys(dateQuery).length > 0) {
+        filterQuery.createdAt = dateQuery;
       }
     }
 

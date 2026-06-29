@@ -33,6 +33,48 @@ const Form13HeaderSection = ({
     issueToOptions
   } = masterData;
 
+  const [fpodOptions, setFpodOptions] = React.useState([]);
+  const [fpodLoading, setFpodLoading] = React.useState(false);
+  const [fpodSearch, setFpodSearch] = React.useState("");
+
+  React.useEffect(() => {
+    let active = true;
+    const fetchFpods = async (searchTerm) => {
+      try {
+        setFpodLoading(true);
+        const res = await masterAPI.getFpodCodes(searchTerm);
+        if (active) {
+          const options = (res.data || []).map(item => ({
+            value: item.PORT_CODE,
+            label: `${item.PORT_CODE} - ${item.PORT_NAME}`
+          }));
+          setFpodOptions(options);
+        }
+      } catch (err) {
+        console.error("Failed to load FPOD codes:", err);
+      } finally {
+        if (active) setFpodLoading(false);
+      }
+    };
+
+    if (fpodSearch === "") {
+      fetchFpods("");
+    } else {
+      const timer = setTimeout(() => {
+        fetchFpods(fpodSearch);
+      }, 1000);
+
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [fpodSearch]);
+
   // --- DYNAMIC POD / FPOD OPTIONS FROM local master data ---
   // Managed locally via cascadingPods using the pre-loaded master data.
 
@@ -212,6 +254,49 @@ const Form13HeaderSection = ({
 
     const required = isFieldRequired(fieldName, formData);
 
+    if (fieldName === "fpod") {
+      return (
+        <Grid item xs={12} sm={6} md={md}>
+          <FormLabelCustom label={label} required={required} />
+          <Autocomplete
+            size="small"
+            options={fpodOptions}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.label || "";
+            }}
+            value={
+              fpodOptions.find(opt => opt.value === formData.fpod) || 
+              (formData.fpod ? { value: formData.fpod, label: formData.fpod } : null)
+            }
+            onChange={(e, newValue) => {
+              const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
+              onFormDataChange("header", fieldName, val);
+            }}
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === 'input') {
+                setFpodSearch(newInputValue);
+              } else if (reason === 'clear') {
+                setFpodSearch("");
+              }
+            }}
+            loading={fpodLoading}
+            disabled={loading || !formData.locId}
+            noOptionsText={fpodLoading ? "Loading..." : `${label} is not present`}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="standard"
+                placeholder={`Search ${label}...`}
+                fullWidth
+                error={!!validationErrors[fieldName]}
+              />
+            )}
+          />
+        </Grid>
+      );
+    }
+
     let selectOptions = [];
     let isSelect = true;
 
@@ -245,12 +330,6 @@ const Form13HeaderSection = ({
         selectOptions = srvOptions.map(opt => ({ value: opt, label: opt }));
         break;
       case "pod":
-        selectOptions = cascadingPods.map(p => ({
-          value: p.podCd,
-          label: `${p.podCd} - ${p.podNm}`
-        }));
-        break;
-      case "fpod":
         selectOptions = cascadingPods.map(p => ({
           value: p.podCd,
           label: `${p.podCd} - ${p.podNm}`

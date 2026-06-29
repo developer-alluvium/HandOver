@@ -27,6 +27,7 @@ export const vgmAPI = {
   updateRequest: (vgmId, updateData) =>
     api.put(`vgm/requests/${vgmId}`, updateData),
   getRequestById: (vgmId) => api.get(`vgm/requests/${vgmId}`),
+  cancelRequest: (vgmId) => api.put(`vgm/requests/${vgmId}/cancel`),
 };
 
 export const logAPI = {
@@ -46,6 +47,8 @@ export const masterAPI = {
   getCFSCodes: (search) =>
     api.get("master/cfs-codes", { params: { search } }),
   getPODCodes: () => api.get("master/pod-codes"),
+  getFpodCodes: (search) =>
+    api.get("master/fpod-codes", { params: { search } }),
   seedShippingLines: (shippingLines) =>
     api.post("master/shipping-lines/seed", { shippingLines }),
 };

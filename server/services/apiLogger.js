@@ -3,6 +3,26 @@ import ApiLog from "../models/ApiLog.js";
 import axios from "axios";
 
 export class ApiLogger {
+  static isLogVerified(log) {
+    if (!log) return false;
+    if (log.status === "success") return true;
+
+    const responseData = log.response?.data || {};
+    const cntnrStatus = responseData.cntnrStatus || log.status || "";
+    if (typeof cntnrStatus === "string") {
+      const s = cntnrStatus.toLowerCase();
+      if (s.includes("verified") || s.includes("success")) return true;
+    }
+
+    const responseMsg = responseData.response || responseData.message || "";
+    if (typeof responseMsg === "string") {
+      const s = responseMsg.toLowerCase();
+      if (s.includes("verified") || s.includes("success")) return true;
+    }
+
+    return false;
+  }
+
   static async logAndForward(moduleName, requestData, logId = null) {
     const startTime = Date.now();
     let apiLog;
@@ -30,6 +50,16 @@ export class ApiLogger {
             "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") },
           }).sort({ createdAt: -1 });
         }
+      }
+
+      // If already verified, do not forward/modify the log, return immediately
+      if (apiLog && ApiLogger.isLogVerified(apiLog)) {
+        console.log(`[ApiLogger] Log ${apiLog._id} is already verified. Skipping API forwarding.`);
+        return {
+          success: true,
+          data: apiLog.response?.data,
+          logId: apiLog._id,
+        };
       }
 
       // 3. Last resort: Create new log
@@ -86,8 +116,19 @@ export class ApiLogger {
       const timeTaken = Date.now() - startTime;
       const currentLogId = apiLog?._id;
 
-      // Update log with error
+      // Update log with error only if it hasn't been verified or cancelled in the meantime
       if (currentLogId) {
+        const latestLog = await ApiLog.findById(currentLogId);
+        if (latestLog && (latestLog.status === "success" || latestLog.status === "cancelled" || ApiLogger.isLogVerified(latestLog))) {
+          console.log(`[ApiLogger] Log ${currentLogId} is already ${latestLog.status} or verified. Skipping error overwrite.`);
+          return {
+            success: latestLog.status === "success" || ApiLogger.isLogVerified(latestLog),
+            data: latestLog.response?.data,
+            logId: currentLogId,
+            error: latestLog.status === "success" ? null : (error.response?.data || error.message)
+          };
+        }
+
         await ApiLog.findByIdAndUpdate(currentLogId, {
           response: {
             statusCode: error.response?.status || 500,

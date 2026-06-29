@@ -71,6 +71,33 @@ const Icons = {
       <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
     </svg>
   ),
+  Clear: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+    >
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  ),
+  Cancel: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="15" y1="9" x2="9" y2="15"></line>
+      <line x1="9" y1="9" x2="15" y2="15"></line>
+    </svg>
+  ),
 };
 
 // Port mapping for display
@@ -138,6 +165,8 @@ const VGMStatus = () => {
   const [requests, setRequests] = useState([]);
   const [shippingLines, setShippingLines] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [cancellingRequest, setCancellingRequest] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -145,15 +174,13 @@ const VGMStatus = () => {
     pages: 0,
   });
 
-  // Filters with date defaults - From Date defaults to today
-  // Filters with date defaults - Default to current month
+  // Filters with date defaults
   const [containerSearch, setContainerSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Initialize with current month's start and end dates
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().format("MM"));
+  // Initialize with current month's start and today's date
   const [dateFrom, setDateFrom] = useState(dayjs().startOf("month").format("YYYY-MM-DD"));
-  const [dateTo, setDateTo] = useState(dayjs().endOf("month").format("YYYY-MM-DD"));
+  const [dateTo, setDateTo] = useState(getTodayDate());
 
   const debounceTimerRef = useRef(null);
 
@@ -206,19 +233,17 @@ const VGMStatus = () => {
     fetchVGMRequests(1, containerSearch, value, dateFrom, dateTo);
   };
 
-  // Month filter change
-  const handleMonthChange = (month) => {
-    const currentYear = dayjs().year();
-    // month is "01", "02", etc.
-    const start = dayjs(`${currentYear}-${month}-01`).startOf("month").format("YYYY-MM-DD");
-    const end = dayjs(`${currentYear}-${month}-01`).endOf("month").format("YYYY-MM-DD");
-
-    setSelectedMonth(month);
-    setDateFrom(start);
-    setDateTo(end);
+  // Date filter changes
+  const handleDateFromChange = (value) => {
+    setDateFrom(value);
     setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchVGMRequests(1, containerSearch, statusFilter, value, dateTo);
+  };
 
-    fetchVGMRequests(1, containerSearch, statusFilter, start, end);
+  const handleDateToChange = (value) => {
+    setDateTo(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchVGMRequests(1, containerSearch, statusFilter, dateFrom, value);
   };
 
   // Check if request is verified - disable edit if verified
@@ -240,12 +265,10 @@ const VGMStatus = () => {
     setContainerSearch("");
     setStatusFilter("");
 
-    // Reset to current month
-    const currentMonth = dayjs().format("MM");
+    // Reset to start of current month and today's date
     const start = dayjs().startOf("month").format("YYYY-MM-DD");
-    const end = dayjs().endOf("month").format("YYYY-MM-DD");
+    const end = getTodayDate();
 
-    setSelectedMonth(currentMonth);
     setDateFrom(start);
     setDateTo(end);
 
@@ -256,34 +279,38 @@ const VGMStatus = () => {
     fetchVGMRequests(1, "", "", start, end);
   };
 
-  const MONTHS = [
-    { value: "01", label: "January" },
-    { value: "02", label: "February" },
-    { value: "03", label: "March" },
-    { value: "04", label: "April" },
-    { value: "05", label: "May" },
-    { value: "06", label: "June" },
-    { value: "07", label: "July" },
-    { value: "08", label: "August" },
-    { value: "09", label: "September" },
-    { value: "10", label: "October" },
-    { value: "11", label: "November" },
-    { value: "12", label: "December" },
-  ];
+  const handleCancelRequest = (req) => {
+    setCancellingRequest(req);
+  };
+
+  const confirmCancelRequest = async () => {
+    if (!cancellingRequest) return;
+    setCancelling(true);
+    try {
+      await vgmAPI.cancelRequest(cancellingRequest.vgmId);
+      enqueueSnackbar("VGM request cancelled successfully", { variant: "success" });
+      setCancellingRequest(null);
+      fetchVGMRequests(pagination.page, containerSearch, statusFilter, dateFrom, dateTo);
+    } catch (error) {
+      const msg = error.response?.data?.error || error.message || "Failed to cancel request";
+      enqueueSnackbar(msg, { variant: "error" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+
 
   // --- Logic 1: Determine Display Status ---
   const getDisplayStatus = (req) => {
-    // Handle string responses (errors)
-    if (
-      typeof req.response === "string" &&
-      req.response.trim().toUpperCase().startsWith("ERROR")
-    ) {
-      return "Pending";
+    if (req.status === "cancelled") {
+      return "Cancelled";
     }
 
     // Check cntnrStatus from the request object directly (not nested in response)
     if (req.cntnrStatus) {
       const s = req.cntnrStatus.toLowerCase();
+      if (s === "cancelled") return "Cancelled";
       if (s.includes("verified")) return "Verified";
       if (s.includes("success")) return "Verified"; // If status is "success", treat as Verified
     }
@@ -295,8 +322,17 @@ const VGMStatus = () => {
       req.response.cntnrStatus
     ) {
       const s = req.response.cntnrStatus.toLowerCase();
+      if (s === "cancelled") return "Cancelled";
       if (s.includes("verified")) return "Verified";
       if (s.includes("success")) return "Verified";
+    }
+
+    // Handle string responses (errors)
+    if (
+      typeof req.response === "string" &&
+      req.response.trim().toUpperCase().startsWith("ERROR")
+    ) {
+      return "Pending";
     }
 
     return "Pending";
@@ -306,11 +342,16 @@ const VGMStatus = () => {
     const s = displayStatus?.toUpperCase();
     if (s === "VERIFIED" || s === "SUCCESS") return "badge-success";
     if (s === "FAILED" || s === "ERROR") return "badge-danger";
+    if (s === "CANCELLED") return "badge-secondary";
     return "badge-warning";
   };
 
   // --- Logic 2: Get Remarks ---
   const getRemarks = (req) => {
+    if (req.status === "cancelled" || getDisplayStatus(req) === "Cancelled") {
+      return req.remarks || "Cancelled manually by user";
+    }
+
     // If response is a string (error or success message)
     if (typeof req.response === "string") {
       // Check if it's an error
@@ -389,16 +430,11 @@ const VGMStatus = () => {
 
       {/* Filters */}
       <div className="panel">
-        <div className="d-flex mb-4 gap-2" style={{ fontWeight: 600 }}>
+        <div className="panel-title mb-3">
           <Icons.Filter /> Filters
         </div>
-        <div
-          className="form-grid"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          }}
-        >
-          <div className="form-group">
+        <div className="filter-grid">
+          <div className="form-group status-group">
             <label>Status</label>
             <select
               className="form-control"
@@ -408,9 +444,10 @@ const VGMStatus = () => {
               <option value="">All</option>
               <option value="Verified">Verified</option>
               <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
-          <div className="form-group">
+          <div className="form-group search-group">
             <label>Container / Booking</label>
             <div style={{ position: "relative" }}>
               <input
@@ -436,29 +473,32 @@ const VGMStatus = () => {
               Auto-searches after 2 seconds
             </small>
           </div>
-          <div className="form-group">
-            <label>Filter Month</label>
-            <select
+          <div className="form-group date-from-group">
+            <label>From Date</label>
+            <input
+              type="date"
               className="form-control"
-              value={selectedMonth}
-              onChange={(e) => handleMonthChange(e.target.value)}
-            >
-              {MONTHS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+              value={dateFrom}
+              onChange={(e) => handleDateFromChange(e.target.value)}
+            />
           </div>
-          <div
-            className="form-group"
-            style={{ display: "flex", alignItems: "flex-end", gap: "0.5rem" }}
-          >
+          <div className="form-group date-to-group">
+            <label>To Date</label>
+            <input
+              type="date"
+              className="form-control"
+              value={dateTo}
+              onChange={(e) => handleDateToChange(e.target.value)}
+            />
+          </div>
+          <div className="form-group clear-group">
+            <label style={{ visibility: "hidden" }}>Clear</label>
             <button
               className="btn btn-outline w-full"
               onClick={handleClearFilters}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem" }}
             >
-              Clear
+              <Icons.Clear /> Clear
             </button>
           </div>
         </div>
@@ -530,6 +570,15 @@ const VGMStatus = () => {
                             >
                               <Icons.Edit />
                             </button>
+                            {displayStatus !== "Cancelled" && (
+                              <button
+                                className="btn-icon btn-cancel"
+                                title="Cancel Request"
+                                onClick={() => handleCancelRequest(req)}
+                              >
+                                <Icons.Cancel />
+                              </button>
+                            )}
                           </div>
                         </td>
                         <td style={{ fontWeight: 500 }}>{getLinerName(req.linerId)}</td>
@@ -586,6 +635,51 @@ const VGMStatus = () => {
           </>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {cancellingRequest && (
+        <div className="modal-overlay" onClick={() => !cancelling && setCancellingRequest(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3 style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                <Icons.Cancel /> Confirm Cancellation
+              </h3>
+              <button
+                className="close-btn"
+                onClick={() => !cancelling && setCancellingRequest(null)}
+                disabled={cancelling}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.25rem' }}>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#1e293b', fontWeight: 500 }}>
+                Are you sure you want to cancel the VGM request for container <strong>{cancellingRequest.cntnrNo}</strong>?
+              </p>
+              <p style={{ marginTop: '8px', marginBottom: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                Once cancelled, the status will change to Cancelled and subsequent updates will require manual action.
+              </p>
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => setCancellingRequest(null)}
+                disabled={cancelling}
+              >
+                No, Keep it
+              </button>
+              <button
+                className="btn"
+                style={{ backgroundColor: '#dc2626', color: 'white', borderColor: '#dc2626' }}
+                onClick={confirmCancelRequest}
+                disabled={cancelling}
+              >
+                {cancelling ? "Cancelling..." : "Yes, Cancel Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {selectedRequest && (
