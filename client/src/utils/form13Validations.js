@@ -662,11 +662,13 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
   // 5. Special manual checks
   switch (fieldName) {
     case 'driverNm':
-      // Driver name is mandatory ONLY if terminal is MICT
+      // Driver name is mandatory ONLY if terminal is MICT, and NOT required if origin is Dock Stuffed (C)
+      if (formData.origin === "C") return false;
       return formData.terminalCode === "MICT";
 
     case 'haulier':
-      // Haulier is mandatory if terminal is NOT MICT
+      // Haulier is mandatory if terminal is NOT MICT, and NOT required if origin is Dock Stuffed (C)
+      if (formData.origin === "C") return false;
       return formData.terminalCode !== "MICT";
 
     case 'vgmWt':

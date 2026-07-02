@@ -364,7 +364,10 @@ const VGMForm = ({
               exactMatch: true
             });
 
-            const existing = (dupResponse.data?.requests || []).filter(r => r.status !== 'CANCELLED');
+            const existing = (dupResponse.data?.requests || []).filter(r => {
+              const statusStr = (r.status || "").toUpperCase();
+              return statusStr !== 'CANCELLED' && statusStr !== 'SAVED' && statusStr !== 'FAILED';
+            });
             if (existing.length > 0) {
               enqueueSnackbar(`Duplicate submission detected: A VGM request for Container ${cntnrNo} and Booking ${bookNo} already exists.`, { variant: "error" });
               setLoading(false);
@@ -1297,11 +1300,24 @@ const VGMForm = ({
               const szOpt = CONTAINER_SIZES.find(s => String(s.label).includes(sizeMatch[0]));
               if (szOpt) sz = szOpt.value;
             }
-            const typeMatch = CONTAINER_TYPES.find(t =>
-              fullType.includes(String(t.label || "").toUpperCase()) ||
-              fullType.includes(String(t.value || "").toUpperCase())
-            );
-            if (typeMatch) tp = typeMatch.value;
+            
+            if (fullType.includes("STANDARD DRY") || fullType.includes("STD DRY") || fullType.includes("STANDERED DRY")) {
+              tp = "GPC";
+            } else if (fullType.includes("OPEN TOP") || fullType.includes("OTP")) {
+              tp = "OTP";
+            } else if (fullType.includes("FLAT RACK") || fullType.includes("FRC")) {
+              tp = "FRC";
+            } else if (fullType.includes("REEFER") || fullType.includes("RC")) {
+              tp = "RC";
+            } else if (fullType.includes("TANK") || fullType.includes("TC")) {
+              tp = "TC";
+            } else {
+              const typeMatch = CONTAINER_TYPES.find(t =>
+                fullType.includes(String(t.label || "").toUpperCase()) ||
+                fullType.includes(String(t.value || "").toUpperCase())
+              );
+              if (typeMatch) tp = typeMatch.value;
+            }
           }
 
           const weighmentDetails = getField(job, "weighmentdetails", "weighmentDetails") || [];

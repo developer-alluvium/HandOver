@@ -32,7 +32,7 @@ import {
   OpenInFull as ODCIcon,
 } from "@mui/icons-material";
 import { masterData, getIsoCodesBySize } from "../../data/masterData";
-import { isSpecialStowRequired } from "../../utils/form13Validations";
+import { isSpecialStowRequired, isFieldRequired } from "../../utils/form13Validations";
 
 const ContainerRow = ({
   container,
@@ -204,7 +204,7 @@ const ContainerRow = ({
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
                       <Typography variant="caption" color="text.secondary">
-                        Driver Name {terminalCode === "MICT" && <span style={{ color: '#d32f2f' }}>*</span>}
+                        Driver Name {isFieldRequired('driverNm', { origin, terminalCode, locId, bnfCode, cargoTp }, index) && <span style={{ color: '#d32f2f' }}>*</span>}
                       </Typography>
                       <TextField
                         fullWidth size="small" variant="standard"
@@ -245,7 +245,7 @@ const ContainerRow = ({
                     )}
                     <Grid item xs={12}>
                       <Typography variant="caption" color="text.secondary">
-                        Haulier {terminalCode !== "MICT" && <span style={{ color: '#d32f2f' }}>*</span>}
+                        Haulier {isFieldRequired('haulier', { origin, terminalCode, locId, bnfCode, cargoTp }, index) && <span style={{ color: '#d32f2f' }}>*</span>}
                       </Typography>
                       <Autocomplete
                         size="small"
