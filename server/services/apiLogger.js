@@ -5,10 +5,10 @@ import axios from "axios";
 export class ApiLogger {
   static isLogVerified(log) {
     if (!log) return false;
-    if (log.status === "success") return true;
+    if (log.status === "cancelled") return false;
 
     const responseData = log.response?.data || {};
-    const cntnrStatus = responseData.cntnrStatus || log.status || "";
+    const cntnrStatus = responseData.cntnrStatus || "";
     if (typeof cntnrStatus === "string") {
       const s = cntnrStatus.toLowerCase();
       if (s.includes("verified") || s.includes("success")) return true;

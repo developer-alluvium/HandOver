@@ -103,7 +103,7 @@ const Form13 = () => {
     shipperCd: "",
     FFCode: "",
     IECode: "",
-    CHACode: "",
+    CHACode: userData?.pyrCode || "",
     Notify_TO: "",
     stuffTp: "",
     icdLoadingPort: "",
@@ -179,6 +179,17 @@ const Form13 = () => {
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSaved, setIsSaved] = useState(false);
+
+  // Pre-fill pyrCode and CHACode when userData becomes available
+  useEffect(() => {
+    if (userData?.pyrCode) {
+      setFormData((prev) => ({
+        ...prev,
+        pyrCode: prev.pyrCode || userData.pyrCode,
+        CHACode: prev.CHACode || userData.pyrCode,
+      }));
+    }
+  }, [userData]);
 
   // Load Master Data on component mount
   useEffect(() => {
@@ -1649,7 +1660,7 @@ const Form13 = () => {
         console.error("Failed to fetch hashKey from backend:", err);
       }
 
-      // Helper function to remove empty fields from payload and trim strings
+      // Helper function to process payload: trim strings, map empty fields to null, and keep keys
       const cleanPayload = (obj) => {
         const cleaned = {};
         Object.keys(obj).forEach((key) => {
@@ -1660,17 +1671,14 @@ const Form13 = () => {
             value = value.trim();
           }
 
-          // shipperCity and shipperCd should go even if empty
-          const alwaysInclude = ["shipperCity", "shipperCd"];
-
-          if (alwaysInclude.includes(key) || (value !== null && value !== undefined && value !== "")) {
-            if (Array.isArray(value)) {
-              cleaned[key] = value.map(item => (typeof item === 'object' && item !== null) ? cleanPayload(item) : (typeof item === "string" ? item.trim() : item));
-            } else if (typeof value === "object" && value !== null) {
-              cleaned[key] = cleanPayload(value);
-            } else {
-              cleaned[key] = value;
-            }
+          if (value === null || value === undefined || value === "") {
+            cleaned[key] = null;
+          } else if (Array.isArray(value)) {
+            cleaned[key] = value.map(item => (typeof item === 'object' && item !== null) ? cleanPayload(item) : (typeof item === "string" ? item.trim() : item));
+          } else if (typeof value === "object" && value !== null) {
+            cleaned[key] = cleanPayload(value);
+          } else {
+            cleaned[key] = value;
           }
         });
         return cleaned;
