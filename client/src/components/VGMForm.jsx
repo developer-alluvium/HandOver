@@ -364,7 +364,10 @@ const VGMForm = ({
               exactMatch: true
             });
 
-            const existing = (dupResponse.data?.requests || []).filter(r => r.status !== 'CANCELLED');
+            const existing = (dupResponse.data?.requests || []).filter(r => {
+              const statusStr = (r.status || "").toUpperCase();
+              return statusStr !== 'CANCELLED' && statusStr !== 'SAVED' && statusStr !== 'FAILED';
+            });
             if (existing.length > 0) {
               enqueueSnackbar(`Duplicate submission detected: A VGM request for Container ${cntnrNo} and Booking ${bookNo} already exists.`, { variant: "error" });
               setLoading(false);

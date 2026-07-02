@@ -1602,9 +1602,12 @@ const Form13 = () => {
           const isDuplicate = existingRequests.some(extReq => {
             // Find container in existing request's cntrList
             const containersInExt = extReq.cntrList || extReq.containers || [];
+            const statusUpper = (extReq.status || "").toUpperCase();
             return containersInExt.some(extCont =>
               extCont.cntnrNo === currCont.cntnrNo &&
-              extReq.status !== 'CANCELLED' &&
+              statusUpper !== 'CANCELLED' &&
+              statusUpper !== 'SAVED' &&
+              statusUpper !== 'FAILED' &&
               extReq._id !== requestId // Allow current request if editing
             );
           });
