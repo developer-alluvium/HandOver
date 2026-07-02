@@ -347,6 +347,14 @@ export const getCurrentUser = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, config.jwt.secret);
+
+    // If environment configurations changed (e.g. PILOT_PYRCODE updated in env),
+    // force clean re-authentication so frontend syncs with new credentials.
+    if (config.odex.pyrCode && decoded.pyrCode !== config.odex.pyrCode) {
+      res.clearCookie("odex_auth");
+      return res.status(401).json({ success: false, message: "Session stale due to configuration change" });
+    }
+
     res.json({
       success: true,
       data: {

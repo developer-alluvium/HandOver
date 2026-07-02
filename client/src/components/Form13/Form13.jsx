@@ -1660,7 +1660,7 @@ const Form13 = () => {
         console.error("Failed to fetch hashKey from backend:", err);
       }
 
-      // Helper function to process payload: trim strings, map empty fields to null, and keep keys
+      // Helper function to process payload: trim strings, map empty fields to empty string, and keep keys
       const cleanPayload = (obj) => {
         const cleaned = {};
         Object.keys(obj).forEach((key) => {
@@ -1672,7 +1672,7 @@ const Form13 = () => {
           }
 
           if (value === null || value === undefined || value === "") {
-            cleaned[key] = null;
+            cleaned[key] = "";
           } else if (Array.isArray(value)) {
             cleaned[key] = value.map(item => (typeof item === 'object' && item !== null) ? cleanPayload(item) : (typeof item === "string" ? item.trim() : item));
           } else if (typeof value === "object" && value !== null) {
