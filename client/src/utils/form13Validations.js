@@ -682,8 +682,17 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
 
     case 'FFCode':
     case 'IECode':
-    case 'CHACode':
       // At least one of FF Code, IE code, or CHA code is required for Nhava Sheva
+      if (formData.locId === "INNSA1") {
+        const hasAny = !!formData.FFCode || !!formData.IECode || !!formData.CHACode;
+        return !hasAny;
+      }
+      return false;
+
+    case 'CHACode':
+      if (formData.shipperNm && formData.shipperNm.trim()) {
+        return true;
+      }
       if (formData.locId === "INNSA1") {
         const hasAny = !!formData.FFCode || !!formData.IECode || !!formData.CHACode;
         return !hasAny;
@@ -1036,6 +1045,20 @@ export const validateFormData = (formData) => {
     if (!validatePattern(formData.outsideDate, datePattern, true)) {
       errors.outsideDate = "Outside Date must be in YYYY-MM-DD format (1900-2099)";
     }
+  }
+
+  if (isFieldRequired('CHACode', formData)) {
+    if (!formData.CHACode?.trim()) {
+      errors.CHACode = formData.shipperNm?.trim()
+        ? "CHA Code is required when Shipper Name is provided"
+        : "One of CHA Code, FF Code, or IE Code is required for Nhavasheva";
+    } else {
+      checkLength("CHACode", "CHA Code", formData.CHACode, 50, 1, true);
+      checkPattern("CHACode", "CHA Code", formData.CHACode, alphanumericNoSpacePattern, false);
+    }
+  } else if (formData.CHACode) {
+    checkLength("CHACode", "CHA Code", formData.CHACode, 50, 0, false);
+    checkPattern("CHACode", "CHA Code", formData.CHACode, alphanumericNoSpacePattern, true);
   }
 
   if (isFieldRequired('ShipperCity', formData)) {
@@ -1520,8 +1543,11 @@ export const isFieldVisible = (fieldName, formData) => {
     return locId === "INTUT1" && terminalCode === "DBGT";
   }
 
-  // CHA/FF/IE Code - Nhavasheva
+  // CHA/FF/IE Code - Nhavasheva or if CHACode is necessary because shipperNm is passed
   if (["CHACode", "FFCode", "IECode"].includes(fieldName)) {
+    if (fieldName === "CHACode" && formData.shipperNm && formData.shipperNm.trim()) {
+      return true;
+    }
     return locId === "INNSA1";
   }
 

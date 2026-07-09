@@ -103,7 +103,7 @@ const Form13 = () => {
     shipperCd: "",
     FFCode: "",
     IECode: "",
-    CHACode: userData?.pyrCode || "",
+    CHACode: "",
     Notify_TO: "",
     stuffTp: "",
     icdLoadingPort: "",
@@ -180,16 +180,151 @@ const Form13 = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [isSaved, setIsSaved] = useState(false);
 
-  // Pre-fill pyrCode and CHACode when userData becomes available
+  // --- MERGE & UNMERGE CONTAINERS FOR MULTI-SHIPPING BILL SUPPORT ---
+  const getUnmergedIndex = (mergedContainerIndex, sbIndex) => {
+    const uniqueNos = [];
+    const containerNoToUnmergedIndices = {};
+    
+    formData.containers.forEach((c, idx) => {
+      const cNo = (c.cntnrNo || "").trim().toUpperCase();
+      const key = cNo || `EMPTY_INDEX_${idx}`;
+      
+      if (!containerNoToUnmergedIndices[key]) {
+        containerNoToUnmergedIndices[key] = [];
+        uniqueNos.push(key);
+      }
+      containerNoToUnmergedIndices[key].push(idx);
+    });
+    
+    const containerKey = uniqueNos[mergedContainerIndex];
+    if (!containerKey) return mergedContainerIndex;
+    
+    const unmergedIndices = containerNoToUnmergedIndices[containerKey];
+    if (!unmergedIndices || unmergedIndices.length <= sbIndex) {
+      return unmergedIndices ? unmergedIndices[unmergedIndices.length - 1] : mergedContainerIndex;
+    }
+    
+    return unmergedIndices[sbIndex];
+  };
+
+  const mergeContainers = (containersList) => {
+    const mergedMap = new Map();
+    const result = [];
+
+    (containersList || []).forEach((container) => {
+      const key = (container.cntnrNo || "").trim().toUpperCase();
+      if (!key) {
+        result.push({
+          ...container,
+          sbDtlsVo: container.sbDtlsVo ? [...container.sbDtlsVo] : []
+        });
+        return;
+      }
+
+      if (mergedMap.has(key)) {
+        const existingContainer = mergedMap.get(key);
+        if (container.sbDtlsVo && container.sbDtlsVo.length > 0) {
+          existingContainer.sbDtlsVo = [...existingContainer.sbDtlsVo, ...container.sbDtlsVo];
+        }
+      } else {
+        const copy = {
+          ...container,
+          sbDtlsVo: container.sbDtlsVo ? [...container.sbDtlsVo] : []
+        };
+        mergedMap.set(key, copy);
+        result.push(copy);
+      }
+    });
+
+    return result;
+  };
+
+  const unmergeContainers = (sourceContainers) => {
+    const unmerged = [];
+    (sourceContainers || []).forEach((container) => {
+      const sbList = container.sbDtlsVo || [];
+      if (sbList.length <= 1) {
+        unmerged.push({
+          ...container,
+          sbDtlsVo: sbList.length === 1 ? [{ ...sbList[0] }] : [{
+            shipBillInvNo: "",
+            shipBillDt: "",
+            leoNo: "",
+            leoDt: "",
+            chaNm: "",
+            chaPan: "",
+            exporterNm: "",
+            exporterIec: "",
+            noOfPkg: 0,
+          }]
+        });
+      } else {
+        sbList.forEach((sb) => {
+          const { sbDtlsVo, ...containerFields } = container;
+          unmerged.push({
+            ...containerFields,
+            sbDtlsVo: [{ ...sb }]
+          });
+        });
+      }
+    });
+    return unmerged;
+  };
+
+  // Pre-fill pyrCode when userData becomes available
   useEffect(() => {
     if (userData?.pyrCode) {
       setFormData((prev) => ({
         ...prev,
         pyrCode: prev.pyrCode || userData.pyrCode,
-        CHACode: prev.CHACode || userData.pyrCode,
       }));
     }
   }, [userData]);
+
+  // Auto-populate CHACode and Shipping Bill chaNm when shipperNm is provided
+  useEffect(() => {
+    if (formData.shipperNm && formData.shipperNm.trim()) {
+      setFormData((prev) => {
+        let updated = false;
+        let newCHACode = prev.CHACode;
+        
+        // Auto-populate CHACode if it's empty
+        if (!prev.CHACode) {
+          newCHACode = "AAKCS6838D";
+          updated = true;
+        }
+
+        // Auto-populate chaNm in all container shipping bills if it's empty
+        const newContainers = prev.containers.map((container) => {
+          if (container.sbDtlsVo && container.sbDtlsVo[0]) {
+            if (!container.sbDtlsVo[0].chaNm) {
+              updated = true;
+              return {
+                ...container,
+                sbDtlsVo: [
+                  {
+                    ...container.sbDtlsVo[0],
+                    chaNm: "SURAJ FORWARDERS AND SHIPPING AGENCY",
+                  },
+                  ...container.sbDtlsVo.slice(1),
+                ],
+              };
+            }
+          }
+          return container;
+        });
+
+        if (updated) {
+          return {
+            ...prev,
+            CHACode: newCHACode,
+            containers: newContainers,
+          };
+        }
+        return prev;
+      });
+    }
+  }, [formData.shipperNm, formData.containers.length]);
 
   // Load Master Data on component mount
   useEffect(() => {
@@ -487,16 +622,7 @@ const Form13 = () => {
     // Special handling for Container List (stored as cntrList in DB)
     const sourceContainers = data.cntrList || data.containers || [];
     if (sourceContainers.length > 0) {
-      newFormData.containers = sourceContainers.map((c, idx) => {
-        return {
-          ...c,
-          // Ensure nesting for shipping bills is preserved
-          sbDtlsVo: c.sbDtlsVo || [{
-            shipBillInvNo: "", shipBillDt: "", leoNo: "", leoDt: "",
-            chaNm: "", chaPan: "", exporterNm: "", exporterIec: "", noOfPkg: 0
-          }]
-        };
-      });
+      newFormData.containers = unmergeContainers(sourceContainers);
     } else {
     }
 
@@ -562,7 +688,8 @@ const Form13 = () => {
       // Deep copy containers with their sbDtlsVo (shipping bill details)
       let copiedContainers = [];
       if (sourceContainers.length > 0) {
-        copiedContainers = sourceContainers.map(container => {
+        const unmergedSource = unmergeContainers(sourceContainers);
+        copiedContainers = unmergedSource.map(container => {
           // Remove MongoDB-specific fields from container
           const { _id: cId, ...containerData } = container;
 
@@ -820,8 +947,12 @@ const Form13 = () => {
     checkLength("cntnrStatus", "Container Status", formData.cntnrStatus, 7, 1, true);
     checkPattern("cntnrStatus", "Container Status", formData.cntnrStatus, alphanumericNoSpacePattern, false);
 
-    // Nhavasheva (INNSA1) - One of CHA/FF/IE Code required
-    if (formData.locId === "INNSA1") {
+    // CHA Code validation: required if shipperNm is provided or (one of CHA/FF/IE required for Nhava Sheva)
+    if (formData.shipperNm && formData.shipperNm.trim()) {
+      if (!formData.CHACode) {
+        errors.CHACode = "CHA Code is required when Shipper Name is provided";
+      }
+    } else if (formData.locId === "INNSA1") {
       if (!formData.CHACode && !formData.FFCode && !formData.IECode) {
         errors.CHACode = "One of CHA Code, FF Code, or IE Code is required for Nhavasheva";
       }
@@ -1521,27 +1652,62 @@ const Form13 = () => {
 
     if (!schemaErrors) return errors;
 
+    const processErrorString = (errStr) => {
+      const match = errStr.match(/#\/(.+?):\s*(.+)/);
+      if (!match) {
+        errors.generic = errStr;
+        return;
+      }
+
+      const path = match[1];
+      const message = match[2];
+
+      if (path.startsWith("cntrList/")) {
+        const parts = path.split("/");
+        const containerIndex = parseInt(parts[1], 10);
+        
+        if (path.includes("/sbDtlsVo/")) {
+          const sbIndex = parseInt(parts[3], 10);
+          const field = parts[4];
+          const unmergedIndex = getUnmergedIndex(containerIndex, sbIndex);
+          errors[`container_${unmergedIndex}_${field}`] = message;
+        } else {
+          const field = parts[2];
+          const unmergedIndex = getUnmergedIndex(containerIndex, 0);
+          errors[`container_${unmergedIndex}_${field}`] = message;
+        }
+      } else {
+        errors[path] = message;
+      }
+    };
 
     try {
+      let errorArray = [];
       if (typeof schemaErrors === 'string') {
-        // Try to parse as JSON if it's a string
         try {
-          const parsedErrors = JSON.parse(schemaErrors);
-          Object.keys(parsedErrors).forEach(key => {
-            errors[key] = parsedErrors[key];
-          });
+          const parsed = JSON.parse(schemaErrors);
+          errorArray = Array.isArray(parsed) ? parsed : [schemaErrors];
         } catch (e) {
-          // If it's not JSON, treat it as a generic error message
-          errors.generic = schemaErrors;
+          errorArray = [schemaErrors];
         }
-      } else if (typeof schemaErrors === 'object') {
-        Object.keys(schemaErrors).forEach(key => {
-          errors[key] = schemaErrors[key];
+      } else if (Array.isArray(schemaErrors)) {
+        errorArray = schemaErrors;
+      } else if (typeof schemaErrors === 'object' && schemaErrors !== null) {
+        Object.entries(schemaErrors).forEach(([key, val]) => {
+          const errStr = key.startsWith("#/") ? `${key}: ${val}` : `#/${key}: ${val}`;
+          processErrorString(errStr);
         });
+        return errors;
       }
+
+      errorArray.forEach((err) => {
+        if (typeof err === 'string') {
+          processErrorString(err);
+        }
+      });
     } catch (e) {
       console.warn('Could not parse schema errors:', e);
-      errors.generic = "Schema validation failed";
+      errors.generic = typeof schemaErrors === 'string' ? schemaErrors : "Schema validation failed";
     }
 
     return errors;
@@ -1732,7 +1898,7 @@ const Form13 = () => {
         outsideWindowIssue: formData.outsideWindowIssue,
         cfsCode: formData.cfsCode,
         emailId: formData.emailId,
-        cntrList: formData.containers.map((container) => {
+        cntrList: mergeContainers(formData.containers).map((container) => {
           // vgmWt formatting: if no decimal then add two decimal from frontend
           let formattedVgmWt = container.vgmWt;
           if (formattedVgmWt) {
@@ -1743,7 +1909,6 @@ const Form13 = () => {
           }
 
           return {
-
             cntnrReqId: container.cntnrReqId,
             cntnrNo: container.cntnrNo,
             cntnrSize: container.cntnrSize,
@@ -2006,14 +2171,20 @@ const Form13 = () => {
                 try {
                   setLoading(true);
                   setError("");
-                  // Prepare data (simplified save to DB only)
+                  // Prepare data with merged containers for backend storage consistency
+                  const savedFormData = {
+                    ...formData,
+                    containers: mergeContainers(formData.containers),
+                    status: "SAVED"
+                  };
+
                   let response;
                   if (requestId) {
-                    response = await form13API.updateRequest(requestId, { ...formData, status: "SAVED" });
+                    response = await form13API.updateRequest(requestId, savedFormData);
                   } else {
                     // For first save, we might want a simple endpoint or just /submit with a flag
                     // Using current submit logic but marking as saved
-                    response = await form13API.submitForm13({ ...formData, status: "SAVED", skipOdex: true });
+                    response = await form13API.submitForm13({ ...savedFormData, skipOdex: true });
                   }
 
                   if (response.data?._id || response.data?.internalRef) {
