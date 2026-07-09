@@ -281,50 +281,58 @@ const Form13 = () => {
     }
   }, [userData]);
 
-  // Auto-populate CHACode and Shipping Bill chaNm when shipperNm is provided
+  // Auto-populate CHACode, Shipping Bill chaNm, and chaPan when shipperNm is provided
   useEffect(() => {
     if (formData.shipperNm && formData.shipperNm.trim()) {
-      setFormData((prev) => {
-        let updated = false;
-        let newCHACode = prev.CHACode;
-        
-        // Auto-populate CHACode if it's empty
-        if (!prev.CHACode) {
-          newCHACode = "AAKCS6838D";
-          updated = true;
-        }
+      // Check if we actually need to update to avoid infinite loop
+      const needsCHACodeUpdate = !formData.CHACode;
+      const needsContainersUpdate = formData.containers.some((c) => {
+        const sb = c.sbDtlsVo?.[0];
+        return !sb || !sb.chaNm || !sb.chaPan;
+      });
 
-        // Auto-populate chaNm in all container shipping bills if it's empty
-        const newContainers = prev.containers.map((container) => {
-          if (container.sbDtlsVo && container.sbDtlsVo[0]) {
-            if (!container.sbDtlsVo[0].chaNm) {
-              updated = true;
-              return {
-                ...container,
-                sbDtlsVo: [
-                  {
-                    ...container.sbDtlsVo[0],
-                    chaNm: "SURAJ FORWARDERS AND SHIPPING AGENCY",
-                  },
-                  ...container.sbDtlsVo.slice(1),
-                ],
-              };
-            }
+      if (needsCHACodeUpdate || needsContainersUpdate) {
+        setFormData((prev) => {
+          let newCHACode = prev.CHACode;
+          
+          // Auto-populate CHACode if it's empty
+          if (!prev.CHACode) {
+            newCHACode = "AAKCS6838D";
           }
-          return container;
-        });
 
-        if (updated) {
+          // Auto-populate chaNm and chaPan in all container shipping bills if empty
+          const newContainers = prev.containers.map((container) => {
+            const currentSb = container.sbDtlsVo?.[0] || {
+              shipBillInvNo: "",
+              shipBillDt: "",
+              leoNo: "",
+              leoDt: "",
+              exporterNm: "",
+              exporterIec: "",
+              noOfPkg: 0,
+            };
+
+            const updatedSb = {
+              ...currentSb,
+              chaNm: currentSb.chaNm || "SURAJ FORWARDERS AND SHIPPING AGENCY",
+              chaPan: currentSb.chaPan || "AAKCS6838D",
+            };
+
+            return {
+              ...container,
+              sbDtlsVo: [updatedSb, ...(container.sbDtlsVo?.slice(1) || [])],
+            };
+          });
+
           return {
             ...prev,
             CHACode: newCHACode,
             containers: newContainers,
           };
-        }
-        return prev;
-      });
+        });
+      }
     }
-  }, [formData.shipperNm, formData.containers.length]);
+  }, [formData]);
 
   // Load Master Data on component mount
   useEffect(() => {

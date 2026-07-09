@@ -690,14 +690,7 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
       return false;
 
     case 'CHACode':
-      if (formData.shipperNm && formData.shipperNm.trim()) {
-        return true;
-      }
-      if (formData.locId === "INNSA1") {
-        const hasAny = !!formData.FFCode || !!formData.IECode || !!formData.CHACode;
-        return !hasAny;
-      }
-      return false;
+      return true; // Required since shipper name is always required
 
     case 'shipBillInvNo':
     case 'shipBillDt':
@@ -1543,9 +1536,9 @@ export const isFieldVisible = (fieldName, formData) => {
     return locId === "INTUT1" && terminalCode === "DBGT";
   }
 
-  // CHA/FF/IE Code - Nhavasheva or if CHACode is necessary because shipperNm is passed
+  // CHA/FF/IE Code - Nhavasheva or if CHACode is necessary because shipperNm is required
   if (["CHACode", "FFCode", "IECode"].includes(fieldName)) {
-    if (fieldName === "CHACode" && formData.shipperNm && formData.shipperNm.trim()) {
+    if (fieldName === "CHACode") {
       return true;
     }
     return locId === "INNSA1";
