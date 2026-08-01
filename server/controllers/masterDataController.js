@@ -5,6 +5,8 @@ import { SHIPPING_LINES } from "./shippingLine.js";
 import { HAULIERS } from "./haulier.js";
 import { CFS_CODES } from "./cfsCodes.js";
 import Fpod from "../models/Fpod.js";
+import Shipper from "../models/Shipper.js";
+
 
 
 export const getShippingLines = async (req, res) => {
@@ -241,4 +243,205 @@ export const getFpodCodes = async (req, res) => {
         });
     }
 };
+
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let shipperMasterCache = null;
+
+export const loadShipperMaster = () => {
+    if (shipperMasterCache) return shipperMasterCache;
+    try {
+        const csvPath = path.join(__dirname, "../Shipper Master.csv");
+        if (!fs.existsSync(csvPath)) {
+            console.warn("Shipper Master.csv not found at", csvPath);
+            return [];
+        }
+        const fileContent = fs.readFileSync(csvPath, "utf-8");
+        const lines = fileContent.split(/\r?\n/);
+        const shippers = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const firstCommaIndex = line.indexOf(",");
+            if (firstCommaIndex !== -1) {
+                const shipperCd = line.substring(0, firstCommaIndex).replace(/^"|"$/g, "").trim();
+                const shipperNm = line.substring(firstCommaIndex + 1).replace(/^"|"$/g, "").trim();
+                if (shipperCd || shipperNm) {
+                    shippers.push({ shipperCd, shipperNm });
+                }
+            }
+        }
+        shipperMasterCache = shippers;
+        return shipperMasterCache;
+    } catch (err) {
+        console.error("Error loading Shipper Master CSV:", err);
+        return [];
+    }
+};
+
+export const getShippers = async (req, res) => {
+    try {
+        const { search } = req.query;
+        let query = {};
+        let limit = 50;
+
+        if (search && search.trim() !== "") {
+            const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+            query = {
+                $or: [
+                    { SHIPPER_NM: searchRegex },
+                    { shipperNm: searchRegex },
+                    { SHIPPER_CD: searchRegex },
+                    { shipperCd: searchRegex }
+                ]
+            };
+        }
+
+        // Try fetching from MongoDB first
+        const dbResults = await Shipper.find(query).limit(limit).lean();
+
+        if (dbResults && dbResults.length > 0) {
+            const normalized = dbResults.map(s => ({
+                shipperCd: s.SHIPPER_CD || s.shipperCd || "",
+                shipperNm: s.SHIPPER_NM || s.shipperNm || ""
+            }));
+            return res.json({
+                success: true,
+                data: normalized,
+            });
+        }
+
+        // Fallback to local CSV if MongoDB Shipper collection is empty
+        const shippers = loadShipperMaster();
+        let results = shippers;
+
+        if (search && search.trim() !== "") {
+            const q = search.trim().toLowerCase();
+            results = shippers.filter(s =>
+                s.shipperNm.toLowerCase().includes(q) ||
+                s.shipperCd.toLowerCase().includes(q)
+            );
+        }
+
+        res.json({
+            success: true,
+            data: results.slice(0, 50),
+        });
+    } catch (error) {
+        console.error("Get Shippers Error:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+};
+
+export const validateShipperDetails = async (shipperNm, shipperCd) => {
+    const normNm = (shipperNm || "").trim();
+    const normCd = (shipperCd || "").trim();
+
+    if (!normNm) {
+        return { isValid: false, message: "Shipper Name is mandatory and should always be provided." };
+    }
+
+    const nmRegex = new RegExp(`^${normNm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+
+    // Check if MongoDB collection has data
+    const dbCount = await Shipper.countDocuments().catch(() => 0);
+
+    if (dbCount > 0) {
+        // 1. If shipperCd is provided and not empty/OTHR, match by code first
+        if (normCd && normCd.toUpperCase() !== "OTHR") {
+            const cdRegex = new RegExp(`^${normCd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+            const matchByCd = await Shipper.findOne({
+                $or: [{ SHIPPER_CD: cdRegex }, { shipperCd: cdRegex }]
+            }).lean();
+
+            if (matchByCd) {
+                const masterNm = (matchByCd.SHIPPER_NM || matchByCd.shipperNm || "").trim();
+                if (masterNm.toUpperCase() === normNm.toUpperCase()) {
+                    return { isValid: true };
+                } else {
+                    return {
+                        isValid: false,
+                        errorCode: 1024,
+                        message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+                    };
+                }
+            }
+        }
+
+        // 2. Match by Shipper Name in MongoDB
+        const matchByNm = await Shipper.findOne({
+            $or: [{ SHIPPER_NM: nmRegex }, { shipperNm: nmRegex }]
+        }).lean();
+
+        if (matchByNm) {
+            const masterCd = (matchByNm.SHIPPER_CD || matchByNm.shipperCd || "").trim();
+            if (normCd && normCd.toUpperCase() !== "OTHR" && masterCd.toUpperCase() !== normCd.toUpperCase()) {
+                return {
+                    isValid: false,
+                    errorCode: 1024,
+                    message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+                };
+            }
+            return { isValid: true, matchedCd: masterCd };
+        }
+
+        return {
+            isValid: false,
+            errorCode: 1024,
+            message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+        };
+    }
+
+    // CSV Fallback if MongoDB collection is not seeded yet
+    const shippers = loadShipperMaster();
+    if (!shippers || shippers.length === 0) {
+        return { isValid: true };
+    }
+
+    const normNmUpper = normNm.toUpperCase();
+    const normCdUpper = normCd.toUpperCase();
+
+    if (normCdUpper && normCdUpper !== "OTHR") {
+        const matchByCd = shippers.find(s => s.shipperCd.trim().toUpperCase() === normCdUpper);
+        if (matchByCd) {
+            if (matchByCd.shipperNm.trim().toUpperCase() === normNmUpper) {
+                return { isValid: true };
+            } else {
+                return {
+                    isValid: false,
+                    errorCode: 1024,
+                    message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+                };
+            }
+        }
+    }
+
+    const matchByNm = shippers.find(s => s.shipperNm.trim().toUpperCase() === normNmUpper);
+    if (matchByNm) {
+        if (normCdUpper && normCdUpper !== "OTHR" && matchByNm.shipperCd.trim().toUpperCase() !== normCdUpper) {
+            return {
+                isValid: false,
+                errorCode: 1024,
+                message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+            };
+        }
+        return { isValid: true, matchedCd: matchByNm.shipperCd };
+    }
+
+    return {
+        isValid: false,
+        errorCode: 1024,
+        message: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value."
+    };
+};
+
+
 

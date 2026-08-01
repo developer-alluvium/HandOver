@@ -37,6 +37,10 @@ const Form13HeaderSection = ({
   const [fpodLoading, setFpodLoading] = React.useState(false);
   const [fpodSearch, setFpodSearch] = React.useState("");
 
+  const [shipperOptions, setShipperOptions] = React.useState([]);
+  const [shipperLoading, setShipperLoading] = React.useState(false);
+  const [shipperSearch, setShipperSearch] = React.useState("");
+
   React.useEffect(() => {
     let active = true;
     const fetchFpods = async (searchTerm) => {
@@ -74,6 +78,45 @@ const Form13HeaderSection = ({
       active = false;
     };
   }, [fpodSearch]);
+
+  React.useEffect(() => {
+    let active = true;
+    const fetchShippers = async (searchTerm) => {
+      try {
+        setShipperLoading(true);
+        const res = await masterAPI.getShippers(searchTerm);
+        if (active) {
+          const options = (res.data || []).map(item => ({
+            value: item.shipperNm,
+            code: item.shipperCd,
+            label: `${item.shipperNm} (${item.shipperCd})`
+          }));
+          setShipperOptions(options);
+        }
+      } catch (err) {
+        console.error("Failed to load Shipper Master:", err);
+      } finally {
+        if (active) setShipperLoading(false);
+      }
+    };
+
+    if (shipperSearch === "") {
+      fetchShippers("");
+    } else {
+      const timer = setTimeout(() => {
+        fetchShippers(shipperSearch);
+      }, 500);
+
+      return () => {
+        active = false;
+        clearTimeout(timer);
+      };
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [shipperSearch]);
 
   // --- DYNAMIC POD / FPOD OPTIONS FROM local master data ---
   // Managed locally via cascadingPods using the pre-loaded master data.
@@ -253,6 +296,66 @@ const Form13HeaderSection = ({
     if (!isFieldVisible(fieldName, formData)) return null;
 
     const required = isFieldRequired(fieldName, formData);
+
+    if (fieldName === "shipperNm") {
+      return (
+        <Grid item xs={12} sm={6} md={md}>
+          <FormLabelCustom label={label} required={required} />
+          <Autocomplete
+            size="small"
+            freeSolo
+            options={shipperOptions}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') return option;
+              return option.value || option.label || "";
+            }}
+            value={
+              shipperOptions.find(opt => opt.value === formData.shipperNm) || 
+              (formData.shipperNm ? { value: formData.shipperNm, label: formData.shipperNm } : null)
+            }
+            onChange={(e, newValue) => {
+              if (!newValue) {
+                onFormDataChange("header", "shipperNm", "");
+                onFormDataChange("header", "shipperCd", "");
+              } else if (typeof newValue === 'string') {
+                onFormDataChange("header", "shipperNm", newValue);
+                const matched = shipperOptions.find(o => o.value.toUpperCase() === newValue.toUpperCase());
+                onFormDataChange("header", "shipperCd", matched ? matched.code : "");
+              } else {
+                onFormDataChange("header", "shipperNm", newValue.value);
+                onFormDataChange("header", "shipperCd", newValue.code || "");
+              }
+            }}
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === 'input') {
+                setShipperSearch(newInputValue);
+                onFormDataChange("header", "shipperNm", newInputValue);
+                const matched = shipperOptions.find(o => o.value.toUpperCase() === newInputValue.toUpperCase());
+                if (matched) {
+                  onFormDataChange("header", "shipperCd", matched.code);
+                }
+              } else if (reason === 'clear') {
+                setShipperSearch("");
+                onFormDataChange("header", "shipperNm", "");
+                onFormDataChange("header", "shipperCd", "");
+              }
+            }}
+            loading={shipperLoading}
+            disabled={loading}
+            noOptionsText={shipperLoading ? "Loading..." : "No shippers found"}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="standard"
+                placeholder="Search Shipper Name..."
+                fullWidth
+                error={!!validationErrors[fieldName]}
+              />
+            )}
+          />
+        </Grid>
+      );
+    }
 
     if (fieldName === "fpod") {
       return (

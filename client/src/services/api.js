@@ -49,6 +49,8 @@ export const masterAPI = {
   getPODCodes: () => api.get("master/pod-codes"),
   getFpodCodes: (search) =>
     api.get("master/fpod-codes", { params: { search } }),
+  getShippers: (search) =>
+    api.get("master/shippers", { params: { search } }),
   seedShippingLines: (shippingLines) =>
     api.post("master/shipping-lines/seed", { shippingLines }),
 };

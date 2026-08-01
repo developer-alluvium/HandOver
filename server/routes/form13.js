@@ -2,10 +2,11 @@
 import express from "express";
 import Form13 from "../models/Form13.js";
 import axios from "axios";
-
 import config from "../config.js";
+import { validateShipperDetails } from "../controllers/masterDataController.js";
 
 const router = express.Router();
+
 
 // ODeX API Configuration
 const ODEX_CONFIG = {
@@ -243,12 +244,24 @@ router.post("/submit", async (req, res) => {
     const formData = req.body;
     const { skipOdex = false } = formData;
 
-    // Validate required fields including formType
+    // Normalize shipper payload properties according to API guidelines:
+    // General Rules:
+    // 1. shipperNm is mandatory and should always be provided.
+    // 2. shipperCd should always be included in the request. If no code is available, send it as "" (empty string).
+    // 3. shipperCity should also be included. It is mandatory only for Tuticorin – DBGT.
+    formData.shipperNm = (formData.shipperNm || "").trim();
+    formData.shipperCd = formData.shipperCd !== undefined && formData.shipperCd !== null ? formData.shipperCd.toString().trim() : "";
+    const shipperCityVal = formData.shipperCity || formData.ShipperCity || "";
+    formData.shipperCity = shipperCityVal.trim();
+    formData.ShipperCity = shipperCityVal.trim();
+
+    // Validate required fields including formType and shipperNm
     const requiredFields = [
       "pyrCode",
       "vesselNm",
       "pod",
       "formType",
+      "shipperNm",
     ];
     const missingFields = requiredFields.filter((field) => !formData[field]);
 
@@ -256,6 +269,26 @@ router.post("/submit", async (req, res) => {
       return res.status(400).json({
         success: false,
         error: `Missing required fields: ${missingFields.join(", ")}`,
+      });
+    }
+
+    // Special Case – Tuticorin (DBGT)
+    if (formData.locId === "INTUT1" && formData.terminalCode === "DBGT") {
+      if (!formData.shipperCity) {
+        return res.status(400).json({
+          success: false,
+          error: "Shipper City is required for Tuticorin - DBGT terminal.",
+        });
+      }
+    }
+
+    // Shipper Master Validation Error 1024
+    const shipperCheck = await validateShipperDetails(formData.shipperNm, formData.shipperCd);
+    if (!shipperCheck.isValid) {
+      return res.status(400).json({
+        success: false,
+        errorCode: 1024,
+        error: "Shipper Name or Shipper Code is invalid. Shipper details should match with the master data value.",
       });
     }
 
