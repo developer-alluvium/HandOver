@@ -81,15 +81,18 @@ const Form13HeaderSection = ({
 
   React.useEffect(() => {
     let active = true;
-    const fetchShippers = async (searchTerm) => {
+    const fetchShippers = async (searchTerm, locCode) => {
       try {
         setShipperLoading(true);
-        const res = await masterAPI.getShippers(searchTerm);
+        const res = await masterAPI.getShippers(searchTerm, locCode);
         if (active) {
           const options = (res.data || []).map(item => ({
             value: item.shipperNm,
             code: item.shipperCd,
-            label: `${item.shipperNm} (${item.shipperCd})`
+            portCd: item.portCd,
+            label: item.portCd
+              ? `${item.shipperNm} (${item.shipperCd}) [Port: ${item.portCd}]`
+              : `${item.shipperNm} (${item.shipperCd})`
           }));
           setShipperOptions(options);
         }
@@ -101,10 +104,10 @@ const Form13HeaderSection = ({
     };
 
     if (shipperSearch === "") {
-      fetchShippers("");
+      fetchShippers("", formData.locId);
     } else {
       const timer = setTimeout(() => {
-        fetchShippers(shipperSearch);
+        fetchShippers(shipperSearch, formData.locId);
       }, 500);
 
       return () => {
@@ -116,7 +119,7 @@ const Form13HeaderSection = ({
     return () => {
       active = false;
     };
-  }, [shipperSearch]);
+  }, [shipperSearch, formData.locId]);
 
   // --- DYNAMIC POD / FPOD OPTIONS FROM local master data ---
   // Managed locally via cascadingPods using the pre-loaded master data.
@@ -456,6 +459,9 @@ const Form13HeaderSection = ({
       case "issueTo":
         selectOptions = issueToOptions || [];
         break;
+      case "shipperNm":
+        selectOptions = shipperOptions;
+        break;
       default:
         isSelect = false;
     }
@@ -480,14 +486,27 @@ const Form13HeaderSection = ({
               if (typeof option === 'string') return option;
               return option.label || "";
             }}
-            value={selectOptions.find(opt => opt.value === formData[fieldName]) || (fieldName === "cfsCode" ? formData[fieldName] : null) || null}
+            value={
+              selectOptions.find(opt => opt.value === formData[fieldName]) ||
+              ((fieldName === "cfsCode" || fieldName === "shipperNm") ? formData[fieldName] : null) ||
+              null
+            }
             onChange={(e, newValue) => {
               const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
               onFormDataChange("header", fieldName, val);
+              if (fieldName === "shipperNm" && newValue && typeof newValue === 'object' && newValue.code) {
+                onFormDataChange("header", "shipperCd", newValue.code);
+              }
             }}
-            loading={false}
+            onInputChange={(e, newInputValue) => {
+              if (fieldName === "shipperNm") {
+                setShipperSearch(newInputValue);
+                onFormDataChange("header", fieldName, newInputValue);
+              }
+            }}
+            loading={fieldName === "shipperNm" ? shipperLoading : false}
             disabled={isDisabled}
-            freeSolo={fieldName === "cfsCode"}
+            freeSolo={fieldName === "cfsCode" || fieldName === "shipperNm"}
             noOptionsText={`${label} is not present`}
             renderInput={(params) => (
               <TextField

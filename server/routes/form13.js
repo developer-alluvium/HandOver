@@ -283,7 +283,11 @@ router.post("/submit", async (req, res) => {
     }
 
     // Shipper Master Validation Error 1024
-    const shipperCheck = await validateShipperDetails(formData.shipperNm, formData.shipperCd);
+    const shipperCheck = await validateShipperDetails(
+      formData.shipperNm,
+      formData.shipperCd,
+      formData.locId || formData.portCd || formData.portId || ""
+    );
     if (!shipperCheck.isValid) {
       return res.status(400).json({
         success: false,

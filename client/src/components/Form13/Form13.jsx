@@ -1862,12 +1862,11 @@ const Form13 = () => {
         return cleaned;
       };
 
-      // Prepare API payload
+      // Prepare API payload (Strictly adhering to ODeX Section 5.3 specification)
       const rawPayload = {
         hashKey: backendHashKey,
         formType: "F13",
         odexRefNo: formData.odexRefNo,
-        reqId: formData.reqId,
         bookNo: formData.bookNo,
         bnfCode: formData.bnfCode,
         locId: formData.locId,
@@ -1889,25 +1888,16 @@ const Form13 = () => {
         consigneeAddr: formData.consigneeAddr,
         cargoDesc: formData.cargoDesc,
         terminalLoginId: formData.terminalLoginId,
-        stuffTp: formData.stuffTp,
-        icdLoadingPort: formData.icdLoadingPort,
-        voyageNo: formData.voyageNo,
-        haulageTp: formData.haulageTp,
-        isEarlyGateIn: formData.IsEarlyGateIn,
+        IsEarlyGateIn: formData.IsEarlyGateIn,
         shipperCd: formData.shipperCd || "",
-        railOperator: formData.railOperator,
-        shipperCity: formData.shipperCity || formData.ShipperCity || "",
         ShipperCity: formData.shipperCity || formData.ShipperCity || "",
-        ffCode: formData.FFCode,
-        ieCode: formData.IECode,
-        bookLinId: formData.bookLinId,
-        notifyTo: formData.Notify_TO,
-        chaCode: formData.CHACode,
-        placeOfDel: formData.placeOfDel,
-        contactPerson: formData.contactPerson,
-        outsideWindowIssue: formData.outsideWindowIssue,
+        FFCode: formData.FFCode,
+        IECode: formData.IECode,
+        Notify_TO: formData.Notify_TO,
+        CHACode: formData.CHACode,
         cfsCode: formData.cfsCode,
-        emailId: formData.emailId,
+        email_Id: formData.emailId,
+        bookCopyBlNo: formData.bookCopyBlNo,
         cntrList: mergeContainers(formData.containers).map((container) => {
           // vgmWt formatting: if no decimal then add two decimal from frontend
           let formattedVgmWt = container.vgmWt;

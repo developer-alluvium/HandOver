@@ -286,29 +286,66 @@ export const loadShipperMaster = () => {
 
 export const getShippers = async (req, res) => {
     try {
-        const { search } = req.query;
+        const { search, portCd, location, PORT_CD } = req.query;
+        const targetPort = (portCd || location || PORT_CD || "").trim();
         let query = {};
         let limit = 50;
 
+        const conditions = [];
+
         if (search && search.trim() !== "") {
             const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-            query = {
+            conditions.push({
                 $or: [
                     { SHIPPER_NM: searchRegex },
                     { shipperNm: searchRegex },
                     { SHIPPER_CD: searchRegex },
                     { shipperCd: searchRegex }
                 ]
-            };
+            });
         }
 
-        // Try fetching from MongoDB first
-        const dbResults = await Shipper.find(query).limit(limit).lean();
+        if (targetPort) {
+            const portRegex = new RegExp(`^${targetPort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
+            conditions.push({
+                $or: [
+                    { PORT_CD: portRegex },
+                    { portCd: portRegex }
+                ]
+            });
+        }
+
+        if (conditions.length === 1) {
+            query = conditions[0];
+        } else if (conditions.length > 1) {
+            query = { $and: conditions };
+        }
+
+        // Fetch from MongoDB
+        let dbResults = await Shipper.find(query).limit(limit).lean();
+
+        // Fallback: If location filter was provided but returned 0 results, retry without location filter
+        if ((!dbResults || dbResults.length === 0) && targetPort) {
+            let fallbackQuery = {};
+            if (search && search.trim() !== "") {
+                const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+                fallbackQuery = {
+                    $or: [
+                        { SHIPPER_NM: searchRegex },
+                        { shipperNm: searchRegex },
+                        { SHIPPER_CD: searchRegex },
+                        { shipperCd: searchRegex }
+                    ]
+                };
+            }
+            dbResults = await Shipper.find(fallbackQuery).limit(limit).lean();
+        }
 
         if (dbResults && dbResults.length > 0) {
             const normalized = dbResults.map(s => ({
                 shipperCd: s.SHIPPER_CD || s.shipperCd || "",
-                shipperNm: s.SHIPPER_NM || s.shipperNm || ""
+                shipperNm: s.SHIPPER_NM || s.shipperNm || "",
+                portCd: s.PORT_CD || s.portCd || ""
             }));
             return res.json({
                 success: true,
@@ -316,7 +353,7 @@ export const getShippers = async (req, res) => {
             });
         }
 
-        // Fallback to local CSV if MongoDB Shipper collection is empty
+        // Fallback to local CSV if MongoDB Shipper collection is empty or has no match
         const shippers = loadShipperMaster();
         let results = shippers;
 
@@ -341,9 +378,10 @@ export const getShippers = async (req, res) => {
     }
 };
 
-export const validateShipperDetails = async (shipperNm, shipperCd) => {
+export const validateShipperDetails = async (shipperNm, shipperCd, portCd = "") => {
     const normNm = (shipperNm || "").trim();
     const normCd = (shipperCd || "").trim();
+    const normPort = (portCd || "").trim();
 
     if (!normNm) {
         return { isValid: false, message: "Shipper Name is mandatory and should always be provided." };
@@ -355,12 +393,18 @@ export const validateShipperDetails = async (shipperNm, shipperCd) => {
     const dbCount = await Shipper.countDocuments().catch(() => 0);
 
     if (dbCount > 0) {
+        const portCondition = normPort ? { $or: [{ PORT_CD: new RegExp(`^${normPort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") }, { portCd: new RegExp(`^${normPort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") }] } : null;
+
         // 1. If shipperCd is provided and not empty/OTHR, match by code first
         if (normCd && normCd.toUpperCase() !== "OTHR") {
             const cdRegex = new RegExp(`^${normCd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i");
-            const matchByCd = await Shipper.findOne({
-                $or: [{ SHIPPER_CD: cdRegex }, { shipperCd: cdRegex }]
-            }).lean();
+            const codeCondition = { $or: [{ SHIPPER_CD: cdRegex }, { shipperCd: cdRegex }] };
+            const fullQuery = portCondition ? { $and: [portCondition, codeCondition] } : codeCondition;
+
+            let matchByCd = await Shipper.findOne(fullQuery).lean();
+            if (!matchByCd && normPort) {
+                matchByCd = await Shipper.findOne(codeCondition).lean();
+            }
 
             if (matchByCd) {
                 const masterNm = (matchByCd.SHIPPER_NM || matchByCd.shipperNm || "").trim();
@@ -377,9 +421,13 @@ export const validateShipperDetails = async (shipperNm, shipperCd) => {
         }
 
         // 2. Match by Shipper Name in MongoDB
-        const matchByNm = await Shipper.findOne({
-            $or: [{ SHIPPER_NM: nmRegex }, { shipperNm: nmRegex }]
-        }).lean();
+        const nameCondition = { $or: [{ SHIPPER_NM: nmRegex }, { shipperNm: nmRegex }] };
+        const fullNameQuery = portCondition ? { $and: [portCondition, nameCondition] } : nameCondition;
+
+        let matchByNm = await Shipper.findOne(fullNameQuery).lean();
+        if (!matchByNm && normPort) {
+            matchByNm = await Shipper.findOne(nameCondition).lean();
+        }
 
         if (matchByNm) {
             const masterCd = (matchByNm.SHIPPER_CD || matchByNm.shipperCd || "").trim();
