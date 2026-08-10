@@ -26,7 +26,8 @@ app.use(
       "https://export.alvision.in",
       "http://handover-odex.s3-website.ap-south-1.amazonaws.com",
       "http://elock-tracking.s3-website.ap-south-1.amazonaws.com",
-      "http://3.108.244.38/api/auth/auto-login"
+      "http://3.108.244.38/api/auth/auto-login",
+      "https://testingimport.alvision.in"
     ],
 
     credentials: true,

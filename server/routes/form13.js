@@ -253,7 +253,12 @@ router.post("/submit", async (req, res) => {
     formData.shipperCd = formData.shipperCd !== undefined && formData.shipperCd !== null ? formData.shipperCd.toString().trim() : "";
     const shipperCityVal = formData.shipperCity || formData.ShipperCity || "";
     formData.shipperCity = shipperCityVal.trim();
-    formData.ShipperCity = shipperCityVal.trim();
+    delete formData.ShipperCity;
+    if (formData.email_Id) {
+      formData.emailId = formData.emailId || formData.email_Id;
+      delete formData.email_Id;
+    }
+    delete formData.odexRefNo;
 
     // Validate required fields including formType and shipperNm
     const requiredFields = [

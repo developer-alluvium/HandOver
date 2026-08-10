@@ -1866,7 +1866,6 @@ const Form13 = () => {
       const rawPayload = {
         hashKey: backendHashKey,
         formType: "F13",
-        odexRefNo: formData.odexRefNo,
         bookNo: formData.bookNo,
         bnfCode: formData.bnfCode,
         locId: formData.locId,
@@ -1890,13 +1889,13 @@ const Form13 = () => {
         terminalLoginId: formData.terminalLoginId,
         IsEarlyGateIn: formData.IsEarlyGateIn,
         shipperCd: formData.shipperCd || "",
-        ShipperCity: formData.shipperCity || formData.ShipperCity || "",
+        shipperCity: formData.shipperCity || formData.ShipperCity || "",
         FFCode: formData.FFCode,
         IECode: formData.IECode,
         Notify_TO: formData.Notify_TO,
         CHACode: formData.CHACode,
         cfsCode: formData.cfsCode,
-        email_Id: formData.emailId,
+        emailId: formData.emailId || formData.email_Id || "",
         bookCopyBlNo: formData.bookCopyBlNo,
         cntrList: mergeContainers(formData.containers).map((container) => {
           // vgmWt formatting: if no decimal then add two decimal from frontend
