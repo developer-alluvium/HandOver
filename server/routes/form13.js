@@ -260,6 +260,28 @@ router.post("/submit", async (req, res) => {
     }
     delete formData.odexRefNo;
 
+    // Key normalization for ODeX payload compliance
+    if (formData.FFCode !== undefined) {
+      formData.ffCode = formData.ffCode || formData.FFCode;
+      delete formData.FFCode;
+    }
+    if (formData.IECode !== undefined) {
+      formData.ieCode = formData.ieCode || formData.IECode;
+      delete formData.IECode;
+    }
+    if (formData.CHACode !== undefined) {
+      formData.chaCode = formData.chaCode || formData.CHACode;
+      delete formData.CHACode;
+    }
+    if (formData.Notify_TO !== undefined) {
+      formData.notifyTo = formData.notifyTo || formData.Notify_TO;
+      delete formData.Notify_TO;
+    }
+    if (formData.IsEarlyGateIn !== undefined) {
+      formData.isEarlyGateIn = formData.isEarlyGateIn || formData.IsEarlyGateIn;
+      delete formData.IsEarlyGateIn;
+    }
+
     // Validate required fields including formType and shipperNm
     const requiredFields = [
       "pyrCode",
