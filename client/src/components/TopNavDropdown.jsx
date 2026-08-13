@@ -25,7 +25,7 @@ const TopNavDropdown = ({ sx = {} }) => {
 
   // --- Location Dialog State ---
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const [selectedLocId, setSelectedLocId] = useState("");
+  const [selectedLocId, setSelectedLocId] = useState("INMUN1");
 
   const handleLocationDialogClose = () => {
     setLocationDialogOpen(false);
@@ -33,7 +33,7 @@ const TopNavDropdown = ({ sx = {} }) => {
 
   const handleLocationConfirm = () => {
     setLocationDialogOpen(false);
-    const stateObj = { presetLocId: selectedLocId || null };
+    const stateObj = { presetLocId: selectedLocId || "INMUN1" };
     if (location.pathname === "/form13") {
       stateObj.reset = Date.now();
       navigate("/form13", { state: stateObj, replace: true });

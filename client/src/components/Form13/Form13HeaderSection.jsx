@@ -140,17 +140,26 @@ const Form13HeaderSection = ({
     )].sort();
   }, [allActiveVessels, formData.locId]);
 
-  // 3. Location Options (Filtered by Shipping Line)
+  // 3. Location Options (Filtered by Shipping Line if selected, defaults to all portIds)
   const locOptions = React.useMemo(() => {
-    const locIds = [...new Set(
-      allActiveVessels
-        .filter(v => !formData.bnfCode || v.bnfCode === formData.bnfCode)
-        .map(v => v.locId)
-    )];
-    return locIds.map(id => {
-      const port = portIds.find(p => p.value === id);
-      return { value: id, label: port ? `${id} - ${port.label}` : id };
-    }).sort((a, b) => a.label.localeCompare(b.label));
+    if (formData.bnfCode) {
+      const locIds = [...new Set(
+        allActiveVessels
+          .filter(v => v.bnfCode === formData.bnfCode)
+          .map(v => v.locId)
+      )];
+      if (locIds.length > 0) {
+        return locIds.map(id => {
+          const port = portIds.find(p => p.value === id);
+          return { value: id, label: port ? `${id} - ${port.label}` : id };
+        }).sort((a, b) => a.label.localeCompare(b.label));
+      }
+    }
+    // Fallback: return all portIds
+    return portIds.map(p => ({
+      value: p.value,
+      label: `${p.value} - ${p.label}`
+    })).sort((a, b) => a.label.localeCompare(b.label));
   }, [allActiveVessels, formData.bnfCode, portIds]);
 
   // 4. Vessel Options (Filtered by SL + Loc)

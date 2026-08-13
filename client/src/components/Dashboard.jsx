@@ -149,7 +149,7 @@ const Dashboard = () => {
 
   // --- Location Dialog State ---
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const [selectedLocId, setSelectedLocId] = useState("");
+  const [selectedLocId, setSelectedLocId] = useState("INMUN1");
 
   const handleOpenLocationDialog = () => {
     setLocationDialogOpen(true);
@@ -161,7 +161,7 @@ const Dashboard = () => {
 
   const handleLocationConfirm = () => {
     setLocationDialogOpen(false);
-    navigate("/form13", { state: { presetLocId: selectedLocId || null } });
+    navigate("/form13", { state: { presetLocId: selectedLocId || "INMUN1" } });
   };
 
   const handleLogout = () => {

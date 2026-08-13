@@ -836,8 +836,8 @@ const Form13 = () => {
         setIsEditMode(false);
         setRequestId(null);
 
-        // Pre-fill locId if user selected a location from Dashboard
-        const presetLocId = location.state?.presetLocId || "";
+        // Pre-fill locId if user selected a location from Dashboard (defaults to INMUN1 - Mundra)
+        const presetLocId = location.state?.presetLocId || "INMUN1";
         setFormData({
           ...initialFormData,
           locId: presetLocId,
