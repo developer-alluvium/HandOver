@@ -38,6 +38,7 @@ const apiLogSchema = new mongoose.Schema({
 apiLogSchema.index({ moduleName: 1, createdAt: -1 });
 apiLogSchema.index({ "request.body.cntnrNo": 1 });
 apiLogSchema.index({ "request.body.bookNo": 1 });
+apiLogSchema.index({ moduleName: 1, "request.body.bookNo": 1, "request.body.cntnrNo": 1, createdAt: -1 });
 
 // Use singular model name and let Mongoose pluralize it
 export default mongoose.model('ApiLog', apiLogSchema);

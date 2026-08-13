@@ -1149,7 +1149,7 @@ const VGMForm = ({
         "https://eximbot.alvision.in/export/api/exports",
         {
           params: {
-            status: "Pending",
+            status: "All",
             search: searchVal,
             page: 1,
             limit: 20,
@@ -1464,6 +1464,13 @@ const VGMForm = ({
 
       formik.setValues(updates);
       setFormValues(updates);
+
+      // Clear attachments & reset edit mode for a new submission request
+      setAttachments([]);
+      setIsEditMode(false);
+      setRequestData(null);
+      setIsPdfDownloaded(false);
+
       enqueueSnackbar(`Switched to container ${containerNo}`, { variant: "success" });
     }
   };
@@ -2051,6 +2058,8 @@ const VGMForm = ({
             setSubmittedVGMData(null);
             formik.resetForm();
             setAttachments([]);
+            setIsEditMode(false);
+            setRequestData(null);
             setIsPdfDownloaded(false);
           }}
         />

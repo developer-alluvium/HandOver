@@ -1515,9 +1515,17 @@ export const isFieldVisible = (fieldName, formData) => {
     return ["B", "C", "F_CFS"].includes(origin);
   }
 
-  // Shipping Instruction No - Always visible
+  // Shipping Instruction No - Conditional based on Shipping Line / Location rules
   if (fieldName === "shpInstructNo") {
-    return true;
+    const lineRules = SHIPPING_LINE_RULES[bnfCode];
+    if (lineRules && lineRules.requires?.includes("shpInstructNo")) {
+      return true;
+    }
+    const locRules = LOCATION_SPECIFIC_RULES[locId];
+    if (locRules && locRules.requires?.includes("shpInstructNo")) {
+      return true;
+    }
+    return isFieldRequired("shpInstructNo", formData);
   }
 
   // Booking No - Broadly visible

@@ -6,6 +6,7 @@ import {
   Box,
   Paper,
   Typography,
+  TextField,
   Button,
   Alert,
   CircularProgress,
@@ -18,8 +19,9 @@ import {
   DialogActions,
   DialogContentText,
 } from "@mui/material";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Save as SaveIcon, Send as SendIcon } from "@mui/icons-material";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { Save as SaveIcon, Send as SendIcon, Search as SearchIcon } from "@mui/icons-material";
+import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { form13API } from "../../services/form13API";
 import { vgmAPI, masterAPI } from "../../services/api";
@@ -31,6 +33,7 @@ import Form13AttachmentSection from "./Form13AttachmentSection";
 import AppbarComponent from "../AppbarComponent";
 import {
   isFieldRequired,
+  isFieldVisible,
   isSpecialStowRequired,
   validatePattern,
   validateLength,
@@ -46,6 +49,7 @@ import "../../styles/Form13.scss";
 
 const Form13 = () => {
   const { userData } = useAuth();
+  const { "*": urlJobNo } = useParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -57,6 +61,10 @@ const Form13 = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [requestId, setRequestId] = useState(null);
   const [isCheckingPrevious, setIsCheckingPrevious] = useState(false);
+
+  // Job Search State
+  const [jobNoSearch, setJobNoSearch] = useState("");
+  const [loadingJob, setLoadingJob] = useState(false);
 
   // Master Data States
   const [vessels, setVessels] = useState([]);
@@ -75,7 +83,7 @@ const Form13 = () => {
     reqId: "",
     pyrCode: userData?.pyrCode || "",
     bnfCode: "",
-    locId: "",
+    locId: "INMUN1",
     vesselNm: "",
     viaNo: "",
     terminalCode: "",
@@ -272,12 +280,14 @@ const Form13 = () => {
     return unmerged;
   };
 
-  // Pre-fill pyrCode when userData becomes available
+  // Pre-fill pyrCode and emailId when userData becomes available
   useEffect(() => {
-    if (userData?.pyrCode) {
+    if (userData) {
+      const email = userData.email || userData.emailId || (userData.username && userData.username.includes("@") ? userData.username : "");
       setFormData((prev) => ({
         ...prev,
-        pyrCode: prev.pyrCode || userData.pyrCode,
+        pyrCode: prev.pyrCode || userData.pyrCode || "",
+        emailId: prev.emailId || email || "",
       }));
     }
   }, [userData]);
@@ -339,6 +349,254 @@ const Form13 = () => {
   useEffect(() => {
     loadMasterData();
   }, []);
+
+  // Handle Job No from URL parameters
+  useEffect(() => {
+    if (urlJobNo && masterDataLoaded && !loadingJob) {
+      const cleanedUrlJobNo = decodeURIComponent(urlJobNo.replace(/^\//, ''));
+      setJobNoSearch(cleanedUrlJobNo);
+      handleJobSearch(cleanedUrlJobNo);
+    }
+  }, [urlJobNo, masterDataLoaded]);
+
+  const handleJobSearch = async (forcedJobNo) => {
+    const searchVal = typeof forcedJobNo === "string" ? forcedJobNo : jobNoSearch;
+    if (!searchVal) {
+      setError("Please enter a Job No to search");
+      return;
+    }
+
+    setLoadingJob(true);
+    try {
+      const response = await axios.get(
+        "https://eximbot.alvision.in/export/api/exports",
+        {
+          params: {
+            status: "All",
+            search: searchVal,
+            page: 1,
+            limit: 20,
+          },
+        }
+      );
+
+      if (
+        response.data &&
+        response.data.success &&
+        response.data.data &&
+        response.data.data.jobs &&
+        response.data.data.jobs.length > 0
+      ) {
+        const job = response.data.data.jobs[0];
+
+        const getField = (obj, ...fields) => {
+          if (!obj) return "";
+          for (const f of fields) {
+            if (obj[f] !== undefined && obj[f] !== null) return obj[f];
+            const lowerF = f.toLowerCase();
+            if (obj[lowerF] !== undefined && obj[lowerF] !== null) return obj[lowerF];
+          }
+          return "";
+        };
+
+        // 1. Shipping Line (bookLinId)
+        const rawShippingLine = job.shipping_line_airline || job.shippingLine || (job.operations?.[0]?.statusDetails?.[0]?.shippingLine) || "";
+        let foundLineId = "";
+        if (rawShippingLine && shippingLines && shippingLines.length > 0) {
+          const lineSearch = rawShippingLine.toLowerCase().trim();
+          const match = shippingLines.find(sl => {
+            const val = (sl.value || sl.code || "").toLowerCase().trim();
+            const lab = (sl.label || sl.name || "").toLowerCase().trim();
+            return val === lineSearch || lab === lineSearch || lineSearch.includes(val) || lineSearch.includes(lab);
+          });
+          if (match) foundLineId = match.value || match.code || "";
+        }
+
+        // 2. Booking No (bookNo) & Shipping Instruction No (shpInstructNo = bookNo)
+        const bNo = job.booking_no || job.bookingNo || "";
+
+        // 3. User email & default mobile
+        const userEmail = userData?.email || userData?.emailId || (userData?.username && userData.username.includes("@") ? userData.username : "");
+        const defaultMobile = "99243 04250";
+
+        // 4. Shipper Name & Code (Search using first word of exporter)
+        const rawExporter = job.exporter || "";
+        let foundShipperNm = rawExporter;
+        let foundShipperCd = "";
+
+        if (rawExporter) {
+          const firstWord = rawExporter.trim().split(/\s+/)[0];
+          try {
+            const res = await masterAPI.getShippers(firstWord, job.custom_house || job.port_of_loading || "");
+            const options = res.data || [];
+            if (options && options.length > 0) {
+              const matched = options.find(opt =>
+                (opt.shipperNm || "").toLowerCase().includes(firstWord.toLowerCase())
+              ) || options[0];
+
+              if (matched) {
+                foundShipperNm = matched.shipperNm || rawExporter;
+                foundShipperCd = matched.shipperCd || "";
+              }
+            }
+          } catch (e) {
+            console.warn("Shipper master lookup failed:", e);
+          }
+        }
+
+        // 5. Consignee Name & Address
+        const consigneeNm = job.consignee_name || (job.consignees?.[0]?.consignee_name) || "";
+        const consigneeAddr = job.consignee_address || (job.consignees?.[0]?.address) || job.exporter_address || "";
+
+        // 6. Containers list
+        const rawContainers = Array.isArray(job.containers) ? job.containers : (job.operations?.[0]?.containerdetails || job.operations?.[0]?.containerDetails || []);
+
+        let formattedContainers = [];
+        if (rawContainers && rawContainers.length > 0) {
+          formattedContainers = rawContainers.map((c) => {
+            const cntrNo = getField(c, "containerNo", "cntnrNo", "containerno");
+            const rawSize = getField(c, "containerSize", "type", "size", "cntnrSize");
+            let cntrSize = "20";
+            if (rawSize) {
+              const match = String(rawSize).match(/20|40|45/);
+              if (match) cntrSize = match[0];
+            }
+            const iso = getField(c, "isoCode", "iso", "iso_code") || (cntrSize === "40" ? "4510" : "2210");
+            const agentSealNo = getField(c, "sealNo", "customSealNo", "shippingLineSealNo", "sealno");
+
+            let vgmWt = getField(c, "vgmWtInvoice", "vgmwtinvoice", "vgmWt", "totWt");
+            if (!vgmWt && c.grossWeight) {
+              vgmWt = (Number(c.grossWeight) / 1000).toFixed(3);
+            }
+
+            const rawHaulier = getField(c, "haulier", "transhipper_code", "transhipperCode", "transporter") ||
+              job.transhipper_code ||
+              job.transhipperCode ||
+              job.haulier ||
+              (job.operations?.[0]?.transporterDetails?.[0]?.transporterName) ||
+              "";
+
+            let foundHaulier = rawHaulier;
+            if (rawHaulier && hauliers && hauliers.length > 0) {
+              const hSearch = rawHaulier.toLowerCase().trim();
+              const match = hauliers.find(h => {
+                const val = (h.value || "").toLowerCase().trim();
+                const lab = (h.label || "").toLowerCase().trim();
+                return val === hSearch || lab === hSearch || hSearch.includes(val) || hSearch.includes(lab) || lab.includes(hSearch);
+              });
+              if (match) {
+                foundHaulier = match.value || match.label;
+              }
+            }
+
+            return {
+              cntnrReqId: "",
+              cntnrNo: cntrNo || "",
+              cntnrSize: cntrSize,
+              iso: iso || "",
+              agentSealNo: agentSealNo || "",
+              customSealNo: agentSealNo || "",
+              vgmWt: vgmWt ? String(vgmWt) : "",
+              vgmViaODeX: "N",
+              doNo: "",
+              temp: "0",
+              volt: "0",
+              imoNo1: "",
+              unNo1: "",
+              imoNo2: "",
+              unNo2: "",
+              imoNo3: "",
+              unNo3: "",
+              imoNo4: "",
+              unNo4: "",
+              rightDimensions: "0.00",
+              topDimensions: "0.00",
+              backDimensions: "0.00",
+              leftDimensions: "0.00",
+              frontDimensions: "0.00",
+              odcUnits: "",
+              chaRemarks: "",
+              vehicleNo: "",
+              driverLicNo: "",
+              driverNm: "",
+              haulier: foundHaulier || "",
+              spclStow: "",
+              spclStowRemark: "",
+              status: "REQUESTED",
+              shpInstructNo: bNo,
+              cntnrTareWgt: 0,
+              cargoVal: 0,
+              commodityName: "",
+              hsnCode: "",
+              sbDtlsVo: [
+                {
+                  shipBillInvNo: job.sb_no || "",
+                  shipBillDt: job.sb_date || "",
+                  leoNo: "",
+                  leoDt: "",
+                  chaNm: "SURAJ FORWARDERS AND SHIPPING AGENCY",
+                  chaPan: "AAKCS6838D",
+                  exporterNm: job.exporter || "",
+                  exporterIec: job.ieCode || "",
+                  noOfPkg: job.total_no_of_pkgs || job.no_of_packages || getField(c, "pkgsStuffed") || 0,
+                }
+              ]
+            };
+          });
+        } else {
+          formattedContainers = initialFormData.containers;
+        }
+
+        // Location resolution (defaults to INMUN1 - Mundra)
+        let resolvedLocId = "INMUN1";
+        const rawLoc = (job.port_of_loading || job.custom_house || "").toUpperCase();
+        if (rawLoc.includes("INNSA") || rawLoc.includes("NHAVA") || rawLoc.includes("JNPT")) {
+          resolvedLocId = "INNSA1";
+        } else if (rawLoc.includes("INHZA") || rawLoc.includes("HAZIRA")) {
+          resolvedLocId = "INHZA1";
+        } else if (rawLoc.includes("INPAV") || rawLoc.includes("PIPAVAV")) {
+          resolvedLocId = "INPAV1";
+        } else if (rawLoc.includes("INMAA") || rawLoc.includes("CHENNAI")) {
+          resolvedLocId = "INMAA1";
+        } else if (rawLoc.includes("INTUT") || rawLoc.includes("TUTICORIN")) {
+          resolvedLocId = "INTUT1";
+        } else if (rawLoc.includes("INCCU") || rawLoc.includes("KOLKATA")) {
+          resolvedLocId = "INCCU1";
+        } else if (rawLoc.includes("INKAT") || rawLoc.includes("KATTUPALLI")) {
+          resolvedLocId = "INKAT1";
+        } else if (rawLoc.includes("INVTZ") || rawLoc.includes("VISAKHAPATNAM")) {
+          resolvedLocId = "INVTZ1";
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          bnfCode: foundLineId || prev.bnfCode,
+          locId: resolvedLocId,
+          vesselNm: job.vessel_name || job.vessel || prev.vesselNm,
+          bookNo: bNo || prev.bookNo,
+          shpInstructNo: bNo || prev.shpInstructNo,
+          emailId: userEmail || prev.emailId,
+          mobileNo: defaultMobile,
+          shipperNm: foundShipperNm || prev.shipperNm,
+          shipperCd: foundShipperCd || prev.shipperCd,
+          consigneeNm: consigneeNm || prev.consigneeNm,
+          consigneeAddr: consigneeAddr || prev.consigneeAddr,
+          issueTo: "Shipper",
+          IECode: job.ieCode || prev.IECode,
+          containers: formattedContainers
+        }));
+
+        setSuccess(`Form 13 pre-filled with details for Job No: ${searchVal}`);
+      } else {
+        setError("No job found matching Job No: " + searchVal);
+      }
+    } catch (err) {
+      console.error("Error searching job for Form 13:", err);
+      setError("Failed to fetch job details from Exim API: " + err.message);
+    } finally {
+      setLoadingJob(false);
+    }
+  };
 
   const loadMasterData = async () => {
     try {
@@ -1862,7 +2120,10 @@ const Form13 = () => {
         return cleaned;
       };
 
-      // Prepare API payload (Strictly adhering to ODeX Section 5.3 specification)
+      // Helper to check if a field is visible on the UI
+      const isVisible = (field) => isFieldVisible(field, formData);
+
+      // Prepare API payload (Only sending fields that are visible on the UI as per conditional rules)
       const rawPayload = {
         hashKey: backendHashKey,
         formType: "F13",
@@ -1874,29 +2135,29 @@ const Form13 = () => {
         terminalCode: formData.terminalCode,
         service: formData.service,
         pod: formData.pod,
-        fpod: formData.fpod,
+        fpod: isVisible("fpod") ? formData.fpod : "",
         cargoTp: formData.cargoTp,
         origin: formData.origin,
-        shpInstructNo: formData.shpInstructNo,
+        shpInstructNo: isVisible("shpInstructNo") ? formData.shpInstructNo : "",
         cntnrStatus: (formData.cntnrStatus || "").toUpperCase(),
         mobileNo: formData.mobileNo,
-        issueTo: formData.issueTo,
+        issueTo: isVisible("issueTo") ? formData.issueTo : "",
         shipperNm: formData.shipperNm,
         pyrCode: formData.pyrCode,
-        consigneeNm: formData.consigneeNm,
-        consigneeAddr: formData.consigneeAddr,
-        cargoDesc: formData.cargoDesc,
-        terminalLoginId: formData.terminalLoginId,
+        consigneeNm: isVisible("consigneeNm") ? formData.consigneeNm : "",
+        consigneeAddr: isVisible("consigneeAddr") ? formData.consigneeAddr : "",
+        cargoDesc: isVisible("cargoDesc") ? formData.cargoDesc : "",
+        terminalLoginId: isVisible("terminalLoginId") ? formData.terminalLoginId : "",
         isEarlyGateIn: formData.isEarlyGateIn || formData.IsEarlyGateIn || "N",
         shipperCd: formData.shipperCd || "",
-        shipperCity: formData.shipperCity || formData.ShipperCity || "",
-        ffCode: formData.ffCode || formData.FFCode || "",
-        ieCode: formData.ieCode || formData.IECode || "",
+        shipperCity: isVisible("ShipperCity") ? (formData.shipperCity || formData.ShipperCity || "") : "",
+        ffCode: isVisible("FFCode") ? (formData.ffCode || formData.FFCode || "") : "",
+        ieCode: isVisible("IECode") ? (formData.ieCode || formData.IECode || "") : "",
         notifyTo: formData.notifyTo || formData.Notify_TO || "",
-        chaCode: formData.chaCode || formData.CHACode || "",
-        cfsCode: formData.cfsCode,
+        chaCode: isVisible("CHACode") ? (formData.chaCode || formData.CHACode || "") : "",
+        cfsCode: isVisible("cfsCode") ? formData.cfsCode : "",
         emailId: formData.emailId || formData.email_Id || "",
-        bookCopyBlNo: formData.bookCopyBlNo,
+        bookCopyBlNo: isVisible("bookCopyBlNo") ? formData.bookCopyBlNo : "",
         cntrList: mergeContainers(formData.containers).map((container) => {
           // vgmWt formatting: if no decimal then add two decimal from frontend
           let formattedVgmWt = container.vgmWt;
@@ -1944,7 +2205,7 @@ const Form13 = () => {
             cntnrTareWgt: Number(container.cntnrTareWgt || 0),
             cargoVal: Number(container.cargoVal || 0),
             commodityName: container.commodityName,
-            shpInstructNo: container.shpInstructNo,
+            shpInstructNo: isVisible("shpInstructNo") ? (container.shpInstructNo || formData.shpInstructNo || "") : "",
             sbDtlsVo: (container.sbDtlsVo || []).map(sb => ({
               ...sb,
               noOfPkg: Number(sb.noOfPkg || 0),
@@ -2032,15 +2293,40 @@ const Form13 = () => {
     >
       <AppbarComponent />
       <Paper elevation={3} sx={{ p: { xs: 2, md: 3 } }}>
-        {/* Header */}
-        <Box sx={{ mb: 2.5 }}>
-          <Typography variant="h5" gutterBottom fontWeight="bold">
-            FORM 13 - Export Gate Pass
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Submit Form 13 for export container gate-in authorization at Indian
-            ports
-          </Typography>
+        {/* Header with Job No Search */}
+        <Box sx={{ mb: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+          <Box>
+            <Typography variant="h5" gutterBottom fontWeight="bold">
+              FORM 13 - Export Gate Pass
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Submit Form 13 for export container gate-in authorization at Indian ports
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <TextField
+              size="small"
+              placeholder="Enter Job No (e.g. AMD/EXP...)"
+              value={jobNoSearch}
+              onChange={(e) => setJobNoSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleJobSearch();
+                }
+              }}
+              sx={{ minWidth: 260, bgcolor: "#fff" }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleJobSearch()}
+              disabled={loadingJob}
+              startIcon={loadingJob ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
+            >
+              {loadingJob ? "Searching..." : "Search Job"}
+            </Button>
+          </Box>
         </Box>
 
         <Divider sx={{ mb: 1.5 }} />

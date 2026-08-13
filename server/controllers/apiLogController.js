@@ -5,6 +5,11 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import UserModel from "../models/User.js";
 
+const escapeRegExp = (string) => {
+  if (!string) return "";
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 const sanitizeVGMPayload = (body) => {
   if (!body) return body;
   
@@ -43,12 +48,12 @@ export const submitVGM = async (req, res) => {
 
 
     // Check if a request already exists for this booking + container combination
-    // Use whitespace-tolerant regex just in case
-    const existingLog = await ApiLog.findOne({
+    // Use lightweight selection and escaped regex search only when values exist
+    const existingLog = (bookNo && cntnrNo) ? await ApiLog.findOne({
       moduleName: "VGM_SUBMISSION",
-      "request.body.bookNo": { $regex: new RegExp(`^\\s*${bookNo}\\s*$`, "i") },
-      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
-    }).sort({ createdAt: -1 });
+      "request.body.bookNo": { $regex: new RegExp(`^\\s*${escapeRegExp(bookNo)}\\s*$`, "i") },
+      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${escapeRegExp(cntnrNo)}\\s*$`, "i") }
+    }).select("_id response status").sort({ createdAt: -1 }) : null;
 
     if (existingLog && ApiLogger.isLogVerified(existingLog)) {
       return res.json({
@@ -108,11 +113,12 @@ export const saveVGM = async (req, res) => {
 
 
     // Check if a draft or request already exists for this booking + container combination
-    const existingDraft = await ApiLog.findOne({
+    // Select only _id to prevent loading megabytes of base64 attachment payload into memory
+    const existingDraft = (bookNo && cntnrNo) ? await ApiLog.findOne({
       moduleName: "VGM_SUBMISSION",
-      "request.body.bookNo": { $regex: new RegExp(`^\\s*${bookNo}\\s*$`, "i") },
-      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${cntnrNo}\\s*$`, "i") }
-    }).sort({ createdAt: -1 });
+      "request.body.bookNo": { $regex: new RegExp(`^\\s*${escapeRegExp(bookNo)}\\s*$`, "i") },
+      "request.body.cntnrNo": { $regex: new RegExp(`^\\s*${escapeRegExp(cntnrNo)}\\s*$`, "i") }
+    }).select("_id").sort({ createdAt: -1 }) : null;
 
 
 
@@ -286,6 +292,7 @@ export const getAuthorization = async (req, res) => {
           username: user.username,
           first_name: user.first_name,
           last_name: user.last_name,
+          email: user.email || "",
           role: user.role,
           pyrCode: pyrCode,
           pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
@@ -310,6 +317,7 @@ export const getAuthorization = async (req, res) => {
             username: user.username,
             first_name: user.first_name,
             last_name: user.last_name,
+            email: user.email || "",
             role: user.role,
             pyrCode: pyrCode,
             pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim()
@@ -363,6 +371,7 @@ export const getCurrentUser = async (req, res) => {
           username: decoded.username,
           first_name: decoded.first_name,
           last_name: decoded.last_name,
+          email: decoded.email || "",
           role: decoded.role,
           pyrCode: decoded.pyrCode,
           pyrName: decoded.pyrName
@@ -431,6 +440,7 @@ export const autoLogin = async (req, res) => {
           username: user.username,
           first_name: user.first_name,
           last_name: user.last_name,
+          email: user.email || "",
           role: user.role,
           pyrCode: pyrCode,
           pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),

@@ -104,7 +104,7 @@ function App() {
                 }
               />
               <Route
-                path="/form13"
+                path="/form13/*"
                 element={
                   <ProtectedRoute>
                     <Form13 />
