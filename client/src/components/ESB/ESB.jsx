@@ -133,9 +133,13 @@ const ESB = () => {
       // 2. Fetch Vessel Master
       try {
         if (formData.pyrCode) {
+          const now = new Date();
+          const pad = (n) => String(n).padStart(2, "0");
+          const todayFromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 00:00:00`;
+
           const vRes = await esbAPI.getVesselMaster({
             pyrCode: formData.pyrCode,
-            fromTs: "2025-01-01 00:00:00",
+            fromTs: todayFromTs,
           });
           if (vRes.data && Array.isArray(vRes.data)) {
             setVessels(vRes.data);

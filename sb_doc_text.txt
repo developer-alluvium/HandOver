@@ -1,0 +1,1670 @@
+xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" w14:paraId="38101583" wp14:textId="779E03E3">
+w:rsidP="79C011C1" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" w14:paraId="12A400D4" wp14:textId="0A318855">
+w:rsidP="79C011C1" w14:paraId="08FC6005" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="4EE83969">ODeX Shipping Bill Integration API Document
+w14:paraId="62C54CC0" wp14:textId="77777777">Doc. ID
+w14:paraId="1C7DF0E4" wp14:textId="77777777">Author
+w14:paraId="001E97C7" wp14:textId="77777777">Ver. No.
+w:rsidP="79C011C1" w14:paraId="682FDFB4" wp14:textId="77777777">Classification
+w:rsidP="79C011C1" w14:paraId="24BDBB2D" wp14:textId="77777777">Issue Date
+w14:paraId="468A569D" wp14:textId="77777777">Owner
+w14:paraId="224A4AAA" wp14:textId="77777777">OISPL_ITD_Export_ShippingBill_Integration_API_RC001.docx
+w:rsidP="79C011C1" w14:paraId="109AD592" wp14:textId="77777777">Vedant Sawale
+w14:paraId="4B3AA50C" wp14:textId="77777777">1.0
+w14:paraId="3518BB34" wp14:textId="77777777">Confidential
+w14:paraId="6131F293" wp14:textId="77777777">25-08-2025
+w:rsidP="79C011C1" w14:paraId="611D207B" wp14:textId="77777777">ODeX
+w14:paraId="03242D60" wp14:textId="77777777">OISPL_ITD_Export_ShippingBill_Integration_API_RC001.docx
+w14:paraId="288F5C54" wp14:textId="77777777">Sameer Kulkarni
+w14:paraId="55D8B3B0" wp14:textId="77777777">1.1
+w14:paraId="3CCF283E" wp14:textId="77777777">Confidential
+w14:paraId="1F38981E" wp14:textId="77777777">12-05-2026
+w:rsidP="79C011C1" w14:paraId="354160FE" wp14:textId="77777777">ODeX
+w14:paraId="672A6659" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0A37501D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="5DAB6C7B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="02EB378F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6A05A809" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="5A39BBE3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="41C8F396" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="72A3D3EC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0D0B940D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0E27B00A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="60061E4C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="44EAFD9C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="4B94D5A5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="3DEEC669" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="3461D779" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="781D92FD">
+w14:paraId="3CF2D8B6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0FB78278" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="1FC39945" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0562CB0E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="34CE0A41" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="62EBF3C5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6D98A12B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="2946DB82" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="5997CC1D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="0BF08E27" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Prepared BY: ODeX Integration Team
+w14:paraId="75667D7B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">© Copyrights – ODeX India Solutions Pvt. Ltd.
+w14:paraId="5061C21F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">No part of this document may be reproduced or transmitted in any form or by any means, electronic or mechanical, including photocopying or recording, for any purpose, without the express written consent of ODeX India Solutions Pvt. Ltd.
+w:rsidR="79C011C1" w:rsidP="79C011C1" w:rsidRDefault="79C011C1" w14:paraId="2254DDA7" w14:textId="74A9308F">
+w:rsidP="79C011C1" w14:paraId="694AE0B9" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="6A197A28">1. Document Review
+w:rsidP="79C011C1" w14:paraId="377C2CB7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">This document provides a comprehensive technical and functional overview of the Shipping Bill API Integration process, which is a key digital workflow for port operations within the ODeX platform. Shipping Bill is a critical document used in Indian ports (e.g., JNPT, Mundra, etc) for onboarding permissions of containers, and this documentation aims to guide technical teams, integration partners, and stakeholders through its end-to-end automation.
+w:rsidP="79C011C1" w14:paraId="3F9D9074" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">The manual is intended to support both API consumers (such as shipping lines or third-party software vendors) and system implementers by detailing the process of submitting, validating, and managing Shipping Bill data via secure RESTful APIs.
+w:rsidP="79C011C1" w14:paraId="46B26604" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Objectives:
+w14:paraId="615540C5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">To outline the structure, data flow, and system interactions required for successful Shipping Bill integration.
+w14:paraId="1EE273B6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">To define API request/response standards, including field-level rules, mandatory checks, and sample payloads.
+w14:paraId="1DCB667B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">To ensure consistency and error-handling mechanisms across all Shipping Bill submissions.
+w14:paraId="47B40220" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">To support faster onboarding of external systems or clients integrating with ODeX.
+w14:paraId="304CDFC4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Audience:
+w14:paraId="1924A2FE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Backend/API Developers
+w14:paraId="7EA90AAE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Integration Teams of Shipping Lines/Agents
+w14:paraId="53F280CD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Business Analysts and Project Managers
+w14:paraId="3EB120B3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">QA Teams involved in testing integration
+w14:paraId="47202048" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">ODeX Internal IT &amp; Support teams
+w:rsidP="79C011C1" w14:paraId="548AFA52" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">2. Business Use Case
+w:rsidP="79C011C1" w14:paraId="13C9553F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Shipping Bill (SB) is a mandatory document issued by shipping lines which serves as a declaration to customs authorities, providing details about the goods being shipped, their value, quantity, and destination. This document is essential for customs clearance, facilitating the movement of goods out of the country, and plays a vital role in claiming duty drawbacks and export incentives. Traditionally handled via email or manual systems, Shipping Bill is now being digitized through API integration to improve turnaround time, reduce manual errors, and ensure regulatory compliance.
+w:rsidP="79C011C1" w14:paraId="213B7BAE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">The Shipping Bill Integration enables seamless, real-time submission of requests directly from the Payor's internal system to the ODeX System. This not only simplifies submission of Shipping Bill requests but also enhances operational efficiency, especially in high-volume export scenarios.
+w:rsidP="79C011C1" w14:paraId="55205ED7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Stakeholders Involved:
+w:rsidR="79C011C1" w:rsidP="79C011C1" w:rsidRDefault="79C011C1" w14:paraId="4526D5F0" w14:textId="7B555A36">
+w:rsidR="79C011C1" w:rsidP="79C011C1" w:rsidRDefault="79C011C1" w14:paraId="4833E244" w14:textId="6557AF65">
+w14:paraId="64370993" wp14:textId="77777777">Stakeholders
+w14:paraId="7810568A" wp14:textId="77777777">Role
+w14:paraId="1E7BB785" wp14:textId="77777777">Payor
+w14:paraId="34716407" wp14:textId="77777777">Submits Shipping Bill for export containers
+w:rsidP="79C011C1" w14:paraId="0A6E4BD9" wp14:textId="77777777">ODeX Platform
+w:rsidP="79C011C1" w14:paraId="52947CCD" wp14:textId="77777777">Acts as an intermediary, validating and forwarding Shipping Bill data
+w14:paraId="3D0D680B" wp14:textId="77777777">Shipping Lines
+w14:paraId="357EFDA2" wp14:textId="77777777">Validates Shipping Bill data
+w14:paraId="783CD957" wp14:textId="77777777">Customer (Exporter/CHA)
+w14:paraId="3C79CF61" wp14:textId="77777777">Receive Shipping Bill request status as a response
+w:rsidR="79C011C1" w:rsidP="79C011C1" w:rsidRDefault="79C011C1" w14:paraId="6851D120" w14:textId="4A562640">
+w:rsidP="79C011C1" w14:paraId="49847F1C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Key Goals:
+w14:paraId="0A5F3A4C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Automate the submission of Shipping Bill from Payor systems
+w14:paraId="5430BFAA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Enable faster approval of export containers from Shipping lines
+w14:paraId="10124020" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Reduce errors and rejections due to data mismatch or manual entry
+w14:paraId="08EEB26B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Provide real-time visibility of Shipping Bill status to stakeholders
+w14:paraId="77B38572" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Current Challenges (Without Integration):
+w14:paraId="5C76E442" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Manual data entry leads to errors or inconsistencies
+w14:paraId="50F6C35B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Delays due to email-based communication
+w14:paraId="2EE0986C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">High support overhead to resolve submission/rejection issues
+w14:paraId="47301A52" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Proposed Solution (With API Integration):
+w14:paraId="43D7F406" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Submit Shipping Bill through a secure REST API with proper validation
+w14:paraId="6E7036BB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Ensure container, vessel, and POD data is validated against ODeX master
+w14:paraId="5318621F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Receive instant response for success or actionable error messages
+w14:paraId="3F13BF03" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Track Shipping Bill submission, status, amendment and rejections in real time
+w:rsidP="79C011C1" w14:paraId="56C6D413" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">3. Integration Scope
+w:rsidP="79C011C1" w14:paraId="075CAB43" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Overview:
+w:rsidP="79C011C1" w14:paraId="5F71BDC2" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="1B1D7D25">This integration enables Payor's to submit Shipping Bill data directly to ODeX via REST APIs. Shipping line validates, and ODeX shares the response back to the Payor.
+w:rsidP="79C011C1" w14:paraId="0D6DC7F4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">In Scope:
+w14:paraId="5914E951" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Shipping Bill Transaction API for submitting container gate-in data.
+w14:paraId="0658DF77" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Master APIs for Vessel, POD, etc.
+w14:paraId="0B9AF7EC" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="2A5906DA">Validations for mandatory fields and data formats.
+w14:paraId="37434DBB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">API Responses for success and error handling.
+w14:paraId="3F6A906C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Amendments of submitted Shipping Bill.
+w14:paraId="534B6858" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Retry Support for failed transactions.
+w14:paraId="7B8FB44E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Status Tracking (if enabled on ODeX UI or API).
+w14:paraId="48AEBE5E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Out of Scope:
+w14:paraId="0AF9A0CF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">EDI/SFTP-based submissions.
+w14:paraId="6AC2D383" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Interfaces:
+w14:paraId="4B94B88C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Payor System → ODeX API Gateway → Shipping Line Review
+w14:paraId="71D03C80" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">ODeX manages downstream logic and responses.
+w14:paraId="3057A0FA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Security:
+w14:paraId="197F1EA2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Auth via API key/code (shared securely).
+w14:paraId="25CBCB1D" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="159875C9">HTTPS is mandatory.
+w14:paraId="1144FF1D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Available in UAT &amp; Production environments
+w:rsidP="79C011C1" w14:paraId="3001447E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">4. High-Level Architecture
+w:rsidP="79C011C1" w14:paraId="41DE3E60" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Overview:
+w:rsidP="79C011C1" w14:paraId="22FEE4AD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">This section outlines the data flow between a Payor, ODeX platform, and the shipping line for successful Shipping Bill processing via APIs.
+w:rsidP="79C011C1" w14:paraId="017F55C3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Steps Explained:
+w14:paraId="523C53E9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Shipping Bill Submission: The Payor's system sends a POST request with container gate-in details.
+w14:paraId="65020A39" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Validation &amp; Processing (ODeX): ODeX validates Vessel, POD, Terminal against Master APIs and Mandatory fields and format.
+w14:paraId="1CDA488B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Visibility of request on ODeX for Shipping Line: Upon successful validation, ODeX forwards the Shipping Bill response back to the Payor.
+w14:paraId="7C7255D6" wp14:textId="77777777">Environment
+w14:paraId="0E8BA693" wp14:textId="77777777">URL
+w14:paraId="649B0AE9" wp14:textId="77777777">Use Case
+w14:paraId="17957BFB" wp14:textId="77777777">UAT
+w14:paraId="581B4631" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/
+w14:paraId="4C882B6A" wp14:textId="77777777">Integration testing
+w14:paraId="7644BB6E" wp14:textId="77777777">Production
+w14:paraId="4CD5905F" wp14:textId="77777777">https://www.odexglobal.com/RS/iEGMService/
+w14:paraId="5A67800C" wp14:textId="77777777">Real-time operations
+w14:paraId="3FE9F23F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="1F72F646" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="20A32BFE" wp14:textId="77777777">API Type
+w14:paraId="39EC13BE" wp14:textId="77777777">Purpose
+w14:paraId="7A88C3F9" wp14:textId="77777777">Master APIs
+w14:paraId="51C38931" wp14:textId="77777777">Validate vessels, ports, terminals
+w14:paraId="0A66AE3A" wp14:textId="77777777">Transaction API
+w14:paraId="0522380C" wp14:textId="77777777">Submit Shipping Bill data
+w14:paraId="400F19F2" wp14:textId="77777777">Response API
+w14:paraId="49AAEA88" wp14:textId="77777777">Return status or error messages and Get Shipping Bill Request Status
+w14:paraId="08CE6F91" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="07EF311B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">5. API Specifications
+w:rsidP="79C011C1" w14:paraId="3C3605E9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">General Info:
+w14:paraId="5BD7C9E1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">API Type: RESTful
+w14:paraId="6B93005F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Format: JSON
+w14:paraId="4317BA69" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Protocol: HTTPS
+w14:paraId="21FE7F18" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Authentication: API Key or Token
+w14:paraId="200577B8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Method: POST
+w14:paraId="5EE0E887" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Environment: UAT and Production
+w14:paraId="12C2A075" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Field type:
+w14:paraId="3AB3EEAD" wp14:textId="77777777">Type
+w14:paraId="2DAB5A84" wp14:textId="77777777">Code
+w14:paraId="31FF54C8" wp14:textId="77777777">Description
+w14:paraId="44C280B4" wp14:textId="77777777">Integer
+w14:paraId="39E2D830" wp14:textId="77777777">INT
+w14:paraId="1C20CF22" wp14:textId="77777777">0-9
+w:rsidP="79C011C1" w14:paraId="7C2B56F6" wp14:textId="77777777">Decimal (defined places e.g. up to 2 decimal places)
+w14:paraId="76742342" wp14:textId="77777777">DEC
+w14:paraId="296BD484" wp14:textId="77777777">0.00 – 0.99
+w14:paraId="563D63F2" wp14:textId="77777777">Alphabetic
+w14:paraId="52693581" wp14:textId="77777777">ALPHA
+w14:paraId="4214AF2D" wp14:textId="77777777">A-Z, a-z
+w:rsidP="79C011C1" w14:paraId="17A17762" wp14:textId="77777777">Alphanumeric
+w14:paraId="4F4B824E" wp14:textId="77777777">AN
+w14:paraId="56C6FF03" wp14:textId="77777777">A-Z, a-z, 0-9
+w14:paraId="491072FA" wp14:textId="77777777">Date
+w14:paraId="7B02AFC4" wp14:textId="77777777">DATE
+w14:paraId="4AA636F2" wp14:textId="77777777">DDMMYYYY
+w14:paraId="44D21E93" wp14:textId="77777777">Date &amp; Time
+w14:paraId="7CCB4CAA" wp14:textId="77777777">DTM
+w14:paraId="79CDB783" wp14:textId="77777777">DDMMYYYYHHMMSS
+w14:paraId="1D4843B6" wp14:textId="77777777">File
+w14:paraId="683F260E" wp14:textId="77777777">FILE
+w14:paraId="2F7EBDE0" wp14:textId="77777777">File in Base 64 format
+w14:paraId="61CDCEAD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6BB9E253" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6C573534" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Field requirement:
+w14:paraId="7627B49D" wp14:textId="77777777">Requirement
+w14:paraId="02F99ED9" wp14:textId="77777777">Description
+w:rsidP="79C011C1" w14:paraId="4C94FBC7" wp14:textId="77777777">Remarks
+w14:paraId="63695634" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="3B021D9B" wp14:textId="77777777">Mandatory
+w14:paraId="0CF88E5F" wp14:textId="77777777">Value is always expected
+w14:paraId="1E84BEA1" wp14:textId="77777777">O
+w14:paraId="630948E9" wp14:textId="77777777">Optional
+w14:paraId="1FC42170" wp14:textId="77777777">This is up to the user whether to provide this value
+w14:paraId="37AAF844" wp14:textId="77777777">C
+w:rsidP="79C011C1" w14:paraId="24D3CE9D" wp14:textId="77777777">Conditional
+w14:paraId="357644AB" wp14:textId="77777777">In any specific condition this value must be provided
+w14:paraId="23DE523C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="212A0969" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">6. Vessel Master API
+w:rsidP="79C011C1" w14:paraId="39B166CA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">In this Vessel master API request, users will be able to get those data which are defined in ODeX by liner (and Admin) and required shipping bill request. Line Location wise Vessel name, CHA Valid from-to (So customer will send Shipping Bill request within this time only), All these are defined by Shipping line while creating vessel information. Until these data are correct in the request, ODeX will not accept the same.
+w:rsidP="79C011C1" w14:paraId="4AA0C6A8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Message Header
+w14:paraId="40E85682" wp14:textId="77777777">API Type
+w14:paraId="6AF7B77F" wp14:textId="77777777">RESTful API
+w14:paraId="52F7419B" wp14:textId="77777777">EDI Type
+w14:paraId="068B26B7" wp14:textId="77777777">JSON
+w14:paraId="206DFFD0" wp14:textId="77777777">Method
+w14:paraId="50740CCA" wp14:textId="77777777">POST
+w14:paraId="01FCC6AE" wp14:textId="77777777">URL
+w14:paraId="33BCD54A" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/json/getSbVesselMst
+w14:paraId="647BC71B" wp14:textId="77777777">Hosted By
+w:rsidP="79C011C1" w14:paraId="0182401B" wp14:textId="77777777">ODeX
+w14:paraId="2E26C3ED" wp14:textId="77777777">Requested By
+w14:paraId="299B3C39" wp14:textId="77777777">Client
+w14:paraId="07547A01" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml" wp14:textId="4D0DE905">
+w:rsidP="79C011C1" w14:paraId="2F676033" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Message
+w14:paraId="24C50E0D" wp14:textId="77777777">Sr No
+w14:paraId="45E3BCF1" wp14:textId="77777777">Field Name
+w14:paraId="660F88E5" wp14:textId="77777777">API Field
+w14:paraId="4BBBB629" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="4CDBFDD0" wp14:textId="77777777">M/O/C
+w14:paraId="66FA58FA" wp14:textId="77777777">Description / Additional Details
+w14:paraId="649841BE" wp14:textId="77777777">1
+w:rsidP="79C011C1" w14:paraId="065539C3" wp14:textId="77777777">CHA-Name
+w:rsidP="79C011C1" w14:paraId="74D94F42" wp14:textId="77777777">pyrCode
+w14:paraId="4C5738C6" wp14:textId="77777777">ANS-200
+w14:paraId="6911F612" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="2273ED5B" wp14:textId="77777777">Auto pull from Logged in user. Payor will have to send either its Payor ID or unique key, which will be shared by ODeX with the Payor
+w14:paraId="18F999B5" wp14:textId="77777777">2
+w:rsidP="79C011C1" w14:paraId="6B7B6B30" wp14:textId="77777777">HashKey
+w:rsidP="79C011C1" w14:paraId="02C48195" wp14:textId="77777777">hashKey
+w14:paraId="146E8121" wp14:textId="77777777">NA
+w14:paraId="32497ED0" wp14:textId="77777777">C
+w:rsidP="79C011C1" w14:paraId="2466A7A4" wp14:textId="77777777">Required only if additional security is desired. Mandatory if encryption desired by customer. checksumKey = crc32(pyrcode+timestamp+secretKey)
+w14:paraId="5FCD5EC4" wp14:textId="77777777">3
+w14:paraId="07476757" wp14:textId="77777777">Time Stamp
+w:rsidP="79C011C1" w14:paraId="7F14EC50" wp14:textId="77777777">fromTs
+w14:paraId="1B2DB450" wp14:textId="77777777">DTM
+w14:paraId="092C34A3" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="2B56F524" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS. Response will consist those data only, which are added/updated on or after this time.
+w14:paraId="5043CB0F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="07459315" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="32A11CE8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Sample:
+w:rsidP="79C011C1" w14:paraId="668EF8AE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="40344301" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "pyrCode": "ODeX/MH/SHP/2503/00020",
+w:rsidP="79C011C1" w14:paraId="2873201C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "hashKey": "3746888286",
+w:rsidP="79C011C1" w14:paraId="4201C311" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "fromTs": "2025-07-19 00:00:00"
+w:rsidP="79C011C1" w14:paraId="2239F6FF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w14:paraId="6537F28F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="5F0DFFA7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Message
+w14:paraId="0CABDCA0" wp14:textId="77777777">S.N
+w14:paraId="366DA071" wp14:textId="77777777">Field Name
+w14:paraId="27E41B97" wp14:textId="77777777">API Field
+w14:paraId="5823F9C0" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="52D889D5" wp14:textId="77777777">M/O/C
+w14:paraId="63DA41F2" wp14:textId="77777777">Description / Additional Details
+w14:paraId="56B20A0C" wp14:textId="77777777">1
+w14:paraId="0A6DB6E2" wp14:textId="77777777">Shipping Line
+w:rsidP="79C011C1" w14:paraId="1E184EF6" wp14:textId="77777777">bnfCode
+w14:paraId="37E04ACF" wp14:textId="77777777">ALPHA-8
+w14:paraId="5DB29657" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="7AE7A0D6" wp14:textId="77777777">Refer Master Data Section
+w14:paraId="7144751B" wp14:textId="77777777">2
+w14:paraId="66ED7752" wp14:textId="77777777">Location (Port)
+w:rsidP="79C011C1" w14:paraId="336CFEF4" wp14:textId="77777777">locId
+w14:paraId="6335AC66" wp14:textId="77777777">AN-8
+w14:paraId="1F0E4D68" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="7B36D81E" wp14:textId="77777777">Refer Master Data Section
+w14:paraId="0B778152" wp14:textId="77777777">3
+w14:paraId="663040C2" wp14:textId="77777777">Vessel
+w:rsidP="79C011C1" w14:paraId="5E7C698E" wp14:textId="77777777">vesselNm
+w14:paraId="3C098811" wp14:textId="77777777">ANS-50
+w14:paraId="556F2A3E" wp14:textId="77777777">M
+w14:paraId="44904895" wp14:textId="77777777">Vessel Name
+w14:paraId="2598DEE6" wp14:textId="77777777">4
+w14:paraId="1C0BB3EC" wp14:textId="77777777">VIA No.
+w:rsidP="79C011C1" w14:paraId="15A14718" wp14:textId="77777777">viaNo
+w14:paraId="22C69039" wp14:textId="77777777">AN-20
+w14:paraId="4A3A7040" wp14:textId="77777777">O
+w14:paraId="685586B5" wp14:textId="77777777">Voyage Reference
+w14:paraId="78941E47" wp14:textId="77777777">5
+w14:paraId="6648D18E" wp14:textId="77777777">Liner/VOA Valid From
+w:rsidP="79C011C1" w14:paraId="184BD8E3" wp14:textId="77777777">linValidFrm
+w14:paraId="4A5E6407" wp14:textId="77777777">DTM
+w14:paraId="0E261B8E" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="52EBED72" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="29B4EA11" wp14:textId="77777777">6
+w14:paraId="2313FDE9" wp14:textId="77777777">Liner/VOA Valid To
+w:rsidP="79C011C1" w14:paraId="40384DCE" wp14:textId="77777777">linValidTo
+w14:paraId="69D28B55" wp14:textId="77777777">DTM
+w14:paraId="6FA8D4AF" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="19128361" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="75697EEC" wp14:textId="77777777">7
+w14:paraId="245D81FE" wp14:textId="77777777">CHA Valid From
+w:rsidP="79C011C1" w14:paraId="0FBCE09B" wp14:textId="77777777">chaValidFrm
+w14:paraId="0F16B1AB" wp14:textId="77777777">DTM
+w14:paraId="755F1112" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="17CBAF99" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="44B0A208" wp14:textId="77777777">8
+w14:paraId="6A30F83D" wp14:textId="77777777">CHA Valid To
+w:rsidP="79C011C1" w14:paraId="60B7D800" wp14:textId="77777777">chaValidTo
+w14:paraId="32EFB640" wp14:textId="77777777">DTM
+w14:paraId="383E7029" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="406D7D69" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="2B2B7304" wp14:textId="77777777">9
+w14:paraId="0F569166" wp14:textId="77777777">COA Valid From
+w:rsidP="79C011C1" w14:paraId="1F9FD2E6" wp14:textId="77777777">coaValidFrm
+w14:paraId="2A132718" wp14:textId="77777777">DTM
+w14:paraId="64558372" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="6766D989" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="5D369756" wp14:textId="77777777">10
+w14:paraId="55B1391F" wp14:textId="77777777">COA Valid To
+w:rsidP="79C011C1" w14:paraId="75ACBB29" wp14:textId="77777777">coaValidTo
+w14:paraId="7C8BADC9" wp14:textId="77777777">DTM
+w14:paraId="1C7B615D" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="122CBC56" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS
+w14:paraId="4737E36C" wp14:textId="77777777">11
+w14:paraId="128EC4D4" wp14:textId="77777777">Last Update Date
+w:rsidP="79C011C1" w14:paraId="128AD823" wp14:textId="77777777">lastUpdatedOn
+w14:paraId="35710428" wp14:textId="77777777">DTM
+w14:paraId="6929BCAA" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="44796F0B" wp14:textId="77777777">YYYY-MM-DD HH:MM:SS – Latest time at which data is created/updated
+w14:paraId="4B73E586" wp14:textId="77777777">12
+w14:paraId="02310123" wp14:textId="77777777">Response Message
+w:rsidP="79C011C1" w14:paraId="670528A5" wp14:textId="77777777">responseMessage
+w14:paraId="30ED3ADD" wp14:textId="77777777">AN
+w14:paraId="62A63C80" wp14:textId="77777777">O
+w14:paraId="7244A849" wp14:textId="77777777">Failure message if any
+w14:paraId="6DFB9E20" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="70DF9E56" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="71DED706" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample:
+w:rsidP="79C011C1" w14:paraId="0CBC1665" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">[
+w:rsidP="79C011C1" w14:paraId="4216DEB1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="27181A93" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "HLCU",
+w:rsidP="79C011C1" w14:paraId="5795D034" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="199FBD1D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="2B4F6722" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="45BB64F9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "terminalCode": null,
+w:rsidP="79C011C1" w14:paraId="4BD5D4ED" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "service": null,
+w:rsidP="79C011C1" w14:paraId="4792DC27" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidFrmStr": "02-05-2025",
+w:rsidP="79C011C1" w14:paraId="434145D2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="0A6F1CBA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidFrmStr": "29-04-2025",
+w:rsidP="79C011C1" w14:paraId="73CF1FCE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="786BA01A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "responseMessage": ""
+w:rsidP="79C011C1" w14:paraId="15333499" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="3655449F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="3AFE62E1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "MSCU",
+w:rsidP="79C011C1" w14:paraId="31B0D8C9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="071C2A87" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "HYUNDAI OAKLAND",
+w:rsidP="79C011C1" w14:paraId="51EAC66B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "F777",
+w:rsidP="79C011C1" w14:paraId="7C0839FF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "terminalCode": null,
+w:rsidP="79C011C1" w14:paraId="2942FD34" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "service": null,
+w:rsidP="79C011C1" w14:paraId="5F7BDBE3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidFrmStr": "04-08-2025",
+w:rsidP="79C011C1" w14:paraId="05F32BBF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="5082D700" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidFrmStr": "02-08-2025",
+w:rsidP="79C011C1" w14:paraId="4BFC912A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="24335C64" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "responseMessage": ""
+w:rsidP="79C011C1" w14:paraId="2A280F38" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="6148C37D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="459F66A5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "HDMU",
+w:rsidP="79C011C1" w14:paraId="684383C3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="4FEF194B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="00097849" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="5D1CB961" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "terminalCode": null,
+w:rsidP="79C011C1" w14:paraId="558E38A5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "service": null,
+w:rsidP="79C011C1" w14:paraId="22AFA898" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidFrmStr": "08-09-2025",
+w:rsidP="79C011C1" w14:paraId="2CFAEB42" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="2F30566B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidFrmStr": "02-09-2025",
+w:rsidP="79C011C1" w14:paraId="6CCCD0BD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidToStr": "11-07-2026",
+w:rsidP="79C011C1" w14:paraId="2D2F0FD5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "responseMessage": ""
+w:rsidP="79C011C1" w14:paraId="2C64967E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="23760B0C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="1455C120" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "ONEY",
+w:rsidP="79C011C1" w14:paraId="170B8376" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="5676D47C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="454689EA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="7162A622" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "terminalCode": null,
+w:rsidP="79C011C1" w14:paraId="68804834" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "service": null,
+w:rsidP="79C011C1" w14:paraId="489FF259" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidFrmStr": "21-05-2025",
+w:rsidP="79C011C1" w14:paraId="36FCA8E7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidToStr": "30-12-2026",
+w:rsidP="79C011C1" w14:paraId="79D0965C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidFrmStr": "21-05-2025",
+w:rsidP="79C011C1" w14:paraId="45CEAEE8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidToStr": "31-12-2026",
+w:rsidP="79C011C1" w14:paraId="5422CF7A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "responseMessage": ""
+w:rsidP="79C011C1" w14:paraId="48841487" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="794B00EE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="212542DD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "COSU",
+w:rsidP="79C011C1" w14:paraId="452F8CDA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="6D7376A8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="73ECE9A3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="6D34CA51" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "terminalCode": null,
+w:rsidP="79C011C1" w14:paraId="06FF9737" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "service": null,
+w:rsidP="79C011C1" w14:paraId="5ABA9AA8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidFrmStr": "04-06-2025",
+w:rsidP="79C011C1" w14:paraId="0A924573" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "chaValidToStr": "02-09-2026",
+w:rsidP="79C011C1" w14:paraId="55A9D8D1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidFrmStr": "04-06-2025",
+w:rsidP="79C011C1" w14:paraId="68F96C31" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "linValidToStr": "18-05-2027",
+w:rsidP="79C011C1" w14:paraId="025DFFDE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "responseMessage": ""
+w:rsidP="79C011C1" w14:paraId="0D3AE923" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    }
+w:rsidP="79C011C1" w14:paraId="371057F7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">]
+w:rsidP="79C011C1" w14:paraId="2F7FCE0A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">7. Shipping Bill Submission API
+w:rsidP="79C011C1" w14:paraId="001849F8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">In Shipping Bill request API, data will be pulled from payor's internal system and submitted via API. Response of API will provide the status of the request for that container. Request and response sections are divided into header, container and attachment sections for better clarity.
+w:rsidP="79C011C1" w14:paraId="57A41D16" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Message Header:
+w14:paraId="5DE56A12" wp14:textId="77777777">API Type
+w14:paraId="5138969D" wp14:textId="77777777">RESTful API
+w14:paraId="2A9F70BC" wp14:textId="77777777">EDI Type
+w14:paraId="261CA092" wp14:textId="77777777">JSON
+w14:paraId="17B87C57" wp14:textId="77777777">Method
+w14:paraId="05736E9C" wp14:textId="77777777">POST
+w14:paraId="238BE589" wp14:textId="77777777">URL
+w14:paraId="2EC327F4" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/saveEGMRequestApi
+w14:paraId="03AE14AD" wp14:textId="77777777">Hosted By
+w:rsidP="79C011C1" w14:paraId="40922973" wp14:textId="77777777">ODeX
+w14:paraId="483629F2" wp14:textId="77777777">Requested By
+w14:paraId="4E262A1E" wp14:textId="77777777">Client
+w14:paraId="44E871BC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="144A5D23" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="286763F8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Header Section - Request Message
+w14:paraId="4DE3DC5E" wp14:textId="77777777">Field
+w:rsidP="79C011C1" w14:paraId="338D359A" wp14:textId="77777777">API Tags
+w14:paraId="1DB6CE42" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="04BD7616" wp14:textId="77777777">M/O/C
+w14:paraId="6D9C0E21" wp14:textId="77777777">Validation
+w:rsidP="79C011C1" w14:paraId="639F80E5" wp14:textId="77777777">ODeX Reference Number
+w:rsidP="79C011C1" w14:paraId="7AE21852" wp14:textId="77777777">odexRefNo
+w14:paraId="15AF09BD" wp14:textId="77777777">AN-50
+w14:paraId="430505FE" wp14:textId="77777777">C
+w:rsidP="79C011C1" w14:paraId="350E82D3" wp14:textId="77777777">Leave this tag blank. Unique reference No. generated for each request by ODeX. Used in response further.
+w14:paraId="5241B861" wp14:textId="77777777">Payor ID
+w:rsidP="79C011C1" w14:paraId="28240831" wp14:textId="77777777">pyrCode
+w14:paraId="2BFCA66A" wp14:textId="77777777">AN-50
+w14:paraId="50046019" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="2C2107C5" wp14:textId="77777777">Example: ODeX/MH/SHP/2503/00019
+w:rsidP="79C011C1" w14:paraId="06805A91" wp14:textId="77777777">Sea / Port
+w:rsidP="79C011C1" w14:paraId="00874E6C" wp14:textId="77777777">locCode
+w14:paraId="2075B971" wp14:textId="77777777">AN-6
+w14:paraId="799EC85C" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="3842CFFA" wp14:textId="77777777">Refer Master Data Section. Example: INNSA1
+w14:paraId="6C7EFA21" wp14:textId="77777777">Shipping Line
+w:rsidP="79C011C1" w14:paraId="67578786" wp14:textId="77777777">bnfCode
+w14:paraId="545B80E3" wp14:textId="77777777">AN-4
+w14:paraId="748CD6EC" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="49D8B497" wp14:textId="77777777">Refer Master Data Section. Example: HLCU, MSCU, HDMU
+w14:paraId="1ADF1BB6" wp14:textId="77777777">Booking No.
+w:rsidP="79C011C1" w14:paraId="4D607DEF" wp14:textId="77777777">bookNo
+w14:paraId="562CB29E" wp14:textId="77777777">AN-20
+w14:paraId="477EF257" wp14:textId="77777777">M
+w14:paraId="36975370" wp14:textId="77777777">Example: BOOZE1100001
+w14:paraId="51BBF29B" wp14:textId="77777777">BL No.
+w:rsidP="79C011C1" w14:paraId="1E3936F7" wp14:textId="77777777">blNo
+w14:paraId="61E424A0" wp14:textId="77777777">AN-20
+w14:paraId="5AD787E6" wp14:textId="77777777">M
+w14:paraId="71177615" wp14:textId="77777777">Example: BLZE1100001
+w14:paraId="3D6DD42E" wp14:textId="77777777">Is HBL Involved?
+w:rsidP="79C011C1" w14:paraId="12C59079" wp14:textId="77777777">isHBLInvolved
+w14:paraId="217EEC14" wp14:textId="77777777">Alpha-1
+w14:paraId="0D3EABE3" wp14:textId="77777777">M
+w14:paraId="347326E0" wp14:textId="77777777">LOV: Y / N. Update the MBL Number in the BL Number Field if shipment has straight/Direct BL. In case of HBL involved, add the HBL Number in the BL Number Field.
+w14:paraId="485BE838" wp14:textId="77777777">Booking Origin (ICD/Port)
+w:rsidP="79C011C1" w14:paraId="72450D32" wp14:textId="77777777">icdLocCode
+w14:paraId="69B56639" wp14:textId="77777777">AN-6
+w14:paraId="4E82A334" wp14:textId="77777777">M
+w14:paraId="7E9B6352" wp14:textId="77777777">Example: INNSA1
+w14:paraId="64A511AD" wp14:textId="77777777">SB Processed Location
+w:rsidP="79C011C1" w14:paraId="3443024B" wp14:textId="77777777">portOfSBFiled
+w14:paraId="28470215" wp14:textId="77777777">AN-6
+w14:paraId="388498F2" wp14:textId="77777777">M
+w14:paraId="756FDD33" wp14:textId="77777777">Example: INNSA1
+w14:paraId="436188E5" wp14:textId="77777777">Booking Office Location
+w:rsidP="79C011C1" w14:paraId="74E58C27" wp14:textId="77777777">gatewayLocCode
+w14:paraId="6871B48D" wp14:textId="77777777">AN-6
+w14:paraId="6843B7AD" wp14:textId="77777777">C
+w14:paraId="50834E97" wp14:textId="77777777">Mandatory for MSC shipping line at all locations
+w14:paraId="41F3FD3C" wp14:textId="77777777">Vessel Name
+w:rsidP="79C011C1" w14:paraId="37C6BE3A" wp14:textId="77777777">vesselNm
+w14:paraId="203B0D87" wp14:textId="77777777">AN-50
+w14:paraId="36908B73" wp14:textId="77777777">M
+w14:paraId="2DA3EE1B" wp14:textId="77777777">Includes Special Characters and Spaces. Example: APIVESSEL555
+w14:paraId="6EFB512D" wp14:textId="77777777">Via No.
+w:rsidP="79C011C1" w14:paraId="72F26198" wp14:textId="77777777">viaNo
+w14:paraId="7A1A4BB4" wp14:textId="77777777">AN-20
+w14:paraId="02EB2921" wp14:textId="77777777">M
+w14:paraId="031C952D" wp14:textId="77777777">Special Characters allowed. Example: VIA555
+w14:paraId="4BEB64D0" wp14:textId="77777777">Container Status
+w:rsidP="79C011C1" w14:paraId="3791E794" wp14:textId="77777777">cntStatus
+w14:paraId="5CA00E8B" wp14:textId="77777777">Alpha-3
+w14:paraId="78446B03" wp14:textId="77777777">M
+w14:paraId="0DB77618" wp14:textId="77777777">LOV: FCL / LCL
+w14:paraId="129621A4" wp14:textId="77777777">FPOD (SB Destination Port)
+w14:paraId="58903485" wp14:textId="77777777">pod
+w14:paraId="5E5AD2DF" wp14:textId="77777777">AN-6
+w14:paraId="2B9DE707" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="5CCE581A" wp14:textId="77777777">Example: AOBDD, AEDXB, AEAUH, SGSIN, BEFMA, CAFRE, AUSTA
+w14:paraId="78A49549" wp14:textId="77777777">Nature of Cargo
+w:rsidP="79C011C1" w14:paraId="24BCA967" wp14:textId="77777777">natureOfCargo
+w14:paraId="52DDE5D8" wp14:textId="77777777">AN-3
+w14:paraId="3E638E00" wp14:textId="77777777">M
+w14:paraId="26A0C5D3" wp14:textId="77777777">LOV: C / CP / DB / LB
+w14:paraId="17320C90" wp14:textId="77777777">Booking Line
+w:rsidP="79C011C1" w14:paraId="116C183F" wp14:textId="77777777">bookLine
+w14:paraId="0A9D70F6" wp14:textId="77777777">AN-4 (SCAC)
+w14:paraId="28F8B1D3" wp14:textId="77777777">C
+w14:paraId="208A1824" wp14:textId="77777777">Mandatory if there is an active record with 'is Booking Line Required' as 'Yes' in SB Beneficiary Config
+w14:paraId="738610EB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="637805D2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="7E5375DB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Container Section - Request Message
+w:rsidP="79C011C1" w14:paraId="295A0DF8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">The below section can be multiple in each Shipping Bill request; hence we will need to handle it accordingly in API. E.g.: if there are 3 containers in the request, all these fields must repeat 3 times.
+w14:paraId="422AB0FD" wp14:textId="77777777">Field
+w:rsidP="79C011C1" w14:paraId="3CED7B0E" wp14:textId="77777777">API Tags
+w14:paraId="34C2A66A" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="694D3817" wp14:textId="77777777">M/O/C
+w14:paraId="032E3F61" wp14:textId="77777777">Validation
+w14:paraId="2E726420" wp14:textId="77777777">Container No.
+w:rsidP="79C011C1" w14:paraId="4434EC85" wp14:textId="77777777">cntNo
+w14:paraId="537CD39D" wp14:textId="77777777">AN-11
+w14:paraId="7CBC6735" wp14:textId="77777777">M
+w14:paraId="095732C7" wp14:textId="77777777">Container Format Check. Example: YNZE1000001
+w14:paraId="5A2E9E1B" wp14:textId="77777777">Shipping Bill No.
+w:rsidP="79C011C1" w14:paraId="082189C8" wp14:textId="77777777">shipBillNo
+w14:paraId="17F783D5" wp14:textId="77777777">AN-7
+w14:paraId="497BDA4B" wp14:textId="77777777">M
+w14:paraId="56BD69E7" wp14:textId="77777777">Value Length Check. Example: SB74533
+w14:paraId="318FCBBD" wp14:textId="77777777">Shipping Bill Date
+w:rsidP="79C011C1" w14:paraId="639DD81B" wp14:textId="77777777">shipBillDt
+w14:paraId="04872724" wp14:textId="77777777">DD-MM-YYYY
+w14:paraId="24D19C8D" wp14:textId="77777777">M
+w14:paraId="5C37FC07" wp14:textId="77777777">Example: 08-09-2025
+w:rsidP="79C011C1" w14:paraId="4E807FDC" wp14:textId="77777777">LEO Date
+w:rsidP="79C011C1" w14:paraId="2C893871" wp14:textId="77777777">leoDt
+w14:paraId="657DC83A" wp14:textId="77777777">DD-MM-YYYY
+w14:paraId="31C6196B" wp14:textId="77777777">C
+w14:paraId="3EBBC3D1" wp14:textId="77777777">Mandatory if 'is LEO Date Mandatory' = Yes in SB Beneficiary Config
+w14:paraId="5AFD2702" wp14:textId="77777777">PCIN Number
+w:rsidP="79C011C1" w14:paraId="23956BCA" wp14:textId="77777777">pcinNo
+w14:paraId="6DBD7013" wp14:textId="77777777">AN-20 (MANUAL/SEZ allowed)
+w14:paraId="4AFE18F0" wp14:textId="77777777">C
+w:rsidP="79C011C1" w14:paraId="099A958E" wp14:textId="77777777">MANUAL and SEZ are exception to length check. Example: SEZ
+w14:paraId="75F5EA02" wp14:textId="77777777">POL (SB Processed Loc)
+w14:paraId="54D81883" wp14:textId="77777777">pol
+w14:paraId="130E85D3" wp14:textId="77777777">AN-6
+w14:paraId="007B3E58" wp14:textId="77777777">M
+w14:paraId="0E2D0011" wp14:textId="77777777">Example: INNSA1
+w14:paraId="46437067" wp14:textId="77777777">POD (FPOD)
+w14:paraId="49B8CBE6" wp14:textId="77777777">pod
+w14:paraId="0A4CABF5" wp14:textId="77777777">AN-6
+w14:paraId="407CADBF" wp14:textId="77777777">M
+w14:paraId="5D0AA45B" wp14:textId="77777777">Example: AOBDD
+w14:paraId="4AFF0E9A" wp14:textId="77777777">Cargo + Packaging Weight
+w:rsidP="79C011C1" w14:paraId="1FB55EBC" wp14:textId="77777777">grossWt
+w14:paraId="57D6E6EE" wp14:textId="77777777">DEC (9,2)
+w14:paraId="4C62E683" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="7833DEBF" wp14:textId="77777777">In KGs. Example: 1200.0
+w14:paraId="445BCDBB" wp14:textId="77777777">No. of Packages
+w:rsidP="79C011C1" w14:paraId="7B622D46" wp14:textId="77777777">noOfPkg
+w14:paraId="64FCC42C" wp14:textId="77777777">Numeric-4
+w14:paraId="4BEBFB89" wp14:textId="77777777">M
+w14:paraId="3E42EF66" wp14:textId="77777777">Example: 12
+w14:paraId="3EF42625" wp14:textId="77777777">Package Type
+w:rsidP="79C011C1" w14:paraId="4219DAEF" wp14:textId="77777777">typOfPackages
+w14:paraId="6417E88C" wp14:textId="77777777">ALPHA-3
+w14:paraId="0B4835D4" wp14:textId="77777777">M
+w14:paraId="542938E0" wp14:textId="77777777">Example: BDL, BAG, BOX
+w14:paraId="31DCCA95" wp14:textId="77777777">Cargo / Net Weight
+w:rsidP="79C011C1" w14:paraId="5D8666B4" wp14:textId="77777777">cargoWt
+w14:paraId="1B8405EB" wp14:textId="77777777">DEC (9,2)
+w14:paraId="7F5CD847" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="43BAE7AA" wp14:textId="77777777">In KGs. Example: 1800.0
+w:rsidP="79C011C1" w14:paraId="7156D996" wp14:textId="77777777">Cargo Type
+w:rsidP="79C011C1" w14:paraId="11CE1AAF" wp14:textId="77777777">cargoTp
+w14:paraId="4D5381B2" wp14:textId="77777777">ALPHA-5
+w14:paraId="2C576514" wp14:textId="77777777">M
+w14:paraId="468C0F3D" wp14:textId="77777777">LOV: GEN / HAZ / REF / ODC / ONION
+w14:paraId="58602A84" wp14:textId="77777777">Type of Shipping Bill
+w:rsidP="79C011C1" w14:paraId="59812F48" wp14:textId="77777777">shipBillTp
+w14:paraId="78A51485" wp14:textId="77777777">ALPHA-3
+w14:paraId="696A3350" wp14:textId="77777777">M
+w14:paraId="6E0A65AB" wp14:textId="77777777">LOV: DFS / DS / LIC
+w:rsidP="79C011C1" w14:paraId="02D186F1" wp14:textId="77777777">Exporter Name
+w:rsidP="79C011C1" w14:paraId="71511559" wp14:textId="77777777">exporterNm
+w14:paraId="0C7042DD" wp14:textId="77777777">AN-100
+w14:paraId="5BB7AFFC" wp14:textId="77777777">M
+w14:paraId="5425D89B" wp14:textId="77777777">Includes Special Chars &amp; Spaces. Example: ABC Exporters Pvt Ltd
+w14:paraId="30B3303C" wp14:textId="77777777">IEC
+w:rsidP="79C011C1" w14:paraId="06023055" wp14:textId="77777777">iec
+w14:paraId="214165EC" wp14:textId="77777777">AN-10
+w14:paraId="374870AA" wp14:textId="77777777">M
+w14:paraId="36B7BC1E" wp14:textId="77777777">Example: 1234567890
+w14:paraId="614C03FA" wp14:textId="77777777">Consignee Name
+w:rsidP="79C011C1" w14:paraId="15B15E33" wp14:textId="77777777">consigneeNm
+w14:paraId="33AA5840" wp14:textId="77777777">AN-100
+w14:paraId="7FE72E92" wp14:textId="77777777">M
+w14:paraId="78D2E9D3" wp14:textId="77777777">Includes Special Chars &amp; Spaces. Example: XYZ Trading LLC
+w14:paraId="3F4AB027" wp14:textId="77777777">Marks and Numbers
+w:rsidP="79C011C1" w14:paraId="7BACD675" wp14:textId="77777777">markNum
+w14:paraId="3C75BA28" wp14:textId="77777777">AN-300
+w14:paraId="1F965BD1" wp14:textId="77777777">M
+w14:paraId="50880C91" wp14:textId="77777777">Includes Special Chars &amp; Spaces. Example: MARK001
+w14:paraId="6AC752D9" wp14:textId="77777777">Cargo Description
+w:rsidP="79C011C1" w14:paraId="3D7184DF" wp14:textId="77777777">cargoDesc
+w14:paraId="05BFDF95" wp14:textId="77777777">AN-250
+w14:paraId="7731F430" wp14:textId="77777777">M
+w14:paraId="232C51D4" wp14:textId="77777777">Example: General Cargo Description
+w14:paraId="47C80784" wp14:textId="77777777">HSN Code
+w:rsidP="79C011C1" w14:paraId="06F795A9" wp14:textId="77777777">hsnCode
+w:rsidP="79C011C1" w14:paraId="0E8748CF" wp14:textId="77777777">AN-8 / comma-sep AN-500
+w14:paraId="2A206639" wp14:textId="77777777">M
+w14:paraId="02E4BA51" wp14:textId="77777777">Example: 84211910
+w14:paraId="7320F1CD" wp14:textId="77777777">SOC
+w:rsidP="79C011C1" w14:paraId="00470321" wp14:textId="77777777">socFlag
+w14:paraId="6B09662A" wp14:textId="77777777">ALPHA-1
+w14:paraId="6D421D03" wp14:textId="77777777">M
+w14:paraId="72C0984F" wp14:textId="77777777">LOV: Y / N
+w14:paraId="5BC36B32" wp14:textId="77777777">Container Agent Code
+w:rsidP="79C011C1" w14:paraId="290C75B4" wp14:textId="77777777">cntnrAgentCode
+w14:paraId="030E4985" wp14:textId="77777777">AN-10
+w14:paraId="17EBD725" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="781EEECE" wp14:textId="77777777">Format: 5 alpha + 4 numeric + 1 alpha. Example: AABCH7319B
+w14:paraId="463F29E8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="3B7B4B86" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="48744CCE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Attachment Section - Request Message
+w14:paraId="6943B3D2" wp14:textId="77777777">Field
+w:rsidP="79C011C1" w14:paraId="63AEA9F1" wp14:textId="77777777">API Tags
+w14:paraId="002013A1" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="49C8BB83" wp14:textId="77777777">M/O/C
+w14:paraId="443C6C13" wp14:textId="77777777">Validation
+w14:paraId="2B329953" wp14:textId="77777777">Attachment Name
+w:rsidP="79C011C1" w14:paraId="7D6D3F03" wp14:textId="77777777">attNm
+w14:paraId="549C25C2" wp14:textId="77777777">AN-500
+w14:paraId="702ECB99" wp14:textId="77777777">M
+w14:paraId="0164DC07" wp14:textId="77777777">e.g.: abc.pdf. Only pdf file is allowed
+w14:paraId="46BE0435" wp14:textId="77777777">Attachment Data
+w:rsidP="79C011C1" w14:paraId="311F8335" wp14:textId="77777777">attData
+w14:paraId="73D5DD66" wp14:textId="77777777">Base64
+w14:paraId="5F9049A3" wp14:textId="77777777">M
+w14:paraId="3EC85774" wp14:textId="77777777">File converted to byte array (Base64). Max byte array length: 5,242,880
+w14:paraId="579DD9A8" wp14:textId="77777777">Attachment Title
+w:rsidP="79C011C1" w14:paraId="30DCB19B" wp14:textId="77777777">attTitle
+w14:paraId="00D518C7" wp14:textId="77777777">AN-200
+w14:paraId="765D4946" wp14:textId="77777777">M
+w14:paraId="3CBC53EE" wp14:textId="77777777">LOV: LOC / EIR / TSR / CLP / SB / O
+w14:paraId="4EB9E75F" wp14:textId="77777777">Attachment Description
+w:rsidP="79C011C1" w14:paraId="5C719644" wp14:textId="77777777">attDesc
+w14:paraId="67333A60" wp14:textId="77777777">AN-200
+w14:paraId="4DD7F8F1" wp14:textId="77777777">O
+w:rsidP="79C011C1" w14:paraId="5B59A14C" wp14:textId="77777777">Optional description text
+w14:paraId="3A0FF5F2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="5630AD66" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="776C1278" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Note: Total Attachment size should not exceed 4MB.
+w14:paraId="61829076" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="35599289" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Sample:
+w:rsidP="79C011C1" w14:paraId="748926B4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="772FA025" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "egmRequestVo": {
+w:rsidP="79C011C1" w14:paraId="1AFC65CB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="327C36B9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "icdLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="6569D723" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "gatewayLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="72A9BED7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "portCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="49975730" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "HLCU",
+w:rsidP="79C011C1" w14:paraId="52C7FF40" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "pyrCode": "ODeX/MH/SHP/2503/00019",
+w:rsidP="79C011C1" w14:paraId="6D88CD15" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="77156D57" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "shipmentTp": null,
+w:rsidP="79C011C1" w14:paraId="432D4485" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="3AC8C7D0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="5FF75C0D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "cntStatus": "FCL",
+w:rsidP="79C011C1" w14:paraId="05624D4D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "natureOfCargo": "C",
+w:rsidP="79C011C1" w14:paraId="1CA70690" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "cargoTp": null,
+w:rsidP="79C011C1" w14:paraId="5A8C801E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "portOfSBFiled": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="4D05EC0E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="47B4AF85" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "srchReqStatus": "",
+w:rsidP="79C011C1" w14:paraId="74BA2DD2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "srchCntNo": "",
+w:rsidP="79C011C1" w14:paraId="420B24FB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "blNo": "BLZE1100001",
+w:rsidP="79C011C1" w14:paraId="21D41970" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "declarationFlg": true,
+w:rsidP="79C011C1" w14:paraId="746286D0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isHBLInvolved": "N",
+w:rsidP="79C011C1" w14:paraId="0CC46E21" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "egmRequestcntnrVoList": [
+w:rsidP="79C011C1" w14:paraId="7C7B40A4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            {
+w:rsidP="79C011C1" w14:paraId="3D4C8DA2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cntNo": "YNZE1000001",
+w:rsidP="79C011C1" w14:paraId="25022A3F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "grossWt": 1200.0,
+w:rsidP="79C011C1" w14:paraId="1C98C59C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillNo": "SB74533",
+w:rsidP="79C011C1" w14:paraId="50C52B01" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillDt": "08-09-2025",
+w:rsidP="79C011C1" w14:paraId="735298A3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillTp": "DFS",
+w:rsidP="79C011C1" w14:paraId="364DD099" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "exporterNm": "ABC Exporters Pvt Ltd",
+w:rsidP="79C011C1" w14:paraId="51E7CAE9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "consigneeNm": "XYZ Trading LLC",
+w:rsidP="79C011C1" w14:paraId="1B3D406A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "markNum": "MARK001",
+w:rsidP="79C011C1" w14:paraId="3ECD848A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoDesc": "General Cargo Description",
+w:rsidP="79C011C1" w14:paraId="3AEDDFC2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "noOfPkg": 12,
+w:rsidP="79C011C1" w14:paraId="7891DD1F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "ischeck": true,
+w:rsidP="79C011C1" w14:paraId="2A0C45D0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "hsnCode": "84211910",
+w:rsidP="79C011C1" w14:paraId="5DD2FA12" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pol": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="6C18E8F6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="7CE25D4C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoWt": 1800.0,
+w:rsidP="79C011C1" w14:paraId="7C2F4AF7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pcinNo": "SEZ",
+w:rsidP="79C011C1" w14:paraId="3B6CB21C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "iec": "1234567890",
+w:rsidP="79C011C1" w14:paraId="369A6D75" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "socFlag": "N",
+w:rsidP="79C011C1" w14:paraId="73E5E633" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cntnrAgentCode": "AABCH7319B",
+w:rsidP="79C011C1" w14:paraId="17BA7B8E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "typOfPackages": "BDL",
+w:rsidP="79C011C1" w14:paraId="650B7649" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoTp": "GEN"
+w:rsidP="79C011C1" w14:paraId="55E0C8A2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            }
+w:rsidP="79C011C1" w14:paraId="742BB266" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        ],
+w:rsidP="79C011C1" w14:paraId="5FD18E20" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "egmReqAttVoList": [
+w:rsidP="79C011C1" w14:paraId="7AB9C954" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            {
+w:rsidP="79C011C1" w14:paraId="0232CDC2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attNm": "shipping_bill.pdf",
+w:rsidP="79C011C1" w14:paraId="35ACB72E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attTitle": "LOC",
+w:rsidP="79C011C1" w14:paraId="72934658" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attDesc": "Shipping Bill / LEO Document",
+w:rsidP="79C011C1" w14:paraId="4331E096" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attData": "ZGF3ZHFxd2Rx"
+w:rsidP="79C011C1" w14:paraId="0C279AB4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            },
+w:rsidP="79C011C1" w14:paraId="15C6CB60" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            {
+w:rsidP="79C011C1" w14:paraId="390F06C8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attNm": "eir_document.pdf",
+w:rsidP="79C011C1" w14:paraId="0BAF9726" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attTitle": "EIR",
+w:rsidP="79C011C1" w14:paraId="3E3EF83E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attDesc": "Equipment Interchange Report",
+w:rsidP="79C011C1" w14:paraId="70319394" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attData": "ZGF3ZHFxd2Rx"
+w:rsidP="79C011C1" w14:paraId="6CF35E99" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            },
+w:rsidP="79C011C1" w14:paraId="69C5F6E3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            {
+w:rsidP="79C011C1" w14:paraId="473F99E9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attNm": "tally_sheet.pdf",
+w:rsidP="79C011C1" w14:paraId="768ADFB1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attTitle": "TSR",
+w:rsidP="79C011C1" w14:paraId="42C45072" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attDesc": "Tally Sheet / Stuffing Report",
+w:rsidP="79C011C1" w14:paraId="3A044296" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "attData": "ZGF3ZHFxd2Rx"
+w:rsidP="79C011C1" w14:paraId="15C7440F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            }
+w:rsidP="79C011C1" w14:paraId="619AFA04" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        ]
+w:rsidP="79C011C1" w14:paraId="2BE46643" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    }
+w:rsidP="79C011C1" w14:paraId="46AE40AA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w:rsidP="79C011C1" w14:paraId="4DF15093" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">7.1 Shipping Bill Response API
+w:rsidP="79C011C1" w14:paraId="3476340D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Header Section:
+w14:paraId="4C556526" wp14:textId="77777777">S.N
+w14:paraId="0F90DD93" wp14:textId="77777777">Field Name
+w14:paraId="6CFD3FCC" wp14:textId="77777777">API Field
+w14:paraId="2D34D3E8" wp14:textId="77777777">Description / Additional Details
+w14:paraId="249FAAB8" wp14:textId="77777777">1
+w:rsidP="79C011C1" w14:paraId="4908F8A6" wp14:textId="77777777">ODeX Ref No
+w:rsidP="79C011C1" w14:paraId="4438CE58" wp14:textId="77777777">odexRefNo
+w:rsidP="79C011C1" w14:paraId="35A4A69E" wp14:textId="77777777">Reference number for the submitted request. Example: ODX/SB/2025/00112538
+w14:paraId="78E884CA" wp14:textId="77777777">2
+w14:paraId="3FC8507A" wp14:textId="77777777">Booking No.
+w:rsidP="79C011C1" w14:paraId="5FE3C2DE" wp14:textId="77777777">bookNo
+w:rsidP="79C011C1" w14:paraId="3B7D3667" wp14:textId="77777777">Booking number echoed back. Example: BOOZE1100001
+w14:paraId="7A036E3D" wp14:textId="77777777">3
+w:rsidP="79C011C1" w14:paraId="4D03F84F" wp14:textId="77777777">Schema Validation
+w:rsidP="79C011C1" w14:paraId="4A578980" wp14:textId="77777777">schema_validation
+w14:paraId="159ADF41" wp14:textId="77777777">PASS / FAIL
+w14:paraId="279935FF" wp14:textId="77777777">4
+w:rsidP="79C011C1" w14:paraId="317A4910" wp14:textId="77777777">Schema Validations
+w:rsidP="79C011C1" w14:paraId="3636CAFB" wp14:textId="77777777">schema_validations
+w14:paraId="39A7FEC0" wp14:textId="77777777">List of schema validation error messages if any
+w14:paraId="44240AAE" wp14:textId="77777777">5
+w14:paraId="47C30AC2" wp14:textId="77777777">Business Validation
+w:rsidP="79C011C1" w14:paraId="1628FCDD" wp14:textId="77777777">business_validation
+w14:paraId="380EB828" wp14:textId="77777777">PASS / FAIL
+w14:paraId="1B87E3DE" wp14:textId="77777777">6
+w14:paraId="4961CB9D" wp14:textId="77777777">Business Validations
+w:rsidP="79C011C1" w14:paraId="6D3FDD49" wp14:textId="77777777">business_validations
+w14:paraId="3E2E5299" wp14:textId="77777777">List of business validation error messages if any
+w14:paraId="109B8484" wp14:textId="77777777">7
+w14:paraId="3EF63D26" wp14:textId="77777777">Response
+w:rsidP="79C011C1" w14:paraId="668D286F" wp14:textId="77777777">responseMessage
+w14:paraId="57A67C5D" wp14:textId="77777777">Refer Error Message section in Master Data for list of error messages
+w14:paraId="2BA226A1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="17AD93B2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="2D306FFE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample (Success):
+w:rsidP="79C011C1" w14:paraId="28294C97" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="4AB43013" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="0F5A6A1E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "responseMessage": "Shipping Bill request submitted successfully",
+w:rsidP="79C011C1" w14:paraId="1F6A1543" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validation": "PASS",
+w:rsidP="79C011C1" w14:paraId="2C7BF21D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validations": null,
+w:rsidP="79C011C1" w14:paraId="6D92C71C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validation": "PASS",
+w:rsidP="79C011C1" w14:paraId="6089662C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validations": null,
+w:rsidP="79C011C1" w14:paraId="2226193A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "odexRefNo": "ODX/SB/2025/00112538"
+w:rsidP="79C011C1" w14:paraId="7AE58401" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w14:paraId="0DE4B5B7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="242E4FF3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample (Failure):
+w:rsidP="79C011C1" w14:paraId="0D0B3B85" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="3D6612C9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="58BD9330" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "responseMessage": "",
+w:rsidP="79C011C1" w14:paraId="29BD41DD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validation": null,
+w:rsidP="79C011C1" w14:paraId="28C45298" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validations": null,
+w:rsidP="79C011C1" w14:paraId="26FCE65D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validation": "FAIL",
+w:rsidP="79C011C1" w14:paraId="4AA82463" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validations": "1 - Request already exists done by a different customer. 2 - BOOZE1100001 : Shipping Bill Request for Booking No.: {0} with BL No.: {1} is already available.",
+w:rsidP="79C011C1" w14:paraId="569E82EE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "odexRefNo": ""
+w:rsidP="79C011C1" w14:paraId="4286D95D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w:rsidP="79C011C1" w14:paraId="2C364CB1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">7.2 Get Shipping Bill Status API
+w:rsidP="79C011C1" w14:paraId="6709D329" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Message Header
+w14:paraId="6C858BBF" wp14:textId="77777777">API Type
+w14:paraId="4AE4EF90" wp14:textId="77777777">RESTful API
+w14:paraId="4D298E60" wp14:textId="77777777">EDI Type
+w14:paraId="27414C5E" wp14:textId="77777777">JSON
+w14:paraId="46BA7FD0" wp14:textId="77777777">Method
+w14:paraId="1A69114D" wp14:textId="77777777">POST
+w14:paraId="0C5B6B13" wp14:textId="77777777">URL
+w14:paraId="418149CC" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/json/getEGMRequestDetails
+w14:paraId="75D23958" wp14:textId="77777777">Hosted By
+w:rsidP="79C011C1" w14:paraId="7D215299" wp14:textId="77777777">ODeX
+w14:paraId="7A9AF8BD" wp14:textId="77777777">Requested By
+w14:paraId="2668C9B2" wp14:textId="77777777">Client
+w14:paraId="66204FF1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="2DBF0D7D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="041E37F6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Message:
+w14:paraId="7991B8E3" wp14:textId="77777777">S.N
+w14:paraId="680E575B" wp14:textId="77777777">Field Name
+w14:paraId="2C12FF65" wp14:textId="77777777">API Field
+w14:paraId="3B7417CF" wp14:textId="77777777">Data Type &amp; Length
+w14:paraId="1130E21A" wp14:textId="77777777">M/O/C
+w14:paraId="513D93E2" wp14:textId="77777777">Description
+w14:paraId="19F14E3C" wp14:textId="77777777">1
+w14:paraId="1BD58AF6" wp14:textId="77777777">Booking No.
+w:rsidP="79C011C1" w14:paraId="1FFADC88" wp14:textId="77777777">bookNo
+w14:paraId="145EF162" wp14:textId="77777777">AN-20
+w14:paraId="05C89D75" wp14:textId="77777777">M
+w14:paraId="208B00E7" wp14:textId="77777777">Example: BOOZE1100001
+w14:paraId="7842F596" wp14:textId="77777777">2
+w14:paraId="014645E1" wp14:textId="77777777">Shipping Line
+w:rsidP="79C011C1" w14:paraId="355C0034" wp14:textId="77777777">bnfCode
+w14:paraId="05A7EDA9" wp14:textId="77777777">AN-4
+w14:paraId="4381807A" wp14:textId="77777777">M
+w14:paraId="1BE042D8" wp14:textId="77777777">Example: HLCU
+w14:paraId="68D9363B" wp14:textId="77777777">3
+w14:paraId="5C4197E9" wp14:textId="77777777">Payor Code
+w:rsidP="79C011C1" w14:paraId="2FBD5BD2" wp14:textId="77777777">pyrCode
+w14:paraId="2F6C16A2" wp14:textId="77777777">AN-50
+w14:paraId="15EB8CE3" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="0C375750" wp14:textId="77777777">Example: ODeX/MH/SHP/2503/00019
+w14:paraId="7C964D78" wp14:textId="77777777">4
+w14:paraId="4DF9D552" wp14:textId="77777777">Gateway Location
+w:rsidP="79C011C1" w14:paraId="7368AEFD" wp14:textId="77777777">gatewayLocCode
+w14:paraId="395EDCF3" wp14:textId="77777777">AN-6
+w14:paraId="72A29E6B" wp14:textId="77777777">M
+w14:paraId="6B97B7DD" wp14:textId="77777777">Example: INNSA1
+w14:paraId="6B62F1B3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="02F2C34E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="3ECE2F5F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Sample:
+w:rsidP="79C011C1" w14:paraId="42EF7971" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="70BC3C65" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="2F229ECF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bnfCode": "HLCU",
+w:rsidP="79C011C1" w14:paraId="5D6A9803" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "pyrCode": "ODeX/MH/SHP/2503/00019",
+w:rsidP="79C011C1" w14:paraId="44A7DC3E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "gatewayLocCode": "INNSA1"
+w:rsidP="79C011C1" w14:paraId="202DEC99" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w14:paraId="680A4E5D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="45F5CBF6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Message - Header Section
+w14:paraId="376D9A11" wp14:textId="77777777">S.N
+w14:paraId="3696ADF4" wp14:textId="77777777">Field Name
+w14:paraId="02BA89A1" wp14:textId="77777777">API Field
+w14:paraId="3684F335" wp14:textId="77777777">Description
+w14:paraId="065D2414" wp14:textId="77777777">1
+w14:paraId="494B21B2" wp14:textId="77777777">EGM Request ID
+w:rsidP="79C011C1" w14:paraId="2BC74FC6" wp14:textId="77777777">egmReqId
+w:rsidP="79C011C1" w14:paraId="4E47CAF3" wp14:textId="77777777">Unique numeric identifier
+w14:paraId="2CC21B90" wp14:textId="77777777">2
+w14:paraId="480F814F" wp14:textId="77777777">Booking No.
+w:rsidP="79C011C1" w14:paraId="071AFAA5" wp14:textId="77777777">bookNo
+w14:paraId="57D38F53" wp14:textId="77777777">Example: BOOZE1100001
+w14:paraId="57AB7477" wp14:textId="77777777">3
+w14:paraId="00BEF77D" wp14:textId="77777777">BL No.
+w:rsidP="79C011C1" w14:paraId="29F7542D" wp14:textId="77777777">blNo
+w14:paraId="72DF3802" wp14:textId="77777777">Example: BLZE1100001
+w14:paraId="17310F6F" wp14:textId="77777777">4
+w14:paraId="1B9FBFDD" wp14:textId="77777777">Status
+w14:paraId="1FE02DED" wp14:textId="77777777">status
+w14:paraId="380A44CB" wp14:textId="77777777">REQUESTED / VERIFIED / CONFIRMED / REJECTED / AMENDMENT
+w14:paraId="76DB90EB" wp14:textId="77777777">5
+w14:paraId="78F1E27B" wp14:textId="77777777">Vessel Name
+w:rsidP="79C011C1" w14:paraId="42E48271" wp14:textId="77777777">vesselNm
+w14:paraId="6B0D79BC" wp14:textId="77777777">Example: APIVESSEL555
+w14:paraId="1946A7AE" wp14:textId="77777777">6
+w14:paraId="6035765C" wp14:textId="77777777">Via No.
+w:rsidP="79C011C1" w14:paraId="5E2FD0A1" wp14:textId="77777777">viaNo
+w14:paraId="12F11126" wp14:textId="77777777">Example: VIA555
+w14:paraId="6F74D8FD" wp14:textId="77777777">7
+w14:paraId="6FF10B8D" wp14:textId="77777777">Container Status
+w:rsidP="79C011C1" w14:paraId="13D6AC5D" wp14:textId="77777777">cntStatus
+w14:paraId="2CBFCB9F" wp14:textId="77777777">FCL / LCL
+w14:paraId="03853697" wp14:textId="77777777">8
+w14:paraId="7B435381" wp14:textId="77777777">POD / FPOD
+w14:paraId="5E05954F" wp14:textId="77777777">pod
+w14:paraId="1735F0A8" wp14:textId="77777777">Example: AOBDD
+w14:paraId="089009E4" wp14:textId="77777777">9
+w14:paraId="5460F979" wp14:textId="77777777">No. of Containers
+w:rsidP="79C011C1" w14:paraId="696A54FE" wp14:textId="77777777">noOfCntnr
+w14:paraId="51F6273F" wp14:textId="77777777">Total container count
+w14:paraId="446DE71A" wp14:textId="77777777">10
+w14:paraId="7A5CCD97" wp14:textId="77777777">No. of SBs
+w:rsidP="79C011C1" w14:paraId="4EE60F3D" wp14:textId="77777777">noOfSB
+w14:paraId="38C762E3" wp14:textId="77777777">Number of Shipping Bills
+w14:paraId="735DA4F4" wp14:textId="77777777">11
+w:rsidP="79C011C1" w14:paraId="66E6B5DB" wp14:textId="77777777">Remarks
+w14:paraId="30609CAA" wp14:textId="77777777">remarks
+w14:paraId="4F9A364A" wp14:textId="77777777">Liner remarks if any
+w14:paraId="48DF98D7" wp14:textId="77777777">12
+w14:paraId="3BA38FAB" wp14:textId="77777777">Message
+w:rsidP="79C011C1" w14:paraId="36593C8F" wp14:textId="77777777">message
+w:rsidP="79C011C1" w14:paraId="14C8B751" wp14:textId="77777777">Success/Error message
+w14:paraId="19219836" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="296FEF7D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="79DF91CE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample:
+w:rsidP="79C011C1" w14:paraId="0424B902" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="6FB1AAF8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "data": {
+w:rsidP="79C011C1" w14:paraId="044E60A7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "iEgmRequestVo": {
+w:rsidP="79C011C1" w14:paraId="05AFAF35" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "egmReqId": 112538,
+w:rsidP="79C011C1" w14:paraId="0D257575" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "portCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="4758FBD2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="1AF4375B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "shipmentTp": null,
+w:rsidP="79C011C1" w14:paraId="72FC53DB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="165CA912" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="642B4CFC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "cntStatus": "FCL",
+w:rsidP="79C011C1" w14:paraId="7A5E665E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "natureOfCargo": "C",
+w:rsidP="79C011C1" w14:paraId="24DB19BE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "cargoTp": null,
+w:rsidP="79C011C1" w14:paraId="5F909800" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "portOfSBFiled": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="45ED4E9D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="5FDA0D66" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "originalDocRev": false,
+w:rsidP="79C011C1" w14:paraId="5CB0E80E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "status": "VERIFIED",
+w:rsidP="79C011C1" w14:paraId="6F1C6FD7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "remarks": null,
+w:rsidP="79C011C1" w14:paraId="4D03EA72" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "shpInstructNo": null,
+w:rsidP="79C011C1" w14:paraId="07BFED31" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "vesselViaNm": null,
+w:rsidP="79C011C1" w14:paraId="1B1A694A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "egmRequestStatVoList": null,
+w:rsidP="79C011C1" w14:paraId="70DEF0E2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "egmReqAttVoList": [
+w:rsidP="79C011C1" w14:paraId="5F123E65" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                {
+w:rsidP="79C011C1" w14:paraId="47C8EAE7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDtlsId": null,
+w:rsidP="79C011C1" w14:paraId="1F48288E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attTitle": "LOC",
+w:rsidP="79C011C1" w14:paraId="66CB96F7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDesc": null,
+w:rsidP="79C011C1" w14:paraId="009C4886" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attPath": null,
+w:rsidP="79C011C1" w14:paraId="5216DEEA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attFile": null,
+w:rsidP="79C011C1" w14:paraId="6AD549B2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attNm": "shipping_bill.pdf",
+w:rsidP="79C011C1" w14:paraId="7D6FC7D6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attData": "VUVzREJCUUFDQWdJQU11QlQxc0FBQUFBQUFBQUFBQUFBQUFSQUFBQVpHOWpVSEp2Y0hNdlkyOXlaUzU0Yld5dGtWMUx3ekFVaHUvN0swTHUyNU4=",
+w:rsidP="79C011C1" w14:paraId="5369FE80" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "validUpto": null,
+w:rsidP="79C011C1" w14:paraId="4ADEFD52" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "encAttDtlsId": null,
+w:rsidP="79C011C1" w14:paraId="7E96A753" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "encTempAttDtlsId": null,
+w:rsidP="79C011C1" w14:paraId="2545E3C5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "encInvInfoId": null,
+w:rsidP="79C011C1" w14:paraId="60E53444" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attUploadDtTs": null,
+w:rsidP="79C011C1" w14:paraId="180F38A3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attByteArr": null,
+w:rsidP="79C011C1" w14:paraId="53F6B96D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attCnfrmDt": null,
+w:rsidP="79C011C1" w14:paraId="08011FB0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "crUsr": null,
+w:rsidP="79C011C1" w14:paraId="555DC7AA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "crTs": null,
+w:rsidP="79C011C1" w14:paraId="463F2725" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "pyrNm": null,
+w:rsidP="79C011C1" w14:paraId="72B7FCD0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "createTime": null,
+w:rsidP="79C011C1" w14:paraId="5D5EAA42" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "encAttPath": null,
+w:rsidP="79C011C1" w14:paraId="2900082F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "egmReqAttId": null
+w:rsidP="79C011C1" w14:paraId="1A082F78" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                },
+w:rsidP="79C011C1" w14:paraId="6FAE4628" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                {
+w:rsidP="79C011C1" w14:paraId="1D2483D2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDtlsId": null,
+w:rsidP="79C011C1" w14:paraId="442EBBFE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attTitle": "EIR",
+w:rsidP="79C011C1" w14:paraId="23458E6C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDesc": null,
+w:rsidP="79C011C1" w14:paraId="346461C8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attPath": null,
+w:rsidP="79C011C1" w14:paraId="1BE333C2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attFile": null,
+w:rsidP="79C011C1" w14:paraId="06D0ED77" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attNm": "eir_document.pdf",
+w:rsidP="79C011C1" w14:paraId="10315CBB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attData": "VUVzREJCUUFDQWdJQU11QlQxc0FBQUFBQUFBQUFBQUFBQUFSQUFBQVpHOWpVSEp2Y0hNdlkyOXlaUzU0Yld5dGtWMUx3ekFVaHUvN0w=",
+w:rsidP="79C011C1" w14:paraId="59A03654" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "validUpto": null,
+w:rsidP="79C011C1" w14:paraId="71DE520D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "egmReqAttId": null
+w:rsidP="79C011C1" w14:paraId="2A89FEBF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                },
+w:rsidP="79C011C1" w14:paraId="5E82E768" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                {
+w:rsidP="79C011C1" w14:paraId="613379E4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDtlsId": null,
+w:rsidP="79C011C1" w14:paraId="67B2E8C7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attTitle": "TSR",
+w:rsidP="79C011C1" w14:paraId="042145F9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attDesc": null,
+w:rsidP="79C011C1" w14:paraId="5261573D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attPath": null,
+w:rsidP="79C011C1" w14:paraId="6F583239" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attFile": null,
+w:rsidP="79C011C1" w14:paraId="3F0A0C6F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attNm": "tally_sheet.pdf",
+w:rsidP="79C011C1" w14:paraId="2DC26CC7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "attData": "VUVzREJCUUFDQWdJQUcxMVQxc0FBQUFBQUFBQUFBQUFBQUFSQUFBQVpHOWpVSEp2Y0hNdlkyOXlaUzU0Yld5MGwwMVAyMEFRaHUvNUZi",
+w:rsidP="79C011C1" w14:paraId="60817102" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "validUpto": null,
+w:rsidP="79C011C1" w14:paraId="2BB0E445" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "egmReqAttId": null
+w:rsidP="79C011C1" w14:paraId="10DEE0A6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                }
+w:rsidP="79C011C1" w14:paraId="5F4709E7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            ],
+w:rsidP="79C011C1" w14:paraId="2AB3F7A2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "locId": null,
+w:rsidP="79C011C1" w14:paraId="751FAF9B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "iEgmRequestcntnrVoList": [
+w:rsidP="79C011C1" w14:paraId="307D6F2F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                {
+w:rsidP="79C011C1" w14:paraId="2BB3D822" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "cntNo": "YNZE1000001",
+w:rsidP="79C011C1" w14:paraId="1C4B1AB1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "grossWt": 1200.0,
+w:rsidP="79C011C1" w14:paraId="7BA66E70" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "shipBillNo": "SB74533",
+w:rsidP="79C011C1" w14:paraId="14B5BFB0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "shipBillDt": "08-09-2025",
+w:rsidP="79C011C1" w14:paraId="14FAF128" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "shipBillTp": "DFS",
+w:rsidP="79C011C1" w14:paraId="68FCFEA7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "exporterNm": "ABC Exporters Pvt Ltd",
+w:rsidP="79C011C1" w14:paraId="3B585C04" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "consigneeNm": "XYZ Trading LLC",
+w:rsidP="79C011C1" w14:paraId="7C0F33F0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "markNum": "MARK001",
+w:rsidP="79C011C1" w14:paraId="616CC89C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "cargoDesc": "General Cargo Description",
+w:rsidP="79C011C1" w14:paraId="15F11EAB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "noOfPkg": 12,
+w:rsidP="79C011C1" w14:paraId="2DE17326" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "ischeck": null,
+w:rsidP="79C011C1" w14:paraId="450E15D1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "hsnCode": "84211910",
+w:rsidP="79C011C1" w14:paraId="5796445E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "agentSealNo": null,
+w:rsidP="79C011C1" w14:paraId="0A6D1BBF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "customSealNo": null,
+w:rsidP="79C011C1" w14:paraId="67B49F7D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "pol": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="041BA22F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "leoNo": null,
+w:rsidP="79C011C1" w14:paraId="7381FBBC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="61989F64" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "cargoWt": 1800.0,
+w:rsidP="79C011C1" w14:paraId="41F9523E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "leoDt": null,
+w:rsidP="79C011C1" w14:paraId="26A54945" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "pcinNo": "SEZ",
+w:rsidP="79C011C1" w14:paraId="20780308" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "socFlag": "N",
+w:rsidP="79C011C1" w14:paraId="2D55906C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "cntnrAgentCode": "AABCH7319B",
+w:rsidP="79C011C1" w14:paraId="053218A9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "typOfPackages": "BDL",
+w:rsidP="79C011C1" w14:paraId="6D3C406E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "cargoTp": "GEN",
+w:rsidP="79C011C1" w14:paraId="7016EAA7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                    "iec": "1234567890"
+w:rsidP="79C011C1" w14:paraId="5A9496DE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                }
+w:rsidP="79C011C1" w14:paraId="40F509A4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            ],
+w:rsidP="79C011C1" w14:paraId="5F53D384" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "noOfCntnr": 1,
+w:rsidP="79C011C1" w14:paraId="3B3B1DF9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "blNo": "BLZE1100001",
+w:rsidP="79C011C1" w14:paraId="51982FA8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "isHBLInvolved": "N",
+w:rsidP="79C011C1" w14:paraId="3F33F026" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "pyrCode": "ODeX/MH/SHP/2503/00019",
+w:rsidP="79C011C1" w14:paraId="446261AB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "bnfCode": "HLCU",
+w:rsidP="79C011C1" w14:paraId="1DD033D1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "icdLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="6F7EC716" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "gatewayLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="1B1BF200" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "locCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="378119B6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            "noOfSB": 1
+w:rsidP="79C011C1" w14:paraId="3628C5C7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        }
+w:rsidP="79C011C1" w14:paraId="0A144028" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="25582A81" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "message": "EGM request details retrieved successfully",
+w:rsidP="79C011C1" w14:paraId="3885FBFA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "status": "SUCCESS"
+w:rsidP="79C011C1" w14:paraId="50CBB65B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w:rsidP="79C011C1" w14:paraId="545A8D74" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">7.3 Get Shipping Bill Attachment Details API
+w:rsidP="79C011C1" w14:paraId="3FEC28B3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">This API returns the list of mandatory and optional attachments to be uploaded for a given Shipping Line + Location + Container Status combination.
+w:rsidP="79C011C1" w14:paraId="201A1092" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Message Header
+w14:paraId="2885F04D" wp14:textId="77777777">API Type
+w14:paraId="3EFB4A8F" wp14:textId="77777777">RESTful API
+w14:paraId="1FC4C9C1" wp14:textId="77777777">EDI Type
+w14:paraId="397D4F71" wp14:textId="77777777">JSON
+w14:paraId="5D55D8C2" wp14:textId="77777777">Method
+w14:paraId="02773F02" wp14:textId="77777777">POST
+w14:paraId="25A522BB" wp14:textId="77777777">URL
+w14:paraId="7B710E3E" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/json/getSbAttDtls
+w14:paraId="02D7ED35" wp14:textId="77777777">Hosted By
+w:rsidP="79C011C1" w14:paraId="66C8468A" wp14:textId="77777777">ODeX
+w14:paraId="5835A683" wp14:textId="77777777">Requested By
+w14:paraId="74AB4F06" wp14:textId="77777777">Client
+w14:paraId="7194DBDC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="769D0D3C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="3237005E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Message:
+w14:paraId="1F1CF8C2" wp14:textId="77777777">S.N
+w14:paraId="24575FD4" wp14:textId="77777777">Field Name
+w14:paraId="5D3DF88C" wp14:textId="77777777">API Field
+w14:paraId="7B2A907E" wp14:textId="77777777">Data Type
+w14:paraId="393FB0A7" wp14:textId="77777777">M/O/C
+w14:paraId="653C03CD" wp14:textId="77777777">Description
+w14:paraId="2E32D521" wp14:textId="77777777">1
+w14:paraId="6C13C9FA" wp14:textId="77777777">Payor Code
+w:rsidP="79C011C1" w14:paraId="4AC65715" wp14:textId="77777777">pyrCode
+w14:paraId="49F72A08" wp14:textId="77777777">AN-50
+w14:paraId="627E5AD6" wp14:textId="77777777">M
+w:rsidP="79C011C1" w14:paraId="0D00981D" wp14:textId="77777777">Example: ODeX/MH/SHP/2503/00020
+w14:paraId="138328F9" wp14:textId="77777777">2
+w14:paraId="0691A4A1" wp14:textId="77777777">Beneficiary ID
+w:rsidP="79C011C1" w14:paraId="40E9F384" wp14:textId="77777777">bnfId
+w14:paraId="514A7B6F" wp14:textId="77777777">AN-4
+w14:paraId="61A57A1C" wp14:textId="77777777">M
+w14:paraId="063E70FA" wp14:textId="77777777">Example: HDMU
+w14:paraId="297C039E" wp14:textId="77777777">3
+w14:paraId="202CA042" wp14:textId="77777777">Location ID
+w:rsidP="79C011C1" w14:paraId="4FE906D6" wp14:textId="77777777">locId
+w14:paraId="7106D375" wp14:textId="77777777">AN-6
+w14:paraId="524630E2" wp14:textId="77777777">M
+w14:paraId="4C4462D4" wp14:textId="77777777">Example: INNSA1
+w14:paraId="22C3D751" wp14:textId="77777777">4
+w14:paraId="28462F89" wp14:textId="77777777">Container Status
+w:rsidP="79C011C1" w14:paraId="6B01C811" wp14:textId="77777777">cntStatus
+w14:paraId="16B2B7BA" wp14:textId="77777777">ALPHA-3
+w14:paraId="36E3BA94" wp14:textId="77777777">M
+w14:paraId="561DB9D9" wp14:textId="77777777">FCL / LCL
+w14:paraId="729DE7E4" wp14:textId="77777777">5
+w14:paraId="6C94E408" wp14:textId="77777777">Hash Key
+w:rsidP="79C011C1" w14:paraId="7B798ABA" wp14:textId="77777777">hashKey
+w14:paraId="5BB4DFE6" wp14:textId="77777777">AN
+w14:paraId="4ACE758E" wp14:textId="77777777">C
+w14:paraId="5FC379A4" wp14:textId="77777777">Required only if encryption enabled
+w14:paraId="54CD245A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="1231BE67" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="092AB506" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Sample:
+w:rsidP="79C011C1" w14:paraId="10DDC6F2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="7BEFE7BC" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "pyrCode": "ODeX/MH/SHP/2503/00020",
+w:rsidP="79C011C1" w14:paraId="74C9AB9D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bnfId": "HDMU",
+w:rsidP="79C011C1" w14:paraId="7C8A8A3A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "locId": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="243A513A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "cntStatus": "LCL",
+w:rsidP="79C011C1" w14:paraId="19FF6FF6" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "hashKey": "3746888286"
+w:rsidP="79C011C1" w14:paraId="6677DC93" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w14:paraId="36FEB5B0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="4EFAB521" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample:
+w:rsidP="79C011C1" w14:paraId="79932992" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">[
+w:rsidP="79C011C1" w14:paraId="4958E97F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="27E7FBBB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "SB",
+w:rsidP="79C011C1" w14:paraId="607A73D0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Upload .SB File (Checklist)",
+w:rsidP="79C011C1" w14:paraId="53685855" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": false
+w:rsidP="79C011C1" w14:paraId="4572088E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="5FA9B592" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="1AA9B024" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "LOC",
+w:rsidP="79C011C1" w14:paraId="5A45ACD3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Shipping Bill / LEO",
+w:rsidP="79C011C1" w14:paraId="73333F57" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": true
+w:rsidP="79C011C1" w14:paraId="14D1079E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="3B4A769C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="205E21E8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "CLP",
+w:rsidP="79C011C1" w14:paraId="5571D93A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Container Load Plan (CLP)",
+w:rsidP="79C011C1" w14:paraId="0C3D2D15" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": false
+w:rsidP="79C011C1" w14:paraId="1F889E13" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="7960A8D2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="11855210" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "EIR",
+w:rsidP="79C011C1" w14:paraId="7378D8F3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Equipment Interchange Report",
+w:rsidP="79C011C1" w14:paraId="1ED35E80" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": true
+w:rsidP="79C011C1" w14:paraId="4DD6B3AF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="1F12D0E3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="16AE3256" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "O",
+w:rsidP="79C011C1" w14:paraId="02C6B48D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Other",
+w:rsidP="79C011C1" w14:paraId="4A1E7622" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": false
+w:rsidP="79C011C1" w14:paraId="6D9F1C69" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    },
+w:rsidP="79C011C1" w14:paraId="5C7C4877" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    {
+w:rsidP="79C011C1" w14:paraId="0C4DA550" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeId": "TSR",
+w:rsidP="79C011C1" w14:paraId="4FB5BC7F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "codeDesc": "Tally Sheet / Stuffing Report",
+w:rsidP="79C011C1" w14:paraId="6C15558B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isReq": true
+w:rsidP="79C011C1" w14:paraId="6624AE85" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    }
+w:rsidP="79C011C1" w14:paraId="2E701FF9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">]
+w:rsidP="79C011C1" w14:paraId="6DB2EBE2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">7.4 Shipping Bill Amendment API
+w:rsidP="79C011C1" w14:paraId="7DDBCA9D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">The Shipping Bill Amendment API enables registered users to withdraw or update a previously submitted Shipping Bill request for export operations. This functionality is essential in scenarios where the original submission contains incorrect information, operational plans change, or the request was submitted in error or duplicate. Amendment can be initiated, provided the Shipping Bill is in an active state such as 'Verified' or 'Confirmed'.
+w:rsidP="79C011C1" w14:paraId="60CBB7A2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">In cases where the request has already been confirmed, a structured Request for Amendment (RFA) workflow is followed, requiring approval from the relevant Liner authority. The amendment process ensures data integrity, prevents unauthorized access, and facilitates resubmission of corrected Shipping bill details where necessary.
+w14:paraId="72F77DC3" wp14:textId="77777777">Status
+w14:paraId="34E8A8B8" wp14:textId="77777777">Description
+w:rsidP="79C011C1" w14:paraId="59A4F45A" wp14:textId="77777777">Requested
+w:rsidP="79C011C1" w14:paraId="7B78F5B8" wp14:textId="77777777">The Shipping Bill request has been submitted by the Payor but is yet to be verified or acted upon.
+w14:paraId="608E18D5" wp14:textId="77777777">Verified
+w:rsidP="79C011C1" w14:paraId="306B1754" wp14:textId="77777777">The Shipping bill request has been validated for correctness and meets all required criteria.
+w14:paraId="00A03529" wp14:textId="77777777">Confirmed
+w14:paraId="2361F6EB" wp14:textId="77777777">Shipping bill has been formally approved by the Liner or the system and is ready for operational use.
+w14:paraId="2257E8C0" wp14:textId="77777777">Rejected
+w14:paraId="7CE1B0D0" wp14:textId="77777777">The Shipping bill request has been rejected due to invalid data, non-compliance, or operational reasons.
+w14:paraId="6F641F08" wp14:textId="77777777">Amendment Requested
+w:rsidP="79C011C1" w14:paraId="41618029" wp14:textId="77777777">An amendment request has been initiated after confirmation, pending approval.
+w14:paraId="7BD5BC51" wp14:textId="77777777">Amendment Approved
+w14:paraId="3D1C8B5C" wp14:textId="77777777">The amendment request has been approved, and the Shipping bill is officially updated.
+w14:paraId="5D3581D8" wp14:textId="77777777">Amendment Rejected
+w:rsidP="79C011C1" w14:paraId="5D872F5F" wp14:textId="77777777">The amendment request has been denied, and Shipping bill remains as previously confirmed.
+w14:paraId="30D7AA69" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="7196D064" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="50CCEE05" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Message Header:
+w14:paraId="1A30E76E" wp14:textId="77777777">API Type
+w14:paraId="0BD027F2" wp14:textId="77777777">RESTful API
+w14:paraId="07AB0E4C" wp14:textId="77777777">EDI Type
+w14:paraId="484CF61D" wp14:textId="77777777">JSON
+w14:paraId="2AF58E36" wp14:textId="77777777">Method
+w14:paraId="6F0D128D" wp14:textId="77777777">POST
+w14:paraId="4819F333" wp14:textId="77777777">URL
+w14:paraId="32BA73A6" wp14:textId="77777777">https://staging.odexglobal.com/RS/iEGMService/saveEGMRequestApi
+w14:paraId="7B60BF9F" wp14:textId="77777777">Hosted By
+w:rsidP="79C011C1" w14:paraId="18028DE7" wp14:textId="77777777">ODeX
+w14:paraId="35637CDD" wp14:textId="77777777">Requested By
+w14:paraId="7E732F06" wp14:textId="77777777">Client
+w14:paraId="34FF1C98" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6D072C0D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="039EE59F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Request Sample:
+w:rsidP="79C011C1" w14:paraId="54DE2FC3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="1B9AA441" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "egmRequestVo": {
+w:rsidP="79C011C1" w14:paraId="67206040" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "egmReqId": 112538,
+w:rsidP="79C011C1" w14:paraId="4CCD714D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "odexRefNo": "ODX/SB/2025/00112538",
+w:rsidP="79C011C1" w14:paraId="1C29A8BD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "locCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="2EB10420" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "icdLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="205B7ECF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "gatewayLocCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="366F96F8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "portCode": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="75E176CA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bnfCode": "HLCU",
+w:rsidP="79C011C1" w14:paraId="5A1A5C27" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "pyrCode": "ODeX/MH/SHP/2503/00019",
+w:rsidP="79C011C1" w14:paraId="2B3EF9E7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="203B17F5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "vesselNm": "APIVESSEL555",
+w:rsidP="79C011C1" w14:paraId="26CDC407" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "viaNo": "VIA555",
+w:rsidP="79C011C1" w14:paraId="70148FE4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "cntStatus": "FCL",
+w:rsidP="79C011C1" w14:paraId="134025B9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "natureOfCargo": "C",
+w:rsidP="79C011C1" w14:paraId="4C7A131E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "portOfSBFiled": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="577C5E98" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="2469B512" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "blNo": "BLZE1100001",
+w:rsidP="79C011C1" w14:paraId="3030E188" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "isHBLInvolved": "N",
+w:rsidP="79C011C1" w14:paraId="6CBB2976" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "status": "AMENDMENT",
+w:rsidP="79C011C1" w14:paraId="745DD4C5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "remarks": "Updating Shipping Bill No and Cargo Weight",
+w:rsidP="79C011C1" w14:paraId="7958D2AE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        "egmRequestcntnrVoList": [
+w:rsidP="79C011C1" w14:paraId="46CCD50A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            {
+w:rsidP="79C011C1" w14:paraId="178492F0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cntNo": "YNZE1000001",
+w:rsidP="79C011C1" w14:paraId="790E7F34" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "grossWt": 1250.0,
+w:rsidP="79C011C1" w14:paraId="72ADE243" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillNo": "SB74599",
+w:rsidP="79C011C1" w14:paraId="4707041B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillDt": "10-09-2025",
+w:rsidP="79C011C1" w14:paraId="070B0384" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "shipBillTp": "DFS",
+w:rsidP="79C011C1" w14:paraId="07EEED6D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "exporterNm": "ABC Exporters Pvt Ltd",
+w:rsidP="79C011C1" w14:paraId="450384B8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "consigneeNm": "XYZ Trading LLC",
+w:rsidP="79C011C1" w14:paraId="20516C02" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "markNum": "MARK001",
+w:rsidP="79C011C1" w14:paraId="42613A05" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoDesc": "General Cargo Description",
+w:rsidP="79C011C1" w14:paraId="14292984" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "noOfPkg": 12,
+w:rsidP="79C011C1" w14:paraId="3B973A4A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "hsnCode": "84211910",
+w:rsidP="79C011C1" w14:paraId="3EFDF0F0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pol": "INNSA1",
+w:rsidP="79C011C1" w14:paraId="4B003EC9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pod": "AOBDD",
+w:rsidP="79C011C1" w14:paraId="1A7AC3F0" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoWt": 1850.0,
+w:rsidP="79C011C1" w14:paraId="4261529B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "pcinNo": "SEZ",
+w:rsidP="79C011C1" w14:paraId="05A904D2" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "iec": "1234567890",
+w:rsidP="79C011C1" w14:paraId="6890534E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "socFlag": "N",
+w:rsidP="79C011C1" w14:paraId="23DCC658" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cntnrAgentCode": "AABCH7319B",
+w:rsidP="79C011C1" w14:paraId="743F6ED8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "typOfPackages": "BDL",
+w:rsidP="79C011C1" w14:paraId="5D01F893" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">                "cargoTp": "GEN"
+w:rsidP="79C011C1" w14:paraId="7CBA7410" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">            }
+w:rsidP="79C011C1" w14:paraId="0852CE5F" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">        ]
+w:rsidP="79C011C1" w14:paraId="79A8D64D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    }
+w:rsidP="79C011C1" w14:paraId="1301A7DE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w14:paraId="48A21919" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="09677177" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response Sample:
+w:rsidP="79C011C1" w14:paraId="73D51EE8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">{
+w:rsidP="79C011C1" w14:paraId="7C3CD1A7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "bookNo": "BOOZE1100001",
+w:rsidP="79C011C1" w14:paraId="05A528C3" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "responseMessage": "Shipping Bill amendment request submitted successfully",
+w:rsidP="79C011C1" w14:paraId="01D1BDAA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validation": "PASS",
+w:rsidP="79C011C1" w14:paraId="288A7410" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "schema_validations": null,
+w:rsidP="79C011C1" w14:paraId="328868E8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validation": "PASS",
+w:rsidP="79C011C1" w14:paraId="06CD5899" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "business_validations": null,
+w:rsidP="79C011C1" w14:paraId="1ACD5B4D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "odexRefNo": "ODX/SB/2025/00112538",
+w:rsidP="79C011C1" w14:paraId="5A45E9F9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">    "status": "AMENDMENT REQUESTED"
+w:rsidP="79C011C1" w14:paraId="0E418489" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">}
+w:rsidP="79C011C1" w14:paraId="6343ACC4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">8. MASTER DATA
+w14:paraId="55C66309" wp14:textId="77777777">S.N
+w14:paraId="4FDF8C4D" wp14:textId="77777777">Field
+w14:paraId="6D3D45CB" wp14:textId="77777777">Value
+w14:paraId="56C49854" wp14:textId="77777777">Description / Additional Details
+w14:paraId="0C50080F" wp14:textId="77777777">1
+w14:paraId="02BDFFE3" wp14:textId="77777777">Container Status
+w14:paraId="4541E6DF" wp14:textId="77777777">FCL
+w14:paraId="76EADFB0" wp14:textId="77777777">Full Container Load
+w14:paraId="6BD18F9B" wp14:textId="77777777" />
+w14:paraId="238601FE" wp14:textId="77777777" />
+w14:paraId="3766DD28" wp14:textId="77777777">LCL
+w14:paraId="1327DA64" wp14:textId="77777777">Less than Container Load
+w14:paraId="54B6C890" wp14:textId="77777777">2
+w:rsidP="79C011C1" w14:paraId="3135F51A" wp14:textId="77777777">Cargo Type
+w14:paraId="3411883D" wp14:textId="77777777">HAZ
+w14:paraId="44EC8E67" wp14:textId="77777777">Hazardous Shipment Cargo
+w14:paraId="0F3CABC7" wp14:textId="77777777" />
+w14:paraId="5B08B5D1" wp14:textId="77777777" />
+w14:paraId="62FFA2BE" wp14:textId="77777777">GEN
+w14:paraId="4D8C8D40" wp14:textId="77777777">General Shipment Cargo
+w14:paraId="16DEB4AB" wp14:textId="77777777" />
+w14:paraId="0AD9C6F4" wp14:textId="77777777" />
+w14:paraId="4CD8F9E9" wp14:textId="77777777">REF
+w14:paraId="642985DD" wp14:textId="77777777">Reefer Shipment Cargo
+w14:paraId="4B1F511A" wp14:textId="77777777" />
+w14:paraId="65F9C3DC" wp14:textId="77777777" />
+w14:paraId="333C601B" wp14:textId="77777777">ONION
+w14:paraId="6BD68C64" wp14:textId="77777777">Onion Cargo
+w14:paraId="5023141B" wp14:textId="77777777" />
+w14:paraId="1F3B1409" wp14:textId="77777777" />
+w14:paraId="013A0BED" wp14:textId="77777777">ODC
+w14:paraId="4AE2CB73" wp14:textId="77777777">Open Dimension Container Cargo
+w14:paraId="562C75D1" wp14:textId="77777777" />
+w14:paraId="664355AD" wp14:textId="77777777" />
+w14:paraId="1E985E06" wp14:textId="77777777">ODC(HAZ)
+w14:paraId="51C7116A" wp14:textId="77777777">ODC Hazardous
+w14:paraId="1A965116" wp14:textId="77777777" />
+w14:paraId="7DF4E37C" wp14:textId="77777777" />
+w14:paraId="3A425033" wp14:textId="77777777">FLT
+w14:paraId="550758E0" wp14:textId="77777777">Flexi Tank
+w14:paraId="44FB30F8" wp14:textId="77777777" />
+w14:paraId="1DA6542E" wp14:textId="77777777" />
+w14:paraId="225A0DCA" wp14:textId="77777777">REF(HAZ)
+w14:paraId="37341870" wp14:textId="77777777">Reefer Hazardous
+w14:paraId="3041E394" wp14:textId="77777777" />
+w14:paraId="722B00AE" wp14:textId="77777777" />
+w14:paraId="24BD5BD8" wp14:textId="77777777">FLT(HAZ)
+w14:paraId="0A1B1E77" wp14:textId="77777777">Hazardous Flexi Tank
+w14:paraId="42C6D796" wp14:textId="77777777" />
+w14:paraId="6E1831B3" wp14:textId="77777777" />
+w14:paraId="4124EA2C" wp14:textId="77777777">PERISH
+w:rsidP="79C011C1" w14:paraId="3ABC02D0" wp14:textId="77777777">Perishable Cargo
+w14:paraId="2A2176D0" wp14:textId="77777777">3
+w14:paraId="214DDD23" wp14:textId="77777777">Types of Shipping Bills
+w14:paraId="7E4A385A" wp14:textId="77777777">DFS
+w14:paraId="232AAB78" wp14:textId="77777777">Duty Free Shipping
+w14:paraId="54E11D2A" wp14:textId="77777777" />
+w14:paraId="31126E5D" wp14:textId="77777777" />
+w14:paraId="0A1554FB" wp14:textId="77777777">DS
+w14:paraId="69C7C4B1" wp14:textId="77777777">Drawback Shipping
+w14:paraId="2DE403A5" wp14:textId="77777777" />
+w14:paraId="62431CDC" wp14:textId="77777777" />
+w14:paraId="3C59C2BD" wp14:textId="77777777">LIC
+w14:paraId="041C86A3" wp14:textId="77777777">Licensed
+w14:paraId="5055DCC4" wp14:textId="77777777">4
+w14:paraId="290C74D8" wp14:textId="77777777">Nature of Cargo
+w14:paraId="1E19BF87" wp14:textId="77777777">C
+w:rsidP="79C011C1" w14:paraId="2216CB13" wp14:textId="77777777">Containerised
+w14:paraId="49E398E2" wp14:textId="77777777" />
+w14:paraId="16287F21" wp14:textId="77777777" />
+w14:paraId="26FEBBE2" wp14:textId="77777777">CP
+w:rsidP="79C011C1" w14:paraId="1C8433E3" wp14:textId="77777777">Containerised Project Cargo
+w14:paraId="5BE93A62" wp14:textId="77777777" />
+w14:paraId="384BA73E" wp14:textId="77777777" />
+w14:paraId="7B1A94FB" wp14:textId="77777777">DB
+w14:paraId="3D11911A" wp14:textId="77777777">Dry Bulk
+w14:paraId="34B3F2EB" wp14:textId="77777777" />
+w14:paraId="7D34F5C7" wp14:textId="77777777" />
+w14:paraId="0FAE9171" wp14:textId="77777777">LB
+w:rsidP="79C011C1" w14:paraId="6DADE570" wp14:textId="77777777">Liquid Bulk
+w14:paraId="1D0ADF7A" wp14:textId="77777777">5
+w14:paraId="79A61CC1" wp14:textId="77777777">Attachment Title
+w14:paraId="7A25FF48" wp14:textId="77777777">LOC
+w14:paraId="0D4181D9" wp14:textId="77777777">Shipping Bill / LEO
+w14:paraId="0B4020A7" wp14:textId="77777777" />
+w14:paraId="1D7B270A" wp14:textId="77777777" />
+w14:paraId="1FA60B10" wp14:textId="77777777">EIR
+w14:paraId="187B423D" wp14:textId="77777777">Equipment Interchange Report
+w14:paraId="4F904CB7" wp14:textId="77777777" />
+w14:paraId="06971CD3" wp14:textId="77777777" />
+w14:paraId="166EEE3E" wp14:textId="77777777">TSR
+w14:paraId="14B38ECD" wp14:textId="77777777">Tally Sheet / Stuffing Report
+w14:paraId="2A1F701D" wp14:textId="77777777" />
+w14:paraId="03EFCA41" wp14:textId="77777777" />
+w14:paraId="542E2FBD" wp14:textId="77777777">CLP
+w14:paraId="5B924BF6" wp14:textId="77777777">Container Load Plan
+w14:paraId="5F96A722" wp14:textId="77777777" />
+w14:paraId="5B95CD12" wp14:textId="77777777" />
+w14:paraId="73E95FB4" wp14:textId="77777777">SB
+w14:paraId="3662F64F" wp14:textId="77777777">.SB File (Checklist)
+w14:paraId="5220BBB2" wp14:textId="77777777" />
+w14:paraId="13CB595B" wp14:textId="77777777" />
+w14:paraId="1B7B08A3" wp14:textId="77777777">O
+w14:paraId="67AC7CDD" wp14:textId="77777777">Other
+w14:paraId="6DDB914C" wp14:textId="77777777">6
+w:rsidP="79C011C1" w14:paraId="5671330C" wp14:textId="77777777">odexRefNo
+w:rsidP="79C011C1" w14:paraId="752F6C21" wp14:textId="77777777">Auto-generated
+w:rsidP="79C011C1" w14:paraId="545E9817" wp14:textId="77777777">Unique No. for each request. Shared by ODeX in the Acknowledgement file.
+w14:paraId="28AF3A15" wp14:textId="77777777">7
+w:rsidP="79C011C1" w14:paraId="3D977180" wp14:textId="77777777">PayorId
+w:rsidP="79C011C1" w14:paraId="51256827" wp14:textId="77777777">Provided by ODeX
+w14:paraId="28787AD7" wp14:textId="77777777">Unique for each Payor. Shared separately for test and production.
+w14:paraId="49832D11" wp14:textId="77777777">8
+w:rsidP="79C011C1" w14:paraId="3CD262BA" wp14:textId="77777777">secretKey
+w:rsidP="79C011C1" w14:paraId="0362D39A" wp14:textId="77777777">Provided by ODeX
+w14:paraId="08B4299A" wp14:textId="77777777">Key used in encrypting the message. Unique for each shipper.
+w14:paraId="6D9C8D39" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="54A78024" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">8.1 Liner BNF Codes
+w14:paraId="0CB26E3E" wp14:textId="77777777">BNF Code
+w14:paraId="49F1648B" wp14:textId="77777777">Shipping Line
+w14:paraId="3B94B8C0" wp14:textId="77777777">HLCU
+w14:paraId="01B0E3EC" wp14:textId="77777777">Hapag-Lloyd
+w14:paraId="1EBFF336" wp14:textId="77777777">MSCU
+w14:paraId="663CB502" wp14:textId="77777777">Mediterranean Shipping Company (MSC)
+w14:paraId="22F48FD4" wp14:textId="77777777">HDMU
+w14:paraId="4C9D6B3B" wp14:textId="77777777">Hyundai Merchant Marine (HMM)
+w14:paraId="3EBAD1C4" wp14:textId="77777777">ONEY
+w14:paraId="787E0F45" wp14:textId="77777777">Ocean Network Express (ONE)
+w14:paraId="34728255" wp14:textId="77777777">COSU
+w14:paraId="4492A84D" wp14:textId="77777777">COSCO Shipping Lines
+w14:paraId="25C1B988" wp14:textId="77777777">OOLU
+w14:paraId="12198CF3" wp14:textId="77777777">Orient Overseas Container Line (OOCL)
+w14:paraId="6CC44CE8" wp14:textId="77777777">CMDU
+w14:paraId="316A54F2" wp14:textId="77777777">CMA CGM
+w14:paraId="5AAB31F1" wp14:textId="77777777">MAEU
+w14:paraId="3B7A4993" wp14:textId="77777777">Maersk Line
+w14:paraId="4F7AEFAB" wp14:textId="77777777">KMTC
+w:rsidP="79C011C1" w14:paraId="7A6603A5" wp14:textId="77777777">Korea Marine Transport (KMTC)
+w14:paraId="65C24D3F" wp14:textId="77777777">RCLA
+w14:paraId="6FE5B970" wp14:textId="77777777">Regional Container Lines (RCL)
+w14:paraId="675E05EE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="6FC5F9BA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">8.2 Location (Port) Codes
+w14:paraId="551E2EB2" wp14:textId="77777777">Port Code
+w14:paraId="1D2B207C" wp14:textId="77777777">Location
+w14:paraId="6F6A929D" wp14:textId="77777777">INNSA1
+w:rsidP="79C011C1" w14:paraId="3A271BE9" wp14:textId="77777777">Nhava Sheva (JNPT), Maharashtra, India
+w14:paraId="2C9B3AA6" wp14:textId="77777777">INMUN1
+w:rsidP="79C011C1" w14:paraId="7261FF18" wp14:textId="77777777">Mundra Port, Gujarat, India
+w14:paraId="5E445858" wp14:textId="77777777">INMAA1
+w14:paraId="05E8C21B" wp14:textId="77777777">Chennai Port, Tamil Nadu, India
+w14:paraId="0B781C00" wp14:textId="77777777">INCOK1
+w14:paraId="23D50832" wp14:textId="77777777">Cochin Port, Kerala, India
+w14:paraId="2E4BAE89" wp14:textId="77777777">INHAL1
+w:rsidP="79C011C1" w14:paraId="1494B1B7" wp14:textId="77777777">Haldia Port, West Bengal, India
+w14:paraId="3E0F280F" wp14:textId="77777777">INHZA1
+w14:paraId="2ACA244B" wp14:textId="77777777">Hazira Port, Gujarat, India
+w14:paraId="602DADCA" wp14:textId="77777777">INTUT1
+w14:paraId="744AE2B0" wp14:textId="77777777">Tuticorin Port, Tamil Nadu, India
+w14:paraId="0E02E011" wp14:textId="77777777">INENR1
+w:rsidP="79C011C1" w14:paraId="778A72EE" wp14:textId="77777777">Ennore Port (Kamarajar), Tamil Nadu, India
+w14:paraId="3386ACC7" wp14:textId="77777777">INKAT1
+w14:paraId="45A1CFCC" wp14:textId="77777777">Kattupalli Port, Tamil Nadu, India
+w14:paraId="2A2934DC" wp14:textId="77777777">INKRI1
+w:rsidP="79C011C1" w14:paraId="72B55E2B" wp14:textId="77777777">Krishnapatnam Port, Andhra Pradesh, India
+w14:paraId="1901BFA7" wp14:textId="77777777">INCCU1
+w:rsidP="79C011C1" w14:paraId="32287794" wp14:textId="77777777">Kolkata Port, West Bengal, India
+w14:paraId="2C5C6878" wp14:textId="77777777">INIXY1
+w14:paraId="665867B8" wp14:textId="77777777">Kandla Port (Deendayal), Gujarat, India
+w14:paraId="2CA77369" wp14:textId="77777777">INSNF6
+w14:paraId="25B27BFE" wp14:textId="77777777">Sanand ICD, Gujarat, India
+w14:paraId="459FACB6" wp14:textId="77777777">INWFD6
+w14:paraId="78A153D1" wp14:textId="77777777">Whitefield ICD, Karnataka, India
+w14:paraId="1AF53616" wp14:textId="77777777">INMDD6
+w:rsidP="79C011C1" w14:paraId="14CDA3FE" wp14:textId="77777777">Modi Nagar (Tughlakabad) ICD, India
+w14:paraId="14FDBEEB" wp14:textId="77777777">INTLG6
+w:rsidP="79C011C1" w14:paraId="469BDA4B" wp14:textId="77777777">Tughlakabad ICD, Delhi, India
+w14:paraId="26972BC5" wp14:textId="77777777">INNGP6
+w:rsidP="79C011C1" w14:paraId="17CDCFD1" wp14:textId="77777777">Nagpur ICD, Maharashtra, India
+w14:paraId="7764CE2C" wp14:textId="77777777">INBRC6
+w:rsidP="79C011C1" w14:paraId="2A38F85A" wp14:textId="77777777">Bharuch ICD, Gujarat, India
+w14:paraId="43A8EE94" wp14:textId="77777777">INKNU4
+w14:paraId="3D2994E0" wp14:textId="77777777">Kanpur ICD, Uttar Pradesh, India
+w14:paraId="0B840969" wp14:textId="77777777">INIDR4
+w14:paraId="6F8F2054" wp14:textId="77777777">Indore ICD, Madhya Pradesh, India
+w14:paraId="518D6677" wp14:textId="77777777">INAMD4
+w14:paraId="78C792AF" wp14:textId="77777777">Ahmedabad ICD, Gujarat, India
+w14:paraId="42E7FC45" wp14:textId="77777777">INBLR5
+w:rsidP="79C011C1" w14:paraId="148AB934" wp14:textId="77777777">Bangalore ICD, Karnataka, India
+w14:paraId="1B7CBF70" wp14:textId="77777777">INLUH1
+w14:paraId="3EC4BF4A" wp14:textId="77777777">Ludhiana ICD, Punjab, India
+w14:paraId="46B02FB5" wp14:textId="77777777">INAWM6
+w14:paraId="675894F8" wp14:textId="77777777">Aurangabad ICD, Maharashtra, India
+w14:paraId="59C8D363" wp14:textId="77777777">INMBD6
+w:rsidP="79C011C1" w14:paraId="223B50BC" wp14:textId="77777777">Moradabad ICD, India
+w14:paraId="6ED4567C" wp14:textId="77777777">AOBDD
+w14:paraId="5B5E1565" wp14:textId="77777777">Boende, Angola (Foreign POD)
+w14:paraId="14EBEED4" wp14:textId="77777777">AEDXB
+w14:paraId="3069651A" wp14:textId="77777777">Dubai, United Arab Emirates
+w14:paraId="7FEDBCBA" wp14:textId="77777777">AEAUH
+w:rsidP="79C011C1" w14:paraId="5378D250" wp14:textId="77777777">Abu Dhabi, United Arab Emirates
+w14:paraId="168C409C" wp14:textId="77777777">SGSIN
+w14:paraId="3B5477AF" wp14:textId="77777777">Singapore
+w14:paraId="6C3D185B" wp14:textId="77777777">BEFMA
+w:rsidP="79C011C1" w14:paraId="7785E4F5" wp14:textId="77777777">Forest Mall, Belgium
+w14:paraId="3845B26F" wp14:textId="77777777">CAFRE
+w14:paraId="26DFDC4C" wp14:textId="77777777">Fredericton, Canada
+w14:paraId="5AFC486F" wp14:textId="77777777">AUSTA
+w14:paraId="7569E87A" wp14:textId="77777777">St. Arnaud, Australia
+w14:paraId="2FC17F8B" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="405F1622" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">8.3 Package Type Code and Descriptions
+w14:paraId="265F5429" wp14:textId="77777777">Package Code
+w14:paraId="50E4FD80" wp14:textId="77777777">Description
+w14:paraId="61848C8F" wp14:textId="77777777">BDL
+w14:paraId="2D8E12BD" wp14:textId="77777777">Bundle
+w14:paraId="4AC7621A" wp14:textId="77777777">BAG
+w14:paraId="1199FEDA" wp14:textId="77777777">Bag
+w14:paraId="218E76C5" wp14:textId="77777777">BOX
+w14:paraId="3679FFAA" wp14:textId="77777777">Box
+w14:paraId="6CA3BFC5" wp14:textId="77777777">CTN
+w14:paraId="3993883A" wp14:textId="77777777">Carton
+w14:paraId="14933926" wp14:textId="77777777">CRT
+w14:paraId="52EF3C3F" wp14:textId="77777777">Crate
+w14:paraId="2A1EE9EE" wp14:textId="77777777">DRM
+w14:paraId="10416297" wp14:textId="77777777">Drum
+w14:paraId="0CD10EBA" wp14:textId="77777777">PKG
+w14:paraId="51975BC6" wp14:textId="77777777">Package
+w14:paraId="156A4E22" wp14:textId="77777777">PLT
+w14:paraId="69307436" wp14:textId="77777777">Pallet
+w14:paraId="1F66A3A9" wp14:textId="77777777">ROL
+w14:paraId="75A46176" wp14:textId="77777777">Roll
+w14:paraId="5814CCBB" wp14:textId="77777777">CAS
+w14:paraId="33C75167" wp14:textId="77777777">Case
+w14:paraId="04114F51" wp14:textId="77777777">BLE
+w14:paraId="34A840ED" wp14:textId="77777777">Bale
+w14:paraId="00B27019" wp14:textId="77777777">BBL
+w14:paraId="72F3FCE9" wp14:textId="77777777">Barrel
+w14:paraId="0A4F7224" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="789F5075" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">9. Errors and Validations
+w:rsidP="79C011C1" w14:paraId="4041DEE4" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">9.1 List of Schematic Errors
+w14:paraId="2EEABEC5" wp14:textId="77777777">Field
+w14:paraId="3403A370" wp14:textId="77777777">Validation
+w14:paraId="7C4BCCC4" wp14:textId="77777777">Error Messages
+w:rsidP="79C011C1" w14:paraId="031A1131" wp14:textId="77777777">ODeX Reference Number
+w:rsidP="79C011C1" w14:paraId="73508584" wp14:textId="77777777">Leave this tag blank. Unique reference No. generated for each request by ODeX. Used in response.
+w14:paraId="2D366E0F" wp14:textId="77777777">—
+w14:paraId="3AA99906" wp14:textId="77777777">Payor ID
+w14:paraId="68BD3704" wp14:textId="77777777">Payor ID is not mentioned
+w:rsidP="79C011C1" w14:paraId="3293FF6C" wp14:textId="77777777">Payor ID is required
+w14:paraId="38EA0875" wp14:textId="77777777">Booking No.
+w14:paraId="390E591B" wp14:textId="77777777">Booking No is not mentioned
+w:rsidP="79C011C1" w14:paraId="289FDC6E" wp14:textId="77777777">Booking no is required
+w:rsidP="79C011C1" w14:paraId="52AF6888" wp14:textId="77777777">Sea / Port
+w14:paraId="00182512" wp14:textId="77777777">Location is not mentioned
+w:rsidP="79C011C1" w14:paraId="65C64E18" wp14:textId="77777777">Location is required
+w14:paraId="0916F29E" wp14:textId="77777777">Shipping Line
+w14:paraId="453D922D" wp14:textId="77777777">Beneficiary Code is not mentioned
+w:rsidP="79C011C1" w14:paraId="43146882" wp14:textId="77777777">Shipping Line is required
+w14:paraId="4534236E" wp14:textId="77777777">Vessel Name
+w14:paraId="21392F71" wp14:textId="77777777">Vessel Name is not mentioned
+w:rsidP="79C011C1" w14:paraId="107E2A44" wp14:textId="77777777">Vessel Name is required
+w14:paraId="4F5CC6C7" wp14:textId="77777777">Via No.
+w14:paraId="5319C031" wp14:textId="77777777">Via No. is not mentioned
+w:rsidP="79C011C1" w14:paraId="5336E8A6" wp14:textId="77777777">VIA No. is required
+w14:paraId="2625F109" wp14:textId="77777777">BL No.
+w14:paraId="73FEBFE4" wp14:textId="77777777">BL Number is not mentioned
+w:rsidP="79C011C1" w14:paraId="34806CFF" wp14:textId="77777777">BL number is required
+w14:paraId="41BEC0D6" wp14:textId="77777777">Is HBL Involved?
+w14:paraId="350C58B9" wp14:textId="77777777">Is HBL Involved is not mentioned
+w:rsidP="79C011C1" w14:paraId="0F164C40" wp14:textId="77777777">Is HBL Involved is required
+w14:paraId="54AF74C4" wp14:textId="77777777">Booking Origin (ICD/Port)
+w14:paraId="7ACFA8A7" wp14:textId="77777777">Booking Origin (ICD/Port) is not mentioned
+w:rsidP="79C011C1" w14:paraId="56839F8F" wp14:textId="77777777">Booking Origin (ICD/Port) is required
+w14:paraId="15DB025C" wp14:textId="77777777">SB Processed Location
+w14:paraId="098BBD50" wp14:textId="77777777">SB Processed Location is not mentioned
+w:rsidP="79C011C1" w14:paraId="78646B30" wp14:textId="77777777">SB Processed Location is required
+w14:paraId="76B939B8" wp14:textId="77777777">Booking Office Location
+w14:paraId="4DA1FAE6" wp14:textId="77777777">Mandatory for MSC shipping line at all locations
+w:rsidP="79C011C1" w14:paraId="23A6A080" wp14:textId="77777777">Booking Office Location is required
+w14:paraId="2926496D" wp14:textId="77777777">Container Status
+w14:paraId="49A2CAE0" wp14:textId="77777777">Container Status is not mentioned
+w:rsidP="79C011C1" w14:paraId="74EA818C" wp14:textId="77777777">Container Status is required
+w14:paraId="50BE2244" wp14:textId="77777777">FPOD
+w14:paraId="4D537AD9" wp14:textId="77777777">FPOD is not mentioned
+w:rsidP="79C011C1" w14:paraId="5ACA2C41" wp14:textId="77777777">FPOD is required
+w14:paraId="07F961A5" wp14:textId="77777777">Container No.
+w14:paraId="497BDD0D" wp14:textId="77777777">1) Container No is not mentioned. 2) Container Format Check
+w:rsidP="79C011C1" w14:paraId="3EC803C1" wp14:textId="77777777">1) Container No. is required. 2) Invalid Container No. (Incorrect format)
+w14:paraId="33E24B55" wp14:textId="77777777">Shipping Bill No.
+w14:paraId="2179DDD8" wp14:textId="77777777">1) Not mentioned. 2) Data format check
+w:rsidP="79C011C1" w14:paraId="6428A781" wp14:textId="77777777">1) Shipping Bill No is required. 2) Cannot exceed 7 Characters.
+w14:paraId="03B6E354" wp14:textId="77777777">Shipping Bill Date
+w14:paraId="337AF6B7" wp14:textId="77777777">1) Not mentioned. 2) Date range check
+w:rsidP="79C011C1" w14:paraId="5997BD13" wp14:textId="77777777">1) Shipping Bill Date is required. 2) Cannot be Greater than Current Date.
+w:rsidP="79C011C1" w14:paraId="3AA5A147" wp14:textId="77777777">LEO Date
+w14:paraId="1C89993D" wp14:textId="77777777">LEO Date is not mentioned
+w:rsidP="79C011C1" w14:paraId="66CE4C5C" wp14:textId="77777777">LEO Date is required
+w14:paraId="5846A1AC" wp14:textId="77777777">PCIN Number
+w14:paraId="212C10D4" wp14:textId="77777777">1) PCIN No is not mentioned. 2) Data format check
+w14:paraId="7FC4BAB1" wp14:textId="77777777">PCIN number cannot exceed 20 characters
+w14:paraId="0AE26E95" wp14:textId="77777777">Cargo + Packaging Weight (KGs)
+w14:paraId="2026A1D2" wp14:textId="77777777">Cargo + Packaging Weight is not mentioned
+w:rsidP="79C011C1" w14:paraId="3DC3484A" wp14:textId="77777777">Cargo + Packaging Weight (KGs) is required
+w14:paraId="6683F560" wp14:textId="77777777">No. of Packages
+w14:paraId="5812F82E" wp14:textId="77777777">No. of Packages is not mentioned
+w:rsidP="79C011C1" w14:paraId="6C41F63D" wp14:textId="77777777">No. of Packages is required
+w14:paraId="200EA2B7" wp14:textId="77777777">Package Type Required
+w14:paraId="570F921C" wp14:textId="77777777">Package Type is not mentioned
+w:rsidP="79C011C1" w14:paraId="2DE631C6" wp14:textId="77777777">Package Type is required
+w14:paraId="274F5EFB" wp14:textId="77777777">Cargo / Net Weight (KGs)
+w14:paraId="70ED5AD3" wp14:textId="77777777">Cargo / Net Weight is not mentioned
+w:rsidP="79C011C1" w14:paraId="54FD7FFF" wp14:textId="77777777">Cargo / Net Weight (KGs) is required
+w:rsidP="79C011C1" w14:paraId="2D1FB619" wp14:textId="77777777">Cargo Type
+w14:paraId="4D2B4716" wp14:textId="77777777">Cargo Type is not mentioned
+w:rsidP="79C011C1" w14:paraId="08961AE4" wp14:textId="77777777">Cargo Type is required
+w14:paraId="0863648C" wp14:textId="77777777">Type of Shipping Bill
+w14:paraId="487CF716" wp14:textId="77777777">Type of Shipping Bill is not mentioned
+w:rsidP="79C011C1" w14:paraId="35C3C3D6" wp14:textId="77777777">Type of Shipping Bill is required
+w:rsidP="79C011C1" w14:paraId="4C41368F" wp14:textId="77777777">Exporter Name
+w14:paraId="209E0DC0" wp14:textId="77777777">Exporter Name is not mentioned
+w:rsidP="79C011C1" w14:paraId="278947D8" wp14:textId="77777777">Exporter Name is required
+w:rsidP="79C011C1" w14:paraId="5D3EC212" wp14:textId="77777777">Exporter IEC
+w14:paraId="5B86FB6A" wp14:textId="77777777">IEC is not mentioned
+w:rsidP="79C011C1" w14:paraId="450D7269" wp14:textId="77777777">IEC is required
+w14:paraId="64E5D9C0" wp14:textId="77777777">Consignee Name
+w14:paraId="535342B0" wp14:textId="77777777">Consignee Name is not mentioned
+w:rsidP="79C011C1" w14:paraId="20D79328" wp14:textId="77777777">Consignee Name is required
+w14:paraId="2E5FAD64" wp14:textId="77777777">Marks and Numbers
+w14:paraId="097632D0" wp14:textId="77777777">Marks and Numbers are not mentioned
+w:rsidP="79C011C1" w14:paraId="276560AB" wp14:textId="77777777">Marks and Numbers is required
+w14:paraId="5FF0680B" wp14:textId="77777777">Cargo Description
+w14:paraId="75C4BE91" wp14:textId="77777777">Cargo Description is not mentioned
+w:rsidP="79C011C1" w14:paraId="53926E39" wp14:textId="77777777">Cargo Description is required
+w14:paraId="5091C1EC" wp14:textId="77777777">HSN Code
+w14:paraId="3C254AE9" wp14:textId="77777777">HSN Code is not mentioned
+w:rsidP="79C011C1" w14:paraId="2F0000F8" wp14:textId="77777777">HSN Code is required
+w14:paraId="0A725F8B" wp14:textId="77777777">SOC
+w14:paraId="39660884" wp14:textId="77777777">SOC is not mentioned
+w:rsidP="79C011C1" w14:paraId="5C218257" wp14:textId="77777777">SOC is required
+w14:paraId="683F4788" wp14:textId="77777777">Container Agent Code
+w14:paraId="00E528D5" wp14:textId="77777777">1) Not mentioned. 2) Format check
+w:rsidP="79C011C1" w14:paraId="71B7203D" wp14:textId="77777777">1) Container Agent Code is required. 2) Format: 5 alphabets + 4 numeric + 1 alphabet.
+w14:paraId="5AE48A43" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="3FC7D505" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">9.2 List of Business Errors
+w14:paraId="6D1CDD8C" wp14:textId="77777777">Field
+w14:paraId="47D07A55" wp14:textId="77777777">Cause
+w14:paraId="5EF23B4C" wp14:textId="77777777">Errors
+w14:paraId="3B4BD992" wp14:textId="77777777">Corrective Measures
+w:rsidP="79C011C1" w14:paraId="3D5D950B" wp14:textId="77777777">ODeX Reference Number
+w:rsidP="79C011C1" w14:paraId="73F9CFF1" wp14:textId="77777777">1) Initial response reference number and new file's reference number differ. 2) The file's reference number is already verified/confirmed by liner.
+w:rsidP="79C011C1" w14:paraId="626E6E88" wp14:textId="77777777">Error (1100) - ODeX Ref no. mismatch. Error (1101) - Already verified/confirmed.
+w:rsidP="79C011C1" w14:paraId="31AECC96" wp14:textId="77777777">Match the ODeX Ref No. with the initial response. The container is already verified/confirmed.
+w:rsidP="79C011C1" w14:paraId="226D9497" wp14:textId="77777777">Sea / Port
+w14:paraId="0A569375" wp14:textId="77777777">Input data does not match master data
+w14:paraId="382B9DC1" wp14:textId="77777777">Error (1102) - Location code is invalid.
+w14:paraId="3E58526A" wp14:textId="77777777">Location code should match the master data values.
+w14:paraId="0C7459F2" wp14:textId="77777777">Shipping Line
+w14:paraId="128972EB" wp14:textId="77777777">Input data does not match master data
+w14:paraId="6E608FB9" wp14:textId="77777777">Error (1103) - Shipping Line code is invalid.
+w14:paraId="772769A0" wp14:textId="77777777">Shipping Line code should match master data values.
+w14:paraId="1F234756" wp14:textId="77777777">Booking Origin
+w14:paraId="5E7EDE85" wp14:textId="77777777">Input data does not match master data
+w14:paraId="5BD8D99E" wp14:textId="77777777">Error (1104) - Location code is invalid.
+w14:paraId="73AD91EA" wp14:textId="77777777">Location code should match master data values.
+w14:paraId="2F6448B1" wp14:textId="77777777">SB Processed Location
+w14:paraId="7F39F253" wp14:textId="77777777">Input data does not match master data
+w14:paraId="19F1387D" wp14:textId="77777777">Error (1105) - Location code is invalid.
+w14:paraId="7D600640" wp14:textId="77777777">Location code should match master data values.
+w14:paraId="76F65F3C" wp14:textId="77777777">Vessel Name
+w:rsidP="79C011C1" w14:paraId="19731135" wp14:textId="77777777">1) Vessel does not match available vessel name. 2) Vessel cut-off passed.
+w:rsidP="79C011C1" w14:paraId="2E3D177D" wp14:textId="77777777">Error (1106) - Vessel name is invalid. Error (1107) - Vessel cut-off.
+w:rsidP="79C011C1" w14:paraId="2F528464" wp14:textId="77777777">Vessel name should match the actual vessel. Contact shipping line for cut-off.
+w14:paraId="2433EBEE" wp14:textId="77777777">Via No.
+w14:paraId="52EDABA1" wp14:textId="77777777">Input via no not defined for the vessel
+w14:paraId="48F11A93" wp14:textId="77777777">Error (1108) - Via no is not applicable for the used vessel.
+w14:paraId="19966C53" wp14:textId="77777777">Enter the correct Via no.
+w14:paraId="4E328E3C" wp14:textId="77777777">Container Status
+w14:paraId="02CFE7BB" wp14:textId="77777777">Input does not match available options
+w14:paraId="1BE71251" wp14:textId="77777777">Error (1109) - Container status is invalid.
+w14:paraId="5176C733" wp14:textId="77777777">Use FCL or LCL as per master values.
+w14:paraId="69780D9C" wp14:textId="77777777">FPOD
+w14:paraId="61A59BF8" wp14:textId="77777777">Input does not match master data
+w14:paraId="0EB44DD6" wp14:textId="77777777">Error (1110) - FPOD is invalid.
+w14:paraId="02A2A610" wp14:textId="77777777">Enter the correct FPOD value for the used vessel.
+w14:paraId="73CA4FC1" wp14:textId="77777777">Shipping Bill Date
+w14:paraId="57E048EF" wp14:textId="77777777">Input date is greater than current date
+w:rsidP="79C011C1" w14:paraId="796FC4E7" wp14:textId="77777777">Error (1111) - Cannot be greater than current date.
+w14:paraId="79240E72" wp14:textId="77777777">Enter the correct Shipping Bill Date.
+w:rsidP="79C011C1" w14:paraId="4A78BAA6" wp14:textId="77777777">LEO Date
+w14:paraId="4C3AE3BF" wp14:textId="77777777">Input date is greater than current date
+w14:paraId="31DE1407" wp14:textId="77777777">Error (1112) - Cannot be greater than current date.
+w14:paraId="19C29CE8" wp14:textId="77777777">Enter the correct LEO Date.
+w14:paraId="62393BC2" wp14:textId="77777777">Package Type
+w14:paraId="604F76EB" wp14:textId="77777777">Input does not match master data
+w14:paraId="55B0AA23" wp14:textId="77777777">Error (1115) - Package Type is invalid.
+w14:paraId="48B97DEB" wp14:textId="77777777">Package type code should match master data values.
+w:rsidP="79C011C1" w14:paraId="131FE179" wp14:textId="77777777">Cargo Type
+w14:paraId="1F27683F" wp14:textId="77777777">Input does not match master data
+w:rsidP="79C011C1" w14:paraId="4D55BDEB" wp14:textId="77777777">Error (1116) - Cargo Type is invalid.
+w14:paraId="332F9F62" wp14:textId="77777777">Cargo Type code should match master data values.
+w14:paraId="1E359B68" wp14:textId="77777777">Type of Shipping Bill
+w14:paraId="2C660F0F" wp14:textId="77777777">Input does not match master data
+w14:paraId="1634287C" wp14:textId="77777777">Error (1117) - Type of Shipping Bill is invalid.
+w14:paraId="1D6E1479" wp14:textId="77777777">SB type should match master data values (DFS/DS/LIC).
+w14:paraId="0CC78648" wp14:textId="77777777">Duplicate Request
+w14:paraId="0FD1DCE5" wp14:textId="77777777">Same booking and BL already submitted
+w14:paraId="5B916122" wp14:textId="77777777">Error (1118) - Request already exists done by a different customer.
+w14:paraId="5B63675C" wp14:textId="77777777">Use a unique booking number / BL combination.
+w14:paraId="50F40DEB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="46063F71" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">10. Term Glossary
+w:rsidP="79C011C1" w14:paraId="0CEB4B25" wp14:textId="77777777">Term
+w14:paraId="617D99BB" wp14:textId="77777777">Description
+w14:paraId="705F39A3" wp14:textId="77777777">BNF Code
+w:rsidP="79C011C1" w14:paraId="27F28686" wp14:textId="77777777">Unique identifier for the shipping line in ODeX.
+w14:paraId="23028A16" wp14:textId="77777777">LOC ID
+w:rsidP="79C011C1" w14:paraId="1DEB2671" wp14:textId="77777777">Port location code (e.g., INNSA1 for Nhava Sheva).
+w14:paraId="48F029B1" wp14:textId="77777777">Vessel Name
+w14:paraId="667F3836" wp14:textId="77777777">Name of the vessel for export.
+w14:paraId="6C5FA218" wp14:textId="77777777">VIA No.
+w14:paraId="0C89399E" wp14:textId="77777777">Unique voyage reference associated with a vessel.
+w14:paraId="10606E44" wp14:textId="77777777">POD
+w14:paraId="6BF2A084" wp14:textId="77777777">Port of Discharge – where container is to be unloaded.
+w14:paraId="711A7F96" wp14:textId="77777777">FPOD
+w14:paraId="569AA7BF" wp14:textId="77777777">Final Port of Discharge – end destination in case of transshipment.
+w14:paraId="5B053DF2" wp14:textId="77777777">ODC
+w:rsidP="79C011C1" w14:paraId="3C560699" wp14:textId="77777777">Over-Dimensional Cargo.
+w14:paraId="75B93799" wp14:textId="77777777">HAZ
+w:rsidP="79C011C1" w14:paraId="69573BF7" wp14:textId="77777777">Hazardous Cargo.
+w14:paraId="46B8A713" wp14:textId="77777777">REF
+w14:paraId="215D7DCE" wp14:textId="77777777">Reefer / Temperature-controlled Cargo.
+w14:paraId="22B64462" wp14:textId="77777777">Payor ID
+w:rsidP="79C011C1" w14:paraId="110136E0" wp14:textId="77777777">Unique identifier for the CHA/shipping party within ODeX.
+w:rsidP="79C011C1" w14:paraId="0E9B4B85" wp14:textId="77777777">hashKey
+w14:paraId="12E68766" wp14:textId="77777777">Encrypted key for added API request security.
+w14:paraId="6FF6B667" wp14:textId="77777777">Attachment Title
+w14:paraId="1CCCC57F" wp14:textId="77777777">Type of document attached (e.g., LOC, EIR, TSR).
+w14:paraId="021785E4" wp14:textId="77777777">Container Status
+w:rsidP="79C011C1" w14:paraId="0CB79BE6" wp14:textId="77777777">Indicates if container is FCL (Full) or LCL (Less).
+w14:paraId="06D04B6A" wp14:textId="77777777">Booking No.
+w14:paraId="22E85D8B" wp14:textId="77777777">Unique booking number issued by shipping line.
+w14:paraId="4FC3A768" wp14:textId="77777777">BL No.
+w14:paraId="548E0535" wp14:textId="77777777">Bill of Lading Number.
+w14:paraId="36CD870A" wp14:textId="77777777">IEC
+w14:paraId="480B9E0F" wp14:textId="77777777">Importer Exporter Code issued by DGFT, India.
+w14:paraId="2ECFE635" wp14:textId="77777777">PCIN
+w:rsidP="79C011C1" w14:paraId="17F322E8" wp14:textId="77777777">Pre-Clearance Identification Number; SEZ / MANUAL allowed values.
+w14:paraId="725E5C39" wp14:textId="77777777">LEO
+w14:paraId="7B6BE206" wp14:textId="77777777">Let Export Order – issued by Customs.
+w14:paraId="77A52294" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="3D6C176D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">11. FAQ's
+w:rsidP="79C011C1" w14:paraId="20874F4E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q1. Who can use the Shipping Bill Integration API?
+w:rsidP="79C011C1" w14:paraId="161BB67E" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. The API is designed for Payors (Exporters/CHA) and integration partners who want to automate Shipping Bill submissions through the ODeX platform.
+w14:paraId="007DCDA8" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w:rsidP="79C011C1" w14:paraId="28942341" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q2. What type of APIs are provided under this integration?
+w:rsidP="79C011C1" w14:paraId="7ED44066" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. The integration offers:
+w14:paraId="2D091E6A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Master APIs – for validating vessel, port, and terminal data.
+w14:paraId="5491EFFF" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Transaction API – for submitting Shipping Bill data.
+w14:paraId="347F4486" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Response/Status APIs – for checking submission status and receiving error/success messages.
+w14:paraId="7C5B0E4D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Amendment API – for modifying already submitted Shipping Bills (subject to status).
+w14:paraId="450EA2D7" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="2CC96343" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q3. What authentication mechanism is used?
+w14:paraId="6396A6DB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. Authentication is managed via API secret Key/Token (shared securely by ODeX). All requests must be sent over HTTPS.
+w14:paraId="3DD355C9" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="4D6DEF47" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q4. What environments are available for testing and live use?
+w14:paraId="1B61C082" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. ODeX provides two environments:
+w14:paraId="1A81C9BE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">UAT – for integration testing. Base URL: https://staging.odexglobal.com/RS/iEGMService/
+w14:paraId="05E5935A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Production – for real-time operational use. Base URL: https://www.odexglobal.com/RS/iEGMService/
+w14:paraId="1A81F0B1" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="5ADF7BFE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q5. What file formats are supported for attachments?
+w14:paraId="12448329" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. Currently, only PDF files are allowed as attachments. The file should be converted to a byte array (Base64 encoded) with a maximum size limit of 5 MB per file and total size not exceeding 4 MB.
+w14:paraId="717AAFBA" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="723B712C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q6. How can I check the status of a submitted Shipping Bill?
+w14:paraId="2DA9AD68" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. You can use the Get Shipping Bill Status API by providing the Booking No, Shipping Line BNF Code, Payor Code and Gateway Location to retrieve the latest status.
+w14:paraId="56EE48EE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="74F8C9C5" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q7. What happens if a Shipping Bill is rejected?
+w14:paraId="51A41065" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. The rejection reason will be provided in the remarks / business_validations field of the API response. The Payor can then correct the errors and resubmit the Shipping Bill.
+w14:paraId="2908EB2C" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="2B299A58" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q8. Can I amend a Shipping Bill after submission?
+w14:paraId="344B6EAD" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. Yes. Amendments are allowed if the Shipping Bill is in Verified or Confirmed state. For confirmed requests, an Amendment Request workflow is initiated that requires liner approval.
+w14:paraId="121FD38A" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="6DB216EB" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q9. What are the common reasons for validation errors?
+w14:paraId="1EABE29D" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. Common errors include missing mandatory fields (e.g., Booking No, Vessel Name, FPOD), invalid codes (Shipping Line, Location, Cargo Type), incorrect data formats (dates, container numbers), and mismatches with ODeX Master Data.
+w14:paraId="1FE2DD96" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="272A9CAE" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q10. What is the maximum number of containers allowed in a single Shipping Bill request?
+w14:paraId="7F764025" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. Multiple containers can be submitted in a single request. Each container's details (Container No, Shipping Bill No, etc.) must be repeated under the egmRequestcntnrVoList array of the request.
+w14:paraId="27357532" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">
+w14:paraId="45A5FF33" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">Q11. What is odexRefNo and why is it important?
+w14:paraId="2E8C8F14" wp14:textId="77777777" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordml">A. The odexRefNo is a unique reference number generated by ODeX for every request. It must be retained and used for future queries, status checks, and amendments related to that request.

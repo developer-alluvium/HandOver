@@ -29,6 +29,23 @@ const getCurrentTimestamp = () => {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 };
 
+const getTodayStartTimestamp = () => {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = now.getFullYear();
+  const mm = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  return `${yyyy}-${mm}-${dd} 00:00:00`;
+};
+
+const getHashKey = () => {
+  const hashKey = config.odex?.hashKey;
+  if (!hashKey) {
+    throw new Error("ODeX HASHKEY is not configured for this environment");
+  }
+  return hashKey;
+};
+
 const ALLOWED_HEADER_KEYS = [
   "odexRefNo",
   "pyrCode",
@@ -227,7 +244,7 @@ router.post("/hashkey", async (req, res) => {
 router.post("/vessel-master", async (req, res) => {
   try {
     const pyrCode = req.body.pyrCode || config.odex?.pyrCode || "ODeX/IN/SHP/2510/00002";
-    const fromTs = req.body.fromTs || "2025-01-01 00:00:00";
+    const fromTs = req.body.fromTs || getTodayStartTimestamp();
     const hashKey = config.odex?.hashKey || getHashKey();
 
     const vesselRequest = {
