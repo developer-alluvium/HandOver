@@ -69,6 +69,11 @@ import guruRajendraFoot from "../assets/guru rajendra/footer.png";
 import hansHead from "../assets/hans/head.png";
 import hansSign from "../assets/hans/sign.png";
 
+// IIMCO
+import iimcoHead from "../assets/iimco/head.png";
+import iimcoSign from "../assets/iimco/sign.png";
+import iimcoFoot from "../assets/iimco/foot.png";
+
 // Metal Aloy
 import metalAloyHead from "../assets/metal aloy/head.png";
 import metalAloySign from "../assets/metal aloy/sign.png";
@@ -86,6 +91,11 @@ import nandeshwarySign from "../assets/nandeshwary/sign.png";
 import sakarHead from "../assets/sakar/head.png";
 import sakarSign from "../assets/sakar/sign.png";
 import sakarFoot from "../assets/sakar/foot.png";
+
+// Santosh
+import santoshHead from "../assets/santosh/head.png";
+import santoshSign from "../assets/santosh/sign.png";
+import santoshFoot from "../assets/santosh/foot.png";
 
 // ============ EXPORTER CONFIGURATIONS ============
 export const EXPORTERS = [
@@ -188,6 +198,13 @@ export const EXPORTERS = [
         foot: null
     },
     {
+        key: "iimco",
+        label: "IIMCO",
+        head: iimcoHead,
+        sign: iimcoSign,
+        foot: iimcoFoot
+    },
+    {
         key: "metal_aloy",
         label: "Metal Aloy",
         head: metalAloyHead,
@@ -214,6 +231,13 @@ export const EXPORTERS = [
         head: sakarHead,
         sign: sakarSign,
         foot: sakarFoot
+    },
+    {
+        key: "santosh",
+        label: "Santosh",
+        head: santoshHead,
+        sign: santoshSign,
+        foot: santoshFoot
     },
 ];
 
@@ -286,30 +310,31 @@ export const generateVGMPdf = async (vgmData, exporter) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 14;
+    const contentWidth = pageWidth - 2 * marginX; // 182mm
 
-    let currentY = 10;
+    let currentY = 7;
 
     // ============ ADD HEADER IMAGE ============
     if (exporter.head) {
         try {
             const headerData = await getImageData(exporter.head);
-            // Calculate dimensions preserving aspect ratio, max width = page width - margins
-            const maxWidth = pageWidth - 20;
-            const dims = getScaledDimensions(headerData.width, headerData.height, maxWidth, 40);
+            // Calculate dimensions preserving aspect ratio, max width = contentWidth, max height = 22mm
+            const dims = getScaledDimensions(headerData.width, headerData.height, contentWidth, 22);
             // Center the header
             const headerX = (pageWidth - dims.width) / 2;
             doc.addImage(headerData.base64, "PNG", headerX, currentY, dims.width, dims.height);
-            currentY += dims.height + 7;
+            currentY += dims.height + 3;
         } catch (error) {
             console.warn("Header image failed for:", exporter.label, error);
-            currentY += 10;
+            currentY += 5;
         }
     } else {
-        currentY += 10;
+        currentY += 5;
     }
 
     // ============ TITLE ============
-    doc.setFontSize(12);
+    doc.setFontSize(10.5);
     doc.setFont("helvetica", "bold");
     const title = "INFORMATION ABOUT VERIFIED GROSS MASS OF CONTAINER";
     const titleWidth = doc.getTextWidth(title);
@@ -317,9 +342,9 @@ export const generateVGMPdf = async (vgmData, exporter) => {
     doc.text(title, titleX, currentY);
 
     // Underline for title
-    doc.setLineWidth(0.5);
-    doc.line(titleX, currentY + 1, titleX + titleWidth, currentY + 1);
-    currentY += 15;
+    doc.setLineWidth(0.4);
+    doc.line(titleX, currentY + 0.8, titleX + titleWidth, currentY + 0.8);
+    currentY += 4.5;
 
     // ============ BUILD TABLE DATA ============
     const values = vgmData;
@@ -395,46 +420,42 @@ export const generateVGMPdf = async (vgmData, exporter) => {
         head: [["Sr\nNo.", "Details of information", "Particulars"]],
         body: tableData,
         theme: "grid",
+        margin: { left: marginX, right: marginX, top: 4, bottom: 4 },
+        pageBreak: "avoid",
         styles: {
-            fontSize: 9,
-            cellPadding: 2,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.2,
+            fontSize: 8.5,
+            cellPadding: { top: 1.8, bottom: 1.8, left: 2.2, right: 2.2 },
+            lineColor: [60, 60, 60],
+            lineWidth: 0.15,
             textColor: [0, 0, 0],
-            halign: "left",
             valign: "middle",
+            overflow: "linebreak",
         },
         headStyles: {
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],
             fontStyle: "bold",
             halign: "center",
-            lineWidth: 0.3,
+            lineWidth: 0.25,
+            fontSize: 8.5,
+            cellPadding: { top: 2.2, bottom: 2.2, left: 2.2, right: 2.2 },
         },
         columnStyles: {
-            0: { cellWidth: 15, halign: "center" },
-            1: { cellWidth: 90 },
+            0: { cellWidth: 14, halign: "center" },
+            1: { cellWidth: 86 },
             2: { cellWidth: "auto" },
         },
     });
 
-    currentY = doc.lastAutoTable.finalY + 10;
-
-    // Calculate space needed for signature section (approximately 60mm)
-    const signatureSectionHeight = 55;
-    // Check if we need a new page for signature section
-    if (currentY + signatureSectionHeight > pageHeight - 30) {
-        doc.addPage();
-        currentY = 20;
-    }
+    currentY = doc.lastAutoTable.finalY + 5;
 
     // ============ SIGNATURE SECTION ============
-    const signatureX = pageWidth - 75;
+    const signatureX = pageWidth - marginX - 60;
 
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("Signature of authorized person of shipper", signatureX, currentY);
-    currentY += 6;
+    currentY += 4;
 
     doc.text(`Name – ${values.authPrsnNm || ""}`, signatureX, currentY);
     currentY += 4;
@@ -443,16 +464,16 @@ export const generateVGMPdf = async (vgmData, exporter) => {
     if (exporter.sign) {
         try {
             const signData = await getImageData(exporter.sign);
-            // Calculate dimensions preserving aspect ratio, max width = 50mm, max height = 25mm (smaller)
-            const signDims = getScaledDimensions(signData.width, signData.height, 50, 25);
+            // Calculate dimensions preserving aspect ratio, max width = 45mm, max height = 16mm
+            const signDims = getScaledDimensions(signData.width, signData.height, 45, 16);
             doc.addImage(signData.base64, "PNG", signatureX, currentY, signDims.width, signDims.height);
-            currentY += signDims.height + 3;
+            currentY += signDims.height + 2;
         } catch (error) {
             console.warn("Signature image failed for:", exporter.label, error);
-            currentY += 15;
+            currentY += 12;
         }
     } else {
-        currentY += 15;
+        currentY += 12;
     }
 
     // Date
@@ -462,43 +483,37 @@ export const generateVGMPdf = async (vgmData, exporter) => {
         year: "numeric"
     }).replace(/\//g, "-");
     doc.text(`Date – ${currentDate}`, signatureX, currentY);
-    currentY += 10;
-
-    // Check if remarks section needs new page
-    if (currentY + 35 > pageHeight - 30) {
-        doc.addPage();
-        currentY = 20;
-    }
+    currentY += 5;
 
     // ============ REMARKS SECTION ============
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text("Remarks:", 14, currentY);
-    currentY += 5;
+    doc.text("Remarks:", marginX, currentY);
+    currentY += 3.5;
 
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("*Indicates mandatory fields", 14, currentY);
-    currentY += 4;
-    doc.text("**Shippers not having IEC no. CIN No. may provide information as follows:", 14, currentY);
-    currentY += 4;
-    doc.text("Company - PAN NO.", 14, currentY);
-    currentY += 4;
-    doc.text("Individuals", 14, currentY);
-    currentY += 4;
-    doc.text("Indian National - AADHAR No", 14, currentY);
-    currentY += 4;
-    doc.text("Foreign National - PASSPORT No & Country of issue of passport.", 14, currentY);
+    doc.text("*Indicates mandatory fields", marginX, currentY);
+    currentY += 3;
+    doc.text("**Shippers not having IEC no. CIN No. may provide information as follows:", marginX, currentY);
+    currentY += 3;
+    doc.text("Company - PAN NO.", marginX, currentY);
+    currentY += 3;
+    doc.text("Individuals", marginX, currentY);
+    currentY += 3;
+    doc.text("Indian National - AADHAR No", marginX, currentY);
+    currentY += 3;
+    doc.text("Foreign National - PASSPORT No & Country of issue of passport.", marginX, currentY);
 
     // ============ ADD FOOTER IMAGE ============
     if (exporter.foot) {
         try {
             const footerData = await getImageData(exporter.foot);
-            // Calculate dimensions preserving aspect ratio, max height = 20mm
-            const maxFooterWidth = pageWidth - 20;
-            const footerDims = getScaledDimensions(footerData.width, footerData.height, maxFooterWidth, 20);
-            // Position footer at bottom of page, centered
+            // Calculate dimensions preserving aspect ratio, max width = contentWidth, max height = 30mm
+            const footerDims = getScaledDimensions(footerData.width, footerData.height, contentWidth, 30);
+            // Center horizontally to match content width
             const footerX = (pageWidth - footerDims.width) / 2;
-            const footerY = pageHeight - footerDims.height - 5;
+            const footerY = pageHeight - footerDims.height - 4;
             doc.addImage(footerData.base64, "PNG", footerX, footerY, footerDims.width, footerDims.height);
         } catch (error) {
             console.warn("Footer image failed for:", exporter.label, error);

@@ -1138,8 +1138,8 @@ export const validateFormData = (formData) => {
         errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight is required`;
       } else {
         const wtStr = container.vgmWt.toString();
-        if (!/^\d{1,3}(\.\d{1,2})?$/.test(wtStr)) {
-          errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight must be a valid number up to 3 digits and optional 2 decimals (e.g. 25.50)`;
+        if (!/^\d{1,3}(\.\d{1,3})?$/.test(wtStr)) {
+          errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight must be a valid number up to 3 digits and optional 3 decimals (e.g. 25.500)`;
         }
       }
     }

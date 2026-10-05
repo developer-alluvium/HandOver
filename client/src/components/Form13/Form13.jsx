@@ -438,36 +438,60 @@ const Form13 = () => {
           const sCodeLower = codeBeforeHyphen.toLowerCase();
 
           if (Array.isArray(shippingLines) && shippingLines.length > 0) {
-            const match = shippingLines.find(sl => {
-              const val = (sl.value || sl.code || "").toLowerCase().trim();
-              const lab = (sl.label || sl.name || "").toLowerCase().trim();
-              return (
-                lab === sNameLower ||
-                val === sNameLower ||
-                (sCodeLower && val === sCodeLower) ||
-                lab.includes(sNameLower) ||
-                sNameLower.includes(lab) ||
-                (sCodeLower && lab.includes(sCodeLower))
-              );
-            });
+            // 1. Exact match by code (e.g. "ONEY")
+            let match = sCodeLower
+              ? shippingLines.find(sl => (sl.value || sl.code || "").toLowerCase().trim() === sCodeLower)
+              : null;
+
+            // 2. Exact match by full name (normalizing extra spaces)
+            if (!match) {
+              const cleanName = sNameLower.replace(/\s+/g, " ");
+              match = shippingLines.find(sl => {
+                const lab = (sl.label || sl.name || "").toLowerCase().trim().replace(/\s+/g, " ");
+                const val = (sl.value || sl.code || "").toLowerCase().trim();
+                return lab === cleanName || val === cleanName;
+              });
+            }
+
+            // 3. Substring match by distinctive name (min 4 chars) to prevent false positives
+            if (!match && sNameLower.length >= 4) {
+              const cleanName = sNameLower.replace(/\s+/g, " ");
+              match = shippingLines.find(sl => {
+                const lab = (sl.label || sl.name || "").toLowerCase().trim().replace(/\s+/g, " ");
+                return lab.length >= 4 && (lab.includes(cleanName) || cleanName.includes(lab));
+              });
+            }
+
             if (match) {
               foundLineId = match.value || match.code || "";
             }
           }
 
           if (!foundLineId && Array.isArray(vessels) && vessels.length > 0) {
-            const vMatch = vessels.find(v => {
-              const bCode = (v.bnfCode || "").toLowerCase().trim();
-              const bNm = (v.bnfNm || v.shippingLine || "").toLowerCase().trim();
-              return (
-                bCode === sNameLower ||
-                bNm === sNameLower ||
-                (sCodeLower && bCode === sCodeLower) ||
-                bNm.includes(sNameLower) ||
-                sNameLower.includes(bNm) ||
-                sNameLower.includes(bCode)
-              );
-            });
+            // 1. Exact match by vessel bnfCode
+            let vMatch = sCodeLower
+              ? vessels.find(v => (v.bnfCode || "").toLowerCase().trim() === sCodeLower)
+              : null;
+
+            // 2. Exact match by vessel name
+            if (!vMatch) {
+              const cleanName = sNameLower.replace(/\s+/g, " ");
+              vMatch = vessels.find(v => {
+                const bCode = (v.bnfCode || "").toLowerCase().trim();
+                const bNm = (v.bnfNm || v.shippingLine || "").toLowerCase().trim().replace(/\s+/g, " ");
+                return bCode === cleanName || bNm === cleanName;
+              });
+            }
+
+            // 3. Substring match by vessel name
+            if (!vMatch && sNameLower.length >= 4) {
+              const cleanName = sNameLower.replace(/\s+/g, " ");
+              vMatch = vessels.find(v => {
+                const bNm = (v.bnfNm || v.shippingLine || "").toLowerCase().trim().replace(/\s+/g, " ");
+                return bNm.length >= 4 && (bNm.includes(cleanName) || cleanName.includes(bNm));
+              });
+            }
+
             if (vMatch) {
               foundLineId = vMatch.bnfCode || "";
             }
@@ -532,9 +556,14 @@ const Form13 = () => {
             const iso = getField(c, "isoCode", "iso", "iso_code") || (cntrSize === "40" ? "4510" : "2210");
             const agentSealNo = getField(c, "sealNo", "customSealNo", "shippingLineSealNo", "sealno");
 
-            let vgmWt = getField(c, "vgmWtInvoice", "vgmwtinvoice", "vgmWt", "totWt");
-            if (!vgmWt && c.grossWeight) {
-              vgmWt = (Number(c.grossWeight) / 1000).toFixed(3);
+            // VGM Weight: Convert KGS to MTS (if weight > 100, it is in KGS so divide by 1000)
+            const rawWt = getField(c, "vgmWtInvoice", "vgmwtinvoice", "vgmWt", "totWt", "grossWeight");
+            let vgmWt = "";
+            if (rawWt !== undefined && rawWt !== null && rawWt !== "") {
+              const num = parseFloat(rawWt);
+              if (!isNaN(num) && num > 0) {
+                vgmWt = num > 100 ? (num / 1000).toFixed(3) : num.toFixed(3);
+              }
             }
 
             const rawHaulier = getField(c, "haulier", "transhipper_code", "transhipperCode", "transporter") ||
@@ -813,34 +842,53 @@ const Form13 = () => {
         const uniqueVgmContainers = [];
         const seen = new Set();
         vgmContainers.forEach(c => {
-          if (c.cntnrNo && !seen.has(c.cntnrNo)) {
+          const upperNo = (c.cntnrNo || "").trim().toUpperCase();
+          if (upperNo && !seen.has(upperNo)) {
             uniqueVgmContainers.push(c);
-            seen.add(c.cntnrNo);
+            seen.add(upperNo);
           }
         });
 
-        // Check which containers are already in the form
-        const existingNos = formData.containers.map(c => (c.cntnrNo || "").trim()).filter(Boolean);
-        const newVgmContainers = uniqueVgmContainers.filter(c => !existingNos.includes(c.cntnrNo.trim()));
-
-
-        if (newVgmContainers.length > 0) {
-          setFormData(prev => {
-            const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
-            const finalContainers = isFirstEmpty ? newVgmContainers : [...prev.containers, ...newVgmContainers];
-
-            // Also populate header-level shipperNm if it's empty, using the first VGM record found
-            const headerShipperNm = prev.shipperNm || vgmRequests[0]?.shipperNm || "";
-
+        setFormData(prev => {
+          const isFirstEmpty = prev.containers.length === 1 && !prev.containers[0].cntnrNo;
+          if (isFirstEmpty) {
             return {
               ...prev,
-              shipperNm: headerShipperNm,
-              containers: finalContainers
+              shipperNm: prev.shipperNm || vgmRequests[0]?.shipperNm || "",
+              containers: uniqueVgmContainers
             };
+          }
+
+          // If containers already exist in the form, update matching container weight only if not already filled/edited
+          const updatedContainers = prev.containers.map(c => {
+            const cNo = (c.cntnrNo || "").trim().toUpperCase();
+            if (!cNo) return c;
+            const match = uniqueVgmContainers.find(vc => (vc.cntnrNo || "").trim().toUpperCase() === cNo);
+            if (match && (!c.vgmWt || c.vgmWt === "")) {
+              return {
+                ...c,
+                vgmWt: match.vgmWt,
+                vgmViaODeX: "Y"
+              };
+            }
+            return c;
           });
-          setSuccess(`Auto-filled ${newVgmContainers.length} container(s) and Shipper Name from VGM data`);
-        }
-      } else {
+
+          // Check which containers from VGM are completely new
+          const existingNos = prev.containers.map(c => (c.cntnrNo || "").trim().toUpperCase()).filter(Boolean);
+          const newVgmContainers = uniqueVgmContainers.filter(c => !existingNos.includes((c.cntnrNo || "").trim().toUpperCase()));
+
+          // Only append new containers if existing containers were not populated from job (or user had empty initial state)
+          const finalContainers = newVgmContainers.length > 0 
+            ? [...updatedContainers, ...newVgmContainers]
+            : updatedContainers;
+
+          return {
+            ...prev,
+            shipperNm: prev.shipperNm || vgmRequests[0]?.shipperNm || "",
+            containers: finalContainers
+          };
+        });
       }
     } catch (err) {
       console.error("[VGM-AUTOFILL] Error:", err);
@@ -849,13 +897,13 @@ const Form13 = () => {
 
   // Trigger VGM Auto-fill when booking number is entered (Debounced)
   useEffect(() => {
-    if (formData.bookNo && formData.bookNo.length >= 3 && !isEditMode) {
+    if (formData.bookNo && formData.bookNo.length >= 3 && !isEditMode && !requestId && !location.state?.editMode) {
       const timer = setTimeout(() => {
         handleVGMAutoFill(formData.bookNo);
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [formData.bookNo, isEditMode]);
+  }, [formData.bookNo, isEditMode, requestId]);
 
   // Initial load
   useEffect(() => {
@@ -1342,8 +1390,8 @@ const Form13 = () => {
           errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight is required when not via ODeX`;
         } else {
           const wtStr = container.vgmWt.toString();
-          if (!/^\d{1,3}(\.\d{1,2})?$/.test(wtStr)) {
-            errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight must be a valid number up to 3 digits and optional 2 decimals (e.g. 25.50)`;
+          if (!/^\d{1,3}(\.\d{1,3})?$/.test(wtStr)) {
+            errors[`container_${index}_vgmWt`] = `Container ${index + 1}: VGM Weight must be a valid number up to 3 digits and optional 3 decimals (e.g. 25.500)`;
           }
         }
       }

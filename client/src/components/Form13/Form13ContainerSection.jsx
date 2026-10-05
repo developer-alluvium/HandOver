@@ -168,8 +168,13 @@ const ContainerRow = ({
             size="small"
             variant="standard"
             value={container.vgmWt}
-            onChange={(e) => handleContainerChange("vgmWt", e.target.value)}
-            disabled={container.vgmViaODeX === 'Y'}
+            onChange={(e) => {
+              handleContainerChange("vgmWt", e.target.value);
+              // If user manually edits VGM weight, set vgmViaODeX to 'N' so ODeX API doesn't overwrite it with old VGM data
+              if (container.vgmViaODeX === 'Y') {
+                handleContainerChange("vgmViaODeX", 'N');
+              }
+            }}
             type="number"
             inputProps={{ style: { fontSize: '0.875rem', textAlign: 'right' } }}
             error={!!validationErrors[`container_${index}_vgmWt`]}

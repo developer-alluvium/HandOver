@@ -443,4 +443,16 @@ export const AUTHORIZED_PERSONS = [
     designation: "ACCOUNTANT",
     contactNo: "9824250056",
   },
+  {
+    exporter: "SANTOSH STARCH PRODUCTS LTD",
+    authPerson: "Shrikant",
+    designation: "Authorised Signatory",
+    contactNo: "7926651800",
+  },
+  {
+    exporter: "IMPERIAL INDUSTRIAL MINERALS COMPANY",
+    authPerson: "Authorised Signatory",
+    designation: "Authorised Signatory",
+    contactNo: "9947082674",
+  },
 ];
