@@ -455,4 +455,10 @@ export const AUTHORIZED_PERSONS = [
     designation: "Authorised Signatory",
     contactNo: "9947082674",
   },
+  {
+    exporter: "HI TECH",
+    authPerson: "Authorised Signatory",
+    designation: "Authorised Signatory",
+    contactNo: "",
+  },
 ];

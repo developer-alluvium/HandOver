@@ -69,6 +69,11 @@ import guruRajendraFoot from "../assets/guru rajendra/footer.png";
 import hansHead from "../assets/hans/head.png";
 import hansSign from "../assets/hans/sign.png";
 
+// Hi Tech
+import hiTechHead from "../assets/hi tech/head.png";
+import hiTechSign from "../assets/hi tech/sign.png";
+import hiTechFoot from "../assets/hi tech/foot.png";
+
 // IIMCO
 import iimcoHead from "../assets/iimco/head.png";
 import iimcoSign from "../assets/iimco/sign.png";
@@ -196,6 +201,13 @@ export const EXPORTERS = [
         head: hansHead,
         sign: hansSign,
         foot: null
+    },
+    {
+        key: "hi_tech",
+        label: "Hi Tech",
+        head: hiTechHead,
+        sign: hiTechSign,
+        foot: hiTechFoot
     },
     {
         key: "iimco",
