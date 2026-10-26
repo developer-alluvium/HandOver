@@ -1,5 +1,5 @@
 // client/src/components/ESB/ESBHeaderSection.jsx
-import React from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   CONTAINER_STATUS_LOV,
   NATURE_OF_CARGO_LOV,
@@ -7,6 +7,8 @@ import {
   SHIPPING_LINE_LOV,
 } from "../../utils/esbValidations";
 import { masterData } from "../../data/masterData";
+import { masterAPI } from "../../services/api";
+import CustomAutocomplete from "../common/CustomAutocomplete";
 
 const ESBHeaderSection = ({
   formData,
@@ -23,18 +25,59 @@ const ESBHeaderSection = ({
     onChange(name, value);
   };
 
-  const lineOptions =
-    Array.isArray(shippingLines) && shippingLines.length > 0
-      ? shippingLines.map((sl) => ({
-          value: sl.code || sl.bnfCode || sl.value,
-          label: `${sl.code || sl.bnfCode || sl.value} - ${sl.name || sl.bnfName || sl.label || sl.code}`,
-        }))
-      : SHIPPING_LINE_LOV;
-
   const ports = masterData.portIds || [];
 
+  const portOptions = useMemo(() => {
+    return ports.map((p) => ({
+      value: p.value,
+      label: `${p.value} - ${p.label}`,
+    }));
+  }, [ports]);
+
+  // Dynamic FPOD options via API search
+  const [fpodOptions, setFpodOptions] = useState([]);
+  const [fpodLoading, setFpodLoading] = useState(false);
+  const [fpodSearch, setFpodSearch] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const fetchFpods = async (searchTerm) => {
+      try {
+        setFpodLoading(true);
+        const res = await masterAPI.getFpodCodes(searchTerm);
+        if (active && res && res.data) {
+          const options = (res.data || []).map((item) => ({
+            value: item.PORT_CODE,
+            label: `${item.PORT_CODE} - ${item.PORT_NAME}`,
+          }));
+          setFpodOptions(options);
+        }
+      } catch (e) {
+        // Fallback silently
+      } finally {
+        if (active) setFpodLoading(false);
+      }
+    };
+    fetchFpods(fpodSearch);
+    return () => {
+      active = false;
+    };
+  }, [fpodSearch]);
+
+  const allFpodOptions = useMemo(() => {
+    const combined = [...fpodOptions];
+    const seen = new Set(combined.map((o) => o.value));
+    for (const p of portOptions) {
+      if (!seen.has(p.value)) {
+        seen.add(p.value);
+        combined.push(p);
+      }
+    }
+    return combined;
+  }, [fpodOptions, portOptions]);
+
   // 1. Dynamically Filter Shipping Line Options according to Selected Vessel
-  const filteredLineOptions = React.useMemo(() => {
+  const filteredLineOptions = useMemo(() => {
     const rawLines =
       Array.isArray(shippingLines) && shippingLines.length > 0
         ? shippingLines.map((sl) => ({
@@ -69,7 +112,7 @@ const ESBHeaderSection = ({
   }, [shippingLines, vessels, formData.vesselNm]);
 
   // 2. Dynamically Filter Vessel Options according to Selected Shipping Line & Port Location
-  const filteredVessels = React.useMemo(() => {
+  const filteredVessels = useMemo(() => {
     if (!Array.isArray(vessels) || vessels.length === 0) return [];
     let list = vessels;
 
@@ -110,6 +153,14 @@ const ESBHeaderSection = ({
     );
   }, [vessels, formData.locCode, formData.bnfCode]);
 
+  const vesselOptions = useMemo(() => {
+    return filteredVessels.map((v) => ({
+      value: v.vesselNm || v.vesselName,
+      label: `${v.vesselNm || v.vesselName}${v.viaNo ? ` (Via: ${v.viaNo})` : ""}${v.bnfCode ? ` [${v.bnfCode}]` : ""}`,
+      raw: v,
+    }));
+  }, [filteredVessels]);
+
   return (
     <div className="esb-panel">
       {/* Header Bar with Title and Summary Counters */}
@@ -146,25 +197,19 @@ const ESBHeaderSection = ({
             <label>
               Sea / Port Code <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.locCode ? "error" : ""}`}
-              name="locCode"
+            <CustomAutocomplete
+              variant="boxed"
+              options={portOptions}
               value={formData.locCode || ""}
+              placeholder="-- Select Port --"
               disabled={readOnly}
-              onChange={(e) => {
-                const val = e.target.value;
+              error={!!errors.locCode}
+              onChange={(val) => {
                 onChange("locCode", val);
                 if (!formData.icdLocCode) onChange("icdLocCode", val);
                 if (!formData.portOfSBFiled) onChange("portOfSBFiled", val);
               }}
-            >
-              <option value="">-- Select Port --</option>
-              {ports.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.value} - {p.label}
-                </option>
-              ))}
-            </select>
+            />
             {errors.locCode && <span className="error-text">{errors.locCode}</span>}
           </div>
 
@@ -191,20 +236,15 @@ const ESBHeaderSection = ({
             <label>
               SB Processed Location <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.portOfSBFiled ? "error" : ""}`}
-              name="portOfSBFiled"
+            <CustomAutocomplete
+              variant="boxed"
+              options={portOptions}
               value={formData.portOfSBFiled || ""}
+              placeholder="-- Select Location --"
               disabled={readOnly}
-              onChange={handleChange}
-            >
-              <option value="">-- Select Location --</option>
-              {ports.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.value} - {p.label}
-                </option>
-              ))}
-            </select>
+              error={!!errors.portOfSBFiled}
+              onChange={(val) => onChange("portOfSBFiled", val)}
+            />
             {errors.portOfSBFiled && <span className="error-text">{errors.portOfSBFiled}</span>}
           </div>
 
@@ -233,13 +273,14 @@ const ESBHeaderSection = ({
             <label>
               Shipping Line (Beneficiary) <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.bnfCode ? "error" : ""}`}
-              name="bnfCode"
+            <CustomAutocomplete
+              variant="boxed"
+              options={filteredLineOptions}
               value={formData.bnfCode || ""}
+              placeholder="-- Select Shipping Line --"
               disabled={readOnly}
-              onChange={(e) => {
-                const selectedBnf = e.target.value;
+              error={!!errors.bnfCode}
+              onChange={(selectedBnf) => {
                 onChange("bnfCode", selectedBnf);
                 onChange("bookLine", selectedBnf);
 
@@ -255,14 +296,7 @@ const ESBHeaderSection = ({
                   }
                 }
               }}
-            >
-              <option value="">-- Select Shipping Line --</option>
-              {filteredLineOptions.map((sl) => (
-                <option key={sl.value} value={sl.value}>
-                  {sl.label}
-                </option>
-              ))}
-            </select>
+            />
             {errors.bnfCode && <span className="error-text">{errors.bnfCode}</span>}
           </div>
 
@@ -271,16 +305,17 @@ const ESBHeaderSection = ({
             <label>
               Is HBL Involved? <span className="required">*</span>
             </label>
-            <select
-              className="form-control"
-              name="isHBLInvolved"
+            <CustomAutocomplete
+              variant="boxed"
+              options={[
+                { value: "N", label: "No (Straight/Direct MBL)" },
+                { value: "Y", label: "Yes (House BL Involved)" },
+              ]}
               value={formData.isHBLInvolved || "N"}
+              placeholder="Is HBL Involved?"
               disabled={readOnly}
-              onChange={handleChange}
-            >
-              <option value="N">No (Straight/Direct MBL)</option>
-              <option value="Y">Yes (House BL Involved)</option>
-            </select>
+              onChange={(val) => onChange("isHBLInvolved", val || "N")}
+            />
           </div>
 
           {/* Booking Office Location */}
@@ -305,19 +340,15 @@ const ESBHeaderSection = ({
             <label>
               Container Status <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.cntStatus ? "error" : ""}`}
-              name="cntStatus"
+            <CustomAutocomplete
+              variant="boxed"
+              options={CONTAINER_STATUS_LOV}
               value={formData.cntStatus || "FCL"}
+              placeholder="Select Container Status"
               disabled={readOnly}
-              onChange={handleChange}
-            >
-              {CONTAINER_STATUS_LOV.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              error={!!errors.cntStatus}
+              onChange={(val) => onChange("cntStatus", val || "FCL")}
+            />
             {errors.cntStatus && <span className="error-text">{errors.cntStatus}</span>}
           </div>
         </div>
@@ -347,20 +378,15 @@ const ESBHeaderSection = ({
             <label>
               Booking Origin (ICD/Port) <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.icdLocCode ? "error" : ""}`}
-              name="icdLocCode"
+            <CustomAutocomplete
+              variant="boxed"
+              options={portOptions}
               value={formData.icdLocCode || ""}
+              placeholder="-- Select Origin --"
               disabled={readOnly}
-              onChange={handleChange}
-            >
-              <option value="">-- Select Origin --</option>
-              {ports.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.value} - {p.label}
-                </option>
-              ))}
-            </select>
+              error={!!errors.icdLocCode}
+              onChange={(val) => onChange("icdLocCode", val)}
+            />
             {errors.icdLocCode && <span className="error-text">{errors.icdLocCode}</span>}
           </div>
 
@@ -368,60 +394,55 @@ const ESBHeaderSection = ({
           <div className="form-group">
             <label>
               Vessel Name <span className="required">*</span>
-              <span className="sub-link">Click here if Vessel Not Found</span>
-            </label>
-            {vessels.length > 0 ? (
-              <select
-                className={`form-control ${errors.vesselNm ? "error" : ""}`}
-                name="vesselNm"
-                value={formData.vesselNm || ""}
-                disabled={readOnly}
-                onChange={(e) => {
-                  const selectedVal = e.target.value;
-                  onChange("vesselNm", selectedVal);
-
-                  if (selectedVal && Array.isArray(vessels)) {
-                    const matchedVessels = vessels.filter(
-                      (v) => (v.vesselNm || v.vesselName) === selectedVal
-                    );
-                    if (matchedVessels.length > 0) {
-                      const matchedV =
-                        matchedVessels.find(
-                          (v) =>
-                            formData.bnfCode &&
-                            v.bnfCode &&
-                            v.bnfCode.toUpperCase() === formData.bnfCode.toUpperCase()
-                        ) || matchedVessels[0];
-
-                      if (matchedV.viaNo) {
-                        onChange("viaNo", matchedV.viaNo);
-                      }
-                      if (matchedV.bnfCode) {
-                        onChange("bnfCode", matchedV.bnfCode.toUpperCase());
-                        onChange("bookLine", matchedV.bnfCode.toUpperCase());
-                      }
-                    }
-                  }
+              <span
+                className="sub-link"
+                onClick={() => {
+                  onChange("vesselNm", "");
+                  onChange("viaNo", "");
                 }}
               >
-                <option value="">-- Select Vessel --</option>
-                {filteredVessels.map((v, i) => (
-                  <option key={i} value={v.vesselNm || v.vesselName}>
-                    {v.vesselNm || v.vesselName} {v.viaNo ? `(Via: ${v.viaNo})` : ""} {v.bnfCode ? `[${v.bnfCode}]` : ""}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                className={`form-control ${errors.vesselNm ? "error" : ""}`}
-                name="vesselNm"
-                value={formData.vesselNm || ""}
-                disabled={readOnly}
-                onChange={handleChange}
-                placeholder="e.g. DUMMY VSL NHAVA SHEVA"
-              />
-            )}
+                Click here if Vessel Not Found
+              </span>
+            </label>
+            <CustomAutocomplete
+              variant="boxed"
+              options={vesselOptions}
+              value={formData.vesselNm || ""}
+              placeholder="Search or enter vessel name..."
+              disabled={readOnly}
+              error={!!errors.vesselNm}
+              freeSolo={true}
+              onChange={(selectedVal, rawOpt) => {
+                onChange("vesselNm", selectedVal);
+                if (rawOpt && rawOpt.raw) {
+                  const matchedV = rawOpt.raw;
+                  if (matchedV.viaNo) onChange("viaNo", matchedV.viaNo);
+                  if (matchedV.bnfCode) {
+                    onChange("bnfCode", matchedV.bnfCode.toUpperCase());
+                    onChange("bookLine", matchedV.bnfCode.toUpperCase());
+                  }
+                } else if (selectedVal && Array.isArray(vessels)) {
+                  const matchedVessels = vessels.filter(
+                    (v) => (v.vesselNm || v.vesselName) === selectedVal
+                  );
+                  if (matchedVessels.length > 0) {
+                    const matchedV =
+                      matchedVessels.find(
+                        (v) =>
+                          formData.bnfCode &&
+                          v.bnfCode &&
+                          v.bnfCode.toUpperCase() === formData.bnfCode.toUpperCase()
+                      ) || matchedVessels[0];
+
+                    if (matchedV.viaNo) onChange("viaNo", matchedV.viaNo);
+                    if (matchedV.bnfCode) {
+                      onChange("bnfCode", matchedV.bnfCode.toUpperCase());
+                      onChange("bookLine", matchedV.bnfCode.toUpperCase());
+                    }
+                  }
+                }
+              }}
+            />
             {errors.vesselNm && <span className="error-text">{errors.vesselNm}</span>}
           </div>
 
@@ -430,14 +451,17 @@ const ESBHeaderSection = ({
             <label>
               FPOD (Final Port of Discharge) <span className="required">*</span>
             </label>
-            <input
-              type="text"
-              className={`form-control ${errors.pod ? "error" : ""}`}
-              name="pod"
+            <CustomAutocomplete
+              variant="boxed"
+              options={allFpodOptions}
               value={formData.pod || ""}
+              placeholder="Search or enter FPOD (e.g. AOBDD, AQABA)..."
               disabled={readOnly}
-              onChange={handleChange}
-              placeholder="e.g. AOBDD"
+              error={!!errors.pod}
+              freeSolo={true}
+              loading={fpodLoading}
+              onInputChange={(txt) => setFpodSearch(txt)}
+              onChange={(val) => onChange("pod", val)}
             />
             {errors.pod && <span className="error-text">{errors.pod}</span>}
           </div>
@@ -447,19 +471,15 @@ const ESBHeaderSection = ({
             <label>
               Nature of Cargo <span className="required">*</span>
             </label>
-            <select
-              className={`form-control ${errors.natureOfCargo ? "error" : ""}`}
-              name="natureOfCargo"
+            <CustomAutocomplete
+              variant="boxed"
+              options={NATURE_OF_CARGO_LOV}
               value={formData.natureOfCargo || "C"}
+              placeholder="Select Nature of Cargo"
               disabled={readOnly}
-              onChange={handleChange}
-            >
-              {NATURE_OF_CARGO_LOV.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              error={!!errors.natureOfCargo}
+              onChange={(val) => onChange("natureOfCargo", val || "C")}
+            />
             {errors.natureOfCargo && <span className="error-text">{errors.natureOfCargo}</span>}
           </div>
         </div>
@@ -474,3 +494,4 @@ const ESBHeaderSection = ({
 };
 
 export default ESBHeaderSection;
+

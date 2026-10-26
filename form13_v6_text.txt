@@ -1,0 +1,911 @@
+ODeX INDIA SOLUTIONS PVT. LTD.
+Form 13
+Export gate-pass API
+Customer integration guide
+Item
+Value
+Document
+OISPL Form 13 API Integration — Customer
+Version
+6.0
+Issue date
+16 October 2026
+Replaces
+OISPL Gate-pass F13 / F11 integration guide v5.0 (14 March 2026), Form 13 portion
+Classification
+Confidential
+Audience
+Payor technical team integrating Form 13
+Production testing — read this before the first call
+This API is tested on the production ODeX system, with demo users and only three demo shipping lines. DEMO is the general line. DEBET follows the MSC configuration. DEALP follows the Hapag-Lloyd configuration. Do not send any other shipping line code while testing. A request with a live line code is a real Form 13 on production. Live line codes are shared only after UAT sign-off. Payor code, secret key and screen login are shared after the walkthrough.
+1. What this guide covers
+Form 13 is the export gate-pass a payor files with a shipping line so a container can enter an Indian port. This guide is the contract for that filing by API. It lists every field, when the field is mandatory, which code to send, and what the response means.
+Form type in every Form 13 call is F13. The same URL also accepts Form 11 and cart-in. Those forms are not described here. Sending the wrong form type applies the wrong rules.
+1.1 How to read a field
+Mark
+Meaning
+M
+Always send a value.
+O
+Send it when you have it. The request is accepted without it.
+C
+Send it when the condition in the description is true. Leave it blank when the condition is false.
+Type
+Meaning
+AN
+Letters and digits.
+ANS
+Letters, digits and the characters space , . / _ - ( )
+INT
+Whole number.
+DEC(a,b)
+Number with up to a digits before the decimal and b after it.
+DATE
+YYYY-MM-DD
+DTM
+YYYY-MM-DD HH:MM:SS
+Y/N
+The exact letters Y or N.
+2. Form 13 flow
+ODeX shares the payor code (pyrCode) and the secret key. The same payor must be set up for Form 13 integration.
+Download the full vessel list (section 5). Repeat every day, and again whenever a line opens a vessel, using the last update time you stored.
+Download the POD list the same way (section 6). A POD that is not on that list for the terminal and service is rejected.
+On the Form 13 screen, confirm the shipping line, shipper, issue-to, terminal login and haulier. If a value appears twice, use the one on the screen. During testing the line code is only DEMO, DEBET or DEALP.
+Build one JSON for one booking. Put every container of that booking in cntrList. Put every shipping bill of a container in that container's sbDtlsVo.
+Set status to Requested on each container that should go to the line now. Leave it off, or send NOT_SUBMITTED, to save a draft.
+Attach the PDFs whose titles the port, cargo and origin require. Convert each file to Base64.
+Build hashKey with the rule in section 4 and POST saveF13.
+If schema_validation is FAIL, correct the format and send the request again as a new request (no odexRefNo).
+If business_validation is FAIL, correct the business error and send again as a new request.
+On SUCCESS, store odexRefNo and each container status. This number is the key for every later call.
+To correct a request that is still Not Submitted or Requested on every container, send the full JSON again with the same odexRefNo.
+Poll the status API until the line verifies or confirms the container. The PIN, when the line issues one, is on that response.
+To withdraw a verified or confirmed container, call the cancellation API. A rejected, awaiting-VGM or already confirmed container cannot be corrected with odexRefNo; follow the message on the response.
+One odexRefNo belongs to one booking, one vessel, one port and one line. Do not mix bookings in one call. Do not change the port on a re-request.
+3. Endpoints
+Protocol is HTTPS. Method is POST. Body is JSON (Content-Type: application/json). The testing base below is the production host used for this kit.
+Purpose
+URL
+Vessel master
+https://alpha.odexglobal.com/RS/iForm13Service/json/getForm13VesselInfo
+POD master
+https://alpha.odexglobal.com/RS/iForm13Service/json/getForm13PODInfo
+Submit or re-request Form 13
+https://alpha.odexglobal.com/RS/iForm13Service/json/saveF13
+Read Form 13 status
+https://alpha.odexglobal.com/RS/iForm13Service/json/getForm13ReqInfo
+Request cancellation
+https://alpha.odexglobal.com/RS/iForm13Service/json/requestF13CancelPyr
+Cancellation also needs two HTTP headers: clientId = pyrCode, and secretKey = the secret issued for that payor.
+4. Hash key
+hashKey is required when ODeX has marked the payor integration as checksum-required. It is the decimal CRC32 of a string with no separators. Use the raw JSON values, including an empty string when a value is blank. Do not add spaces.
+API
+String before CRC32
+Vessel master and POD master
+pyrCode + fromTs + secretKey
+saveF13
+bookNo + for each container, in array order: cntnrNo + vgmWt + vgmViaODeX + shipBillInvNo + secretKey
+Status response (returned by ODeX)
+bookNo + for each container: cntnrNo + vgm weight + verify flag + shipping bill number + secretKey
+shipBillInvNo in the saveF13 hash is the container-level field. Shipping bills that exist only inside sbDtlsVo do not go into the hash unless you also send shipBillInvNo on the container. Send vgmWt and vgmViaODeX on every container, using an empty string when you have no weight, so the hash stays stable.
+Worked example. bookNo BKDEMO001, one container MSCU1234563, vgmWt 18.50, vgmViaODeX N, shipBillInvNo blank, secretKey SECRET. The string is:
+BKDEMO001MSCU123456318.50NSECRET
+CRC32 decimal (this is the hashKey): 1345125986
+A wrong hash on saveF13 returns “Kindly enter valid hashkey” or “Hash key is Invalid”, before the Form 13 is saved.
+5. Vessel master
+The vessel call returns the lines, vessels, VIA numbers, terminals, services and the CHA filing window. A Form 13 is accepted only when vessel name and VIA match a row for that line and port, the terminal matches that row, the service matches that row, and the call is inside the CHA window (chaValidFrm to chaValidTo). Outside that window the response is Error (1005): the vessel has been cut off.
+Take the whole list in one call, then keep it current. Do not type vessel names from a spreadsheet that is a week old.
+First call: fromTs = 2000-01-01 00:00:00. The response is every vessel created or updated since then. Store the greatest lastUpdatedOn.
+Every day, and whenever a user asks to refresh: fromTs = that stored lastUpdatedOn. Merge the rows into the local table. Replace a row when line, port, vessel and VIA match.
+A full reload is the same first call. Use it if the local table is suspected to be incomplete.
+fromTs must be YYYY-MM-DD HH:MM:SS. A date without the time is rejected.
+listTyp Gatepass (or omit it) returns Form 13 vessels. Do not send HBL for this guide.
+bnfCode on each row is the shipping line code to send later in saveF13. It is the code of the line shown for Form 13. If a line is duplicated in master, this is the code to keep.
+Field
+API field
+Type and length
+M/O/C
+Description
+Payor code
+pyrCode
+ANS 200
+M
+Payor code issued by ODeX.
+Hash key
+hashKey
+INT
+C
+CRC32 of pyrCode + fromTs + secretKey, when the payor profile requires a checksum.
+From time
+fromTs
+DTM
+M
+Return rows created or updated at or after this time. Format YYYY-MM-DD HH:MM:SS.
+List type
+listTyp
+AN 10
+O
+Send Gatepass. If omitted, Gatepass is assumed.
+Each object in the response array:
+Field
+API field
+Type and length
+M/O/C
+Description
+Shipping line
+bnfCode
+AN 8
+M
+Line code. Send this same value as bnfCode on saveF13.
+Port
+locId
+AN 8
+M
+Port code, for example INNSA1.
+Vessel
+vesselNm
+ANS 50
+M
+Send this exact text as vesselNm.
+VIA
+viaNo
+AN 20
+M
+Send this exact text as viaNo.
+Voyage
+voyageNo
+AN 20
+O
+May be blank on this feed. Form 13 matching does not use it.
+VCN
+vcnNo
+AN 50
+O
+May be blank on this feed.
+Form
+type
+AN 10
+O
+May be blank on this feed. This guide is still Form 13.
+Service
+service
+ANS 100
+M
+Send this exact text as service.
+Terminal
+terminalCode
+AN 50
+M
+Send this exact text as terminalCode.
+CHA valid from
+chaValidFrm
+DTM
+M
+Filing opens at this time.
+CHA valid to
+chaValidTo
+DTM
+M
+Filing closes at this time.
+Last update
+lastUpdatedOn
+DTM
+M
+Use the greatest value as the next fromTs.
+Message
+responseMessage
+AN
+O
+Present when the call itself failed.
+Open: vessel master request
+Open: vessel master response
+6. POD master
+POD is accepted only when it belongs to the terminal and service of the vessel. Refresh this list the same way as vessels: one full call, then a daily or on-request call with the last fromTs. Send the POD code, not the port name, in the Form 13 field pod.
+Field
+API field
+Type and length
+M/O/C
+Description
+Payor code
+pyrCode
+ANS 200
+M
+Payor code issued by ODeX.
+Hash key
+hashKey
+INT
+C
+CRC32 of pyrCode + fromTs + secretKey, when required.
+From time
+fromTs
+DTM
+M
+YYYY-MM-DD HH:MM:SS. Full load uses 2000-01-01 00:00:00.
+The response is grouped. Each item is a port (locId). Inside it, terminal[] has terminalId. Inside each terminal, service[] has serviceNm. Inside each service, pod[] has podCd, podNm and status. Send podCd as the Form 13 field pod, and use the same code for fpod when that field is mandatory. Use a row only when status is ACTIVE, and only the service and terminal that belong to the vessel you selected.
+Open: POD master request
+Open: POD master response
+7. Submit Form 13
+URL: POST /iForm13Service/json/saveF13. One JSON object. Containers are an array named cntrList. Shipping bills are an array named sbDtlsVo on each container. Files are an array named attList.
+Leave odexRefNo out on a new filing. ODeX creates it and returns it. Send it back only for a correction (section 11).
+7.1 Header
+Field
+API field
+Type and length
+M/O/C
+Description
+ODeX reference
+odexRefNo
+AN 50
+O
+Blank on a new request. On a correction, the value returned by the first success. See section 11.
+Payor code
+pyrCode
+ANS 200
+M
+Issued by ODeX. A blank or unknown code is rejected before the form is read.
+Hash key
+hashKey
+INT
+C
+Section 4. Required when the payor profile requires a checksum.
+Shipping line
+bnfCode
+AN 8
+M
+Line code. During testing only DEMO, DEBET or DEALP. Otherwise the code shown on the Form 13 screen and on the vessel row. See section 8.
+Port
+locId
+AN 8
+M
+Port code from the location master, for example INNSA1. Must be the port of the vessel row.
+Vessel
+vesselNm
+ANS 50
+M
+Exact vesselNm from the vessel master.
+VIA
+viaNo
+AN 20
+M
+Exact viaNo from the same vessel row. Vessel and VIA are checked together.
+Terminal
+terminalCode
+AN 50
+M
+Exact terminalCode from the same vessel row.
+Service
+service
+ANS 100
+M
+Exact service from the same vessel row.
+POD
+pod
+AN 50
+M
+POD code from the POD master for this terminal and service.
+Final POD
+fpod
+AN 50
+C
+Required for terminals IGT and CCTL, for Tuticorin terminal DBGT, for exception ports, and for any terminal that is integrated to a terminal system.
+Cargo type
+cargoTp
+ANS 50
+M
+Code from the cargo-type sheet. Drives reefer, hazardous, ODC and attachment rules.
+Origin
+origin
+AN 20
+M
+C, F, B, R, W, F_CFS or E_TANK. See the origin sheet.
+Container load
+cntnrStatus
+AN 7
+M
+FULL or EMPTY. This is not the request status.
+Form type
+formType
+AN 10
+M
+F13.
+Booking number
+bookNo
+AN 20
+M
+One booking for the whole request.
+Mobile
+mobileNo
+INT 80
+M
+Digits only. If omitted, ODeX uses the mobile on the payor profile when one exists. Schema still expects the field when you send a full payload.
+Shipper name
+shipperNm
+ANS 100
+M
+Section 12.
+Shipper code
+shipperCd
+ANS 50
+C
+Mandatory, and must match master, on a terminal that uses the shipper master. Section 12.
+Shipper city
+shipperCity
+ANS 50
+C
+Mandatory for Form 13 at Tuticorin when the terminal is DBGT. Send a value for other ports as well; the field is part of the schema.
+Issue to
+issueTo
+ANS 50
+C
+Mandatory except NSIGT, NSICT, MICT, IGT and CCTL. Section 14.
+CFS
+cfsCode
+AN 50
+C
+Required when origin is C. Also required at Mundra MICT when origin is B or F_CFS. Must exist for the port. Ignored for other origins.
+ICD
+icdCode
+AN 50
+C
+Required at Mundra when origin is R, for MICT and Adani terminals. Must exist for the line, port and terminal.
+Shipping instruction no.
+shpInstructNo
+AN 20
+C
+For DEBET / MSC, send it on each container. A header value is copied onto containers that do not have their own, then cleared from the header.
+Booking copy BL
+bookCopyBlNo
+AN 20
+C
+Mandatory for DEALP / Hapag-Lloyd when cargo is not REF and not REF(HAZ). ODeX checks that shipping instructions exist for this BL.
+Early gate-in
+isEarlyGateIn
+Y/N
+O
+Omit or N for a normal filing. Y is accepted only when that line allows early gate-in at that port. For CMA CGM, APL and ANL at Nhava Sheva, Y is accepted only from 14 days before ETA until ETA. Charges shown on the Form 13 screen apply.
+Terminal login
+terminalLoginId
+AN 200
+C
+Section 15.
+Email
+emailId
+ANS 50
+O
+One address, or several separated by commas with no spaces. Form 13 mail for this request goes here.
+Consignee
+consigneeNm
+ALPHA 35
+C
+Required on exception ports (the ports where the screen shows consignee).
+Consignee address
+consigneeAddr
+ANS 200
+C
+Required on the same ports.
+Cargo description
+cargoDesc
+ANS 250
+C
+Required on the same ports.
+Notify
+notifyTo
+ANS
+O
+Free text.
+Contact
+contactPerson
+ANS
+O
+Free text.
+FF code
+ffCode
+AN 50
+C
+Nhava Sheva terminals NSIGT, NSICT, MICT, IGT and CCTL need one of: payor CHA code, ffCode, or ieCode, and the code must be a Cargoes code.
+IE code
+ieCode
+AN 50
+C
+Same Nhava Sheva rule as ffCode.
+CHA code
+chaCode
+AN 50
+O
+CHA name and CHA number are taken from the payor profile of pyrCode. Send chaCode only when the screen asks for a CONCOR / extra CHA code.
+Outside window
+outsideWindowIssue
+true/false
+O
+true uses the outside-window validity on the vessel instead of the normal CHA window. Use only when the line has allowed it.
+Outside date
+outsideDate
+DATE
+O
+YYYY-MM-DD, with outsideWindowIssue.
+7.2 Container  (cntrList)
+Repeat this object once per container. Container numbers inside one request must be unique and must pass the ISO check (4 letters, 6 digits, check digit). The keys below are present on every container. Business mandatory rules apply when status is Requested.
+Field
+API field
+Type and length
+M/O/C
+Description
+Container id
+cntnrReqId
+INT
+O
+Blank on a new container. On a correction, the id returned earlier. If blank, ODeX matches the existing container by container number.
+Container number
+cntnrNo
+AN 11
+M
+ISO container number, 11 characters, no spaces.
+Size
+cntnrSize
+AN 20
+M
+1X20, 1X40 or 1X45.
+ISO
+iso
+AN 50
+M
+ISO code that belongs to that size on the Form 13 screen.
+Agent seal
+agentSealNo
+AN 20
+M
+Required on submit except on exception ports, where the screen does not ask for it.
+Custom seal
+customSealNo
+AN 20
+M
+Same rule as agent seal. Also required for terminals IGT and CCTL.
+VGM mt
+vgmWt
+DEC(3,2)
+C
+Metric tons. Required when vgmViaODeX is N and the line requires a weight. Leave blank when vgmViaODeX is Y. Section 10.
+VGM via ODeX
+vgmViaODeX
+Y/N
+M
+Y or N. Section 10.
+Driver name
+driverNm
+ALPHA 100
+C
+Required when origin is F and the terminal is NSICT, NSIGT or MICT.
+Licence
+driverLicNo
+AN 100
+O
+Send when the screen shows it.
+Vehicle
+vehicleNo
+AN 50
+C
+Required when origin is F or R and the terminal is NSICT, NSIGT, MICT, AICTPL, ACMTPL or AMCT.
+Haulier
+haulier
+AN 100
+C
+Section 13.
+Status
+status
+AN 50
+M
+Requested submits to the line. Any other value saves a draft (NOT_SUBMITTED), unless early gate-in sets EARLY_GATE_IN.
+Shipping bills
+sbDtlsVo
+array
+C
+One object per shipping bill. Section 7.3.
+DO number
+doNo
+AN 50
+O
+Temperature
+temp
+DEC(3,2)
+C
+Celsius. Required when cargo is REF or REF(HAZ). Negative values are allowed.
+Voltage
+volt
+DEC(7,2)
+O
+IMO 1
+imoNo1
+AN 50
+C
+Required for HAZ, REF(HAZ), ODC(HAZ) and FLT(HAZ). Code from the IMO sheet.
+UN 1
+unNo1
+AN 50
+C
+Required with imoNo1.
+IMO 2 to 4
+imoNo2, imoNo3, imoNo4
+AN 50
+O
+Extra hazardous classes. Each code must be on the IMO sheet.
+UN 2 to 4
+unNo2, unNo3, unNo4
+AN 50
+O
+Pair each extra IMO with its UN number.
+Right / left / top / back / front
+rightDimensions and the four companions
+DEC(3,2)
+C
+All five are required for ODC and ODC(HAZ).
+ODC unit
+odcUnits
+AN 10
+C
+CM, FT, IN or M. Required with the five dimensions.
+CHA remarks
+chaRemarks
+AN 50
+O
+Mandatory in the cancellation API.
+Special stow
+spclStow
+AN 10
+C
+Code from the special-stow sheet. Used for NSICT, NSIGT and BMCT when the screen shows the field.
+Stow remark
+spclStowRemark
+AN 100
+C
+With special stow, when the screen shows it.
+Tare
+cntnrTareWgt
+DEC
+O
+Metric tons, 0 to 999.999.
+Cargo value
+cargoVal
+DEC
+O
+HSN
+hsnCode
+AN 30
+O
+Not required for Form 13. If sent, it must exist and the commodity name is filled from that HSN.
+Commodity
+commodityName
+ANS
+O
+Filled from HSN when HSN is sent.
+SI number
+shpInstructNo
+AN
+C
+Mandatory on the container for DEBET / MSC.
+7.3 Shipping bill  (sbDtlsVo)
+Put this array on the container. Two containers can have different bills. One container can have many bills. There is no separate shipping-bill call.
+Field
+API field
+Type and length
+M/O/C
+Description
+SB number
+shipBillInvNo
+AN 7
+M
+Shipping bill number. Business length is 7 characters. Schema allows up to 22; a longer value is rejected on submit.
+SB date
+shipBillDt
+DATE
+M
+YYYY-MM-DD. Not a date-time.
+CHA name
+chaNm
+ANS 50
+M
+CHA on the shipping bill. Max 50.
+CHA PAN
+chaPan
+AN 10
+M
+10-character PAN: five letters, four digits, one letter.
+Exporter
+exporterNm
+ANS 50
+M
+Max 50.
+Exporter IEC
+exporterIec
+AN 10
+M
+Up to 10 letters and digits.
+Packages
+noOfPkg
+INT
+M
+Whole number, greater than zero.
+LEO number
+leoNo
+AN 15
+O
+Max 15.
+LEO date
+leoDt
+DATE
+O
+YYYY-MM-DD, or blank.
+If the container does not have its own shipBillInvNo, ODeX stores the first shipping-bill number from sbDtlsVo on the container. Package count on an exception port is still required at container level when the screen asks for number of packages; send it through the shipping-bill rows.
+7.4 Attachments  (attList)
+Field
+API field
+Type and length
+M/O/C
+Description
+Title
+attTitle
+ANS 200
+M
+The code, for example BOOKING_COPY. Never the description. The code must exist for the port.
+File name
+attNm
+ANS 500
+M
+PDF only. If the name has no .pdf, ODeX adds it.
+File
+attData
+Base64
+M
+Base64 of the PDF. Each file must be 4 MB or smaller. The decoded byte length must not exceed 5,242,880.
+Which titles are mandatory is the combination of four lists for that port:
+The document list for the cargo type (general, hazardous, reefer, ODC, onion, perishable, steam activated carbon).
+The document list for the origin (dock, factory, on wheel, empty tank, and so on).
+VGM Annexure 1 (VGM_ANXR1) when vgmViaODeX is N. It is not required when vgmViaODeX is Y.
+Any extra title the shipping line has marked mandatory for itself.
+A missing mandatory title returns “<document name> is required”. An unknown title returns “Attachment title is invalid” plus the code you sent. The attachment-title sheet lists the codes and the usual condition. A title applies only when that port has it configured, which is the same set the Form 13 screen asks you to upload.
+Open: new Form 13, one container, VGM supplied by you
+Open: two containers, several shipping bills
+8. Shipping lines
+bnfCode is the shipping line code of the line on the Form 13 screen. The vessel master returns that same code on every vessel of the line.
+If master data contains the same line twice, use the row that is on the Form 13 dropdown: active, and enabled for Form 13. Do not send an inactive duplicate, and do not send a code that is not on that dropdown.
+Testing codes — production system
+DEMO — general shipping lines.DEBET — MSC configuration (shipping instruction number on the container).DEALP — Hapag-Lloyd configuration (bookCopyBlNo, and a shipping-instruction check, except reefer).No other bnfCode is allowed while testing.
+DEBET: put shpInstructNo on each container. A value sent only on the header is copied down and then removed from the header.
+DEALP: bookCopyBlNo is required when cargo is not REF and not REF(HAZ). If that BL has no shipping instruction, the request is rejected. It is not left as a silent draft.
+Open: DEBET (MSC-style) sample
+Open: DEALP (Hapag-style) sample
+Open: master workbook (lines, ports, codes, attachments, terminal login)
+9. Several containers, several shipping bills
+cntrList is the whole booking. Two containers means two objects. Each object has its own seals, weight, vehicle, haulier, status and sbDtlsVo. sbDtlsVo is the whole set of shipping bills for that container. Two bills means two objects in that array. Bills are not repeated at the header.
+All containers share the header: line, vessel, VIA, terminal, service, POD, booking, shipper, origin and cargo type.
+A duplicate container number inside the request is rejected.
+Requested on a container submits that container. You can submit every container in the same call.
+If any container is Requested, the submit checks (seals, VGM, hazardous, ODC, vehicle, attachments) run for the request.
+The success response has one odexRefNo and one entry per container.
+10. VGM via ODeX
+vgmViaODeX is Y or N on each container. Any other value is “VGM via ODeX is invalid.” The weight unit is metric tons.
+vgmViaODeX
+What you send in vgmWt
+What ODeX does
+VGM annexure
+Y
+Leave blank.
+ODeX looks up a verified VGM for this line, port, booking and container number. The weight is copied and converted from kilograms to metric tons, two decimals. The VGM line is stored as well.
+Not required.
+Y, and no verified VGM exists
+Leave blank.
+The container is saved as AWAITING_VGM. It is not a rejected request. It moves on when the VGM is verified. Re-request is not allowed while the status is AWAITING_VGM.
+Not required.
+N
+Required, DEC(3,2), for example 18.50.
+Your weight is stored. This is the path when the line’s VGM rule is “weight mandatory” or “weight required if not verified on ODeX”.
+VGM_ANXR1 is required where that port asks for the annexure.
+Y means the VGM is already verified on ODeX. It does not create a VGM. File the VGM on ODeX first, then send the Form 13 with Y, or send N and the weight yourself.
+Open: VGM via ODeX = Y (no weight, no VGM annexure)
+Open: VGM via ODeX = N (weight and VGM annexure)
+11. Correction by odexRefNo
+A correction is the same API, saveF13, with the odexRefNo from the first success, and the full corrected JSON. ODeX updates that request. It does not create a second number.
+Allowed only when every container on that request is NOT_SUBMITTED or REQUESTED.
+If any container is verified, confirmed, rejected, awaiting VGM, cancelled, or in a cancellation request, the response is: Re-request can only be done for requested and not submitted requests.
+locId must be the same port as the original. A different port is rejected.
+An unknown odexRefNo returns invalid odexRefNo.
+An existing container is matched by cntnrReqId if you send it, otherwise by container number. A new container number is added. Send the containers that should remain.
+Send the same attachments that are still required. A correction is checked with the same rules as a new request.
+Open: correction using odexRefNo
+12. Shipper name and code
+shipperNm is always required, maximum 100 characters.
+On a terminal that is integrated to the terminal shipper master (a terminal API is configured and the line has a liner code at that terminal — this is the Adani-family pattern), both the name and the code must match one active shipper for that port and terminal. ODeX then stores the name and the code from that master. Those are the values on the Form 13 shipper dropdown. A name that only looks similar is Error (1024).
+On any other terminal, shipperNm is the name you send. shipperCd is not checked against that master.
+If the same shipper is listed twice, send the name and the code shown on the screen for that port and terminal.
+shipperCity is mandatory for Form 13 at Tuticorin, terminal DBGT.
+13. Haulier
+haulier is the transporter code on the container, not the transporter name. The list is the active haulier codes for that terminal and port. Adani terminals are refreshed from the terminal transporter feed, so the code on the screen is the code to send.
+It is required for Form 13 when you submit (status Requested), the origin is not dock stuffed (C), and that terminal has at least one haulier. A code that is not on the list is Error (1053). If the same transporter is listed twice, send the code shown on the screen.
+14. Issue to
+issueTo is required for Form 13 on every terminal except NSIGT, NSICT, MICT, IGT and CCTL. For those five, leave it blank.
+The value is the code in the Issue To dropdown for that line, port and terminal. The descriptions on the screen are Shipper and CHA. Send the code the screen submits, not a sentence. A value that is not on that list is Error (1017). If a code is duplicated, use the one on the screen.
+15. Terminal login id
+terminalLoginId is the id the terminal uses for the CHA. It is required when any of these is true:
+The port is an exception port and the Form 13 screen shows Terminal Login Id as mandatory. That set includes Chennai, Kattupalli, Ennore, Paradip and Kolkata.
+The terminal master says the login id is mandatory.
+The terminal is a Mundra Adani terminal: ADANI, AMCT, AICTPL, ACMTPL or AMCT2.
+On an Adani-integrated terminal the id must be a CHA code in the terminal cross-reference for that terminal and port. The workbook sheet “AMCT terminal login master” is that list for AMCT: send the code column, status ACTIVE. Other terminals use the same layout. If the screen shows a different code for the same company, send the screen code.
+If you have no id, the Form 13 screen says to enter ALL_CHA / MUNCUST. At Hazira the screen says to enter OTH. For a DPE shipment, origin is W (on wheel) and the terminal login id is the CHA code, not OTHR.
+16. Response of saveF13
+Situation
+What you receive
+What you do
+Payor code missing
+Kindly enter valid PyrCode
+Send the issued pyrCode.
+Hash rejected at the door
+Kindly enter valid hashkey
+Rebuild the CRC32. Section 4.
+Form type missing or not F13
+Form type is required, or Error (1019)
+Send formType F13.
+JSON shape or pattern wrong
+schema_validation = FAIL and schema_validations, a list of JSON-schema messages
+Fix the named field. There is no odexRefNo yet. Send as a new request.
+Business rule failed
+schema_validation = PASS, business_validation = FAIL, business_validations = numbered text, bookNo echoed
+Fix every numbered line. Send as a new request.
+Correction not allowed
+Re-request can only be done for requested and not submitted requests.
+Do not send odexRefNo. The line already moved the container.
+Saved
+schema_validation = PASS, business_validation = PASS, responseMessage = SUCCESS, odexRefNo, bookNo, md_ts, form13ResCntnrVoList
+Store odexRefNo. Read each container status.
+Unhandled failure
+responseMessage starts with PACKET THAT REQUEST FAILED DUE TO THE REASON IN EXCEPTION
+Read the reason after the colon. Contact ODeX if the reason is a system error.
+Each container in form13ResCntnrVoList has cntnrReqId, cntnrNo, status, pinNo and linerRemarks. pinNo is filled when the line has issued a PIN. Store cntnrReqId for a later correction.
+Open: success response
+Open: schema error response
+Open: business error response
+17. Status
+POST getForm13ReqInfo with pyrCode, odexRefNo and the container numbers you want. Poll this after a successful submit. Do not create a new Form 13 to find out the status.
+Field
+API field
+Type and length
+M/O/C
+Description
+Payor
+pyrCode
+ANS 200
+M
+Same payor code.
+ODeX reference
+odexRefNo
+AN 50
+M
+From the submit response.
+Booking
+bookNo
+AN 20
+O
+Same booking, used as a cross-check.
+Containers
+cntrList
+array
+M
+Each item needs cntnrNo.
+The response repeats odexRefNo, bookNo and, per container, status, pinNo and linerRemarks. When status is CONFIRMED, the line’s form is carried as an attachment (attTitle, attNm, attData) where the line returns one. hashKey on a status response is the response checksum in section 4, for payors who verify it.
+Open: status request
+Open: status response
+18. Cancellation
+POST requestF13CancelPyr. Headers: clientId = pyrCode, secretKey = the secret issued for the payor. Body:
+Field
+API field
+Type and length
+M/O/C
+Description
+ODeX reference
+odexRefNo
+AN 50
+M
+Must be the reference of this request. A mismatch is Error (1060).
+Containers
+form13ReqCntnrVoList
+array
+M
+Each cntnrNo must belong to that reference. A stranger container is Error (1061).
+Remarks
+chaRemarks
+AN 50
+M
+Required on each container being cancelled.
+Cancellation runs only for containers that are VERIFIED or CONFIRMED. Any other status returns “Cancellation request can be processed only for Confirmed / Verified containers.” Success is success = true and responseMessage = “Request for Cancellation is submitted”. The container then shows REQUEST_FOR_CANCELLATION until the line accepts or rejects the cancellation.
+Open: cancellation request
+19. Business messages you will see
+Message
+Correct it by
+Beneficiary Code is invalid
+Use DEMO, DEBET or DEALP while testing. Later, use the code on the Form 13 screen.
+Error (1003) Location code is invalid
+Use a locId from the location sheet, matching the vessel row.
+Vessel Name or Via No. is invalid
+Copy vesselNm and viaNo from the same vessel-master row.
+Error (1005) vessel has been cut off
+The call is outside chaValidFrm / chaValidTo. Pick another vessel or wait for the line.
+Error (1007) Terminal code is invalid
+terminalCode must be the terminal on that vessel row.
+Service is not exist on the terminal
+service must be the service on that vessel row.
+Error (1011) POD is invalid
+pod must be on the POD master for that terminal and service.
+FPOD is required
+Send fpod for IGT, CCTL, Tuticorin DBGT, exception ports, and integrated terminals.
+Error (1014) Cargo Type is invalid
+Use a cargoTp code from the cargo sheet.
+Error (1015) Origin is invalid
+Use C, F, B, R, W, F_CFS or E_TANK.
+Error (1017) CFS code is invalid
+cfsCode must exist for the port. Send it for origin C, and for MICT origin B or F_CFS.
+ICD Code is invalid
+icdCode must exist for the line, port and terminal.
+Error (1017) issueTo is invalid
+Use the Issue To code from the screen, or leave it blank on NSIGT, NSICT, MICT, IGT, CCTL.
+Error (1018) Container status is invalid
+Header cntnrStatus is FULL or EMPTY.
+Error (1023) early gate-in
+The line has not enabled early gate-in at this port, or the Nhava Sheva ETA window is not open. Send N.
+Error (1024) Shipper Name or Shipper Code is invalid
+On an integrated terminal, send the name and code from the shipper dropdown.
+Shipper city is required
+Tuticorin, terminal DBGT.
+BL no is required / shipping instructions are not available
+DEALP / Hapag path. Send bookCopyBlNo of a BL that already has shipping instructions. Not used for reefer.
+Container number invalid or duplicate
+11-character ISO number, unique inside the request.
+Error (1029) Container Size is invalid
+1X20, 1X40 or 1X45.
+Error (1030) ISO code is invalid
+ISO must belong to the selected size.
+Error (1034) to (1037) IMO code is invalid
+Use the IMO sheet.
+Error (1038) ODC unit is invalid
+CM, FT, IN or M, and send all five dimensions for ODC.
+VGM via ODeX is invalid
+Y or N only.
+VGM weight is required
+Send vgmWt when vgmViaODeX is N.
+Error (1053) Haulier Code is invalid
+Send the haulier code from the screen for that terminal.
+Vehicle No. is required / Driver Name is required
+Origin F or R at NSICT, NSIGT or MICT (vehicle also at the Adani Mundra terminals named in section 7.2).
+Attachment title is invalid
+attTitle must be a code configured for the port.
+<name> is required
+That PDF is mandatory for this cargo, origin or VGM choice.
+Only pdf file is allowed / Maximum Allowed Attachment size: 4 MB
+PDF, each file within 4 MB.
+Re-request can only be done for requested and not submitted requests.
+Do not send odexRefNo once any container has moved on.
+Re-request must have the same location
+Keep locId identical to the original request.
+invalid odexRefNo
+Use the number from the success response, with no extra spaces.
+Error (1060) / Error (1061)
+Cancellation reference or container does not match the original request.
+Remarks (CHA) is required in case of Request for Cancellation
+Send chaRemarks on each container in the cancel call.
+Cancellation request can be processed only for Confirmed / Verified containers.
+Status must be VERIFIED or CONFIRMED.
+20. Masters and samples in this file
+Each item below is an object in this document. Double-click the icon to open it. The Excel workbook holds the code lists. The JSON files are requests and responses you can paste into your client after replacing YOUR_PAYOR_CODE, the secret, the vessel row, and BASE64_OF_PDF.
+Form13_Masters.xlsx — how to use the codes, demo lines DEMO / DEBET / DEALP, duplicate rule, ports, origin, cargo, size, status, IMO, ODC units, special stow, attachment titles, issue to, haulier, shipper, terminal login rules, the AMCT terminal-login master, and the vessel refresh steps.
+01 and 02 — vessel master request and a one-row response.
+03 and 04 — POD master request and a one-row response.
+05 — new Form 13, DEMO, one container, VGM via ODeX = N.
+06 — two containers. The first has two shipping bills, the second has two shipping bills.
+07 — VGM via ODeX = Y. Weight blank. No VGM annexure.
+08 — VGM via ODeX = N, with weight and VGM annexure.
+09 — the same request sent again with odexRefNo.
+10, 11, 12 — success, schema failure, business failure.
+13 and 14 — status request and a confirmed container with a PIN.
+15 — cancellation. Put clientId and secretKey in the HTTP headers. The JSON body is the object without the _headers member.
+16 — DEBET, with shpInstructNo on the container.
+17 — DEALP, with bookCopyBlNo.
+BASE64_OF_PDF in the samples is a placeholder. Replace it with the Base64 of a real PDF before calling production.
+Questions that remain after this guide should go to the ODeX integration contact with the odexRefNo, the bookNo, the time of the call, and the response body. Do not retry a failed call against a live shipping line.
+© ODeX India Solutions Pvt. Ltd. This document may not be copied or shared outside the integrating payor without written consent.

@@ -1,0 +1,13 @@
+{
+    "odexRefNo": "261016000001",
+    "bookNo": "BKDEMO001",
+    "responseMessage": "SUCCESS",
+    "cntrList": [
+      {
+        "cntnrNo": "MSCU1234563",
+        "status": "CONFIRMED",
+        "pinNo": "PIN123456",
+        "linerRemarks": ""
+      }
+    ]
+  }

@@ -1,0 +1,17 @@
+{
+  "odexRefNo": "261016000001",
+  "bookNo": "BKDEMO001",
+  "responseMessage": "SUCCESS",
+  "schema_validation": "PASS",
+  "business_validation": "PASS",
+  "md_ts": "16-10-2026 12:00",
+  "form13ResCntnrVoList": [
+    {
+      "cntnrReqId": "1001",
+      "cntnrNo": "MSCU1234563",
+      "status": "REQUESTED",
+      "pinNo": "",
+      "linerRemarks": ""
+    }
+  ]
+}

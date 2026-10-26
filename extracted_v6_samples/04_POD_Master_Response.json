@@ -1,0 +1,22 @@
+{
+    "locId": "INNSA1",
+    "terminal": [
+      {
+        "terminalId": "NSIGT",
+        "terminalNm": "NSIGT",
+        "service": [
+          {
+            "serviceNm": "DEMO",
+            "pod": [
+              {
+                "podCd": "SGSIN",
+                "podNm": "SINGAPORE",
+                "status": "ACTIVE"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "responseMessage": ""
+  }

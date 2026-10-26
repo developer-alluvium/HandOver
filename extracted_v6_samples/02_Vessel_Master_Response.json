@@ -1,0 +1,15 @@
+{
+    "bnfCode": "DEMO",
+    "locId": "INNSA1",
+    "vesselNm": "DEMO VESSEL",
+    "viaNo": "VIA001",
+    "terminalCode": "NSIGT",
+    "service": "DEMO",
+    "chaValidFrm": "2026-10-01 00:00:00.0",
+    "chaValidTo": "2026-10-20 23:59:00.0",
+    "voyageNo": "",
+    "vcnNo": "",
+    "type": "",
+    "lastUpdatedOn": "2026-10-15 09:30:00.0",
+    "responseMessage": ""
+  }

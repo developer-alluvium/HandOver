@@ -140,13 +140,19 @@ const TrackF13 = () => {
   const handleGetStatus = async (request) => {
     try {
       setLoading(true);
+      const containerList = (request.cntrList || request.containers || []).map(c => ({
+        cntnrNo: c.cntnrNo
+      })).filter(c => !!c.cntnrNo);
+
       const payload = {
         odexRefNo: request.odexRefNo,
         pyrCode: request.pyrCode,
-        bookNo: request.bookNo
+        bookNo: request.bookNo || "",
+        cntrList: containerList
       };
-      if (!payload.odexRefNo || !payload.pyrCode || !payload.bookNo) {
-        enqueueSnackbar("Missing required fields (odexRefNo, pyrCode, bookNo) on this record.", { variant: "warning" });
+
+      if (!payload.odexRefNo || !payload.pyrCode) {
+        enqueueSnackbar("Missing required fields (odexRefNo, pyrCode) on this record.", { variant: "warning" });
         return;
       }
       const response = await form13API.getForm13Status(payload);
@@ -169,15 +175,18 @@ const TrackF13 = () => {
       
       enqueueSnackbar(`Status Synced: ${newStatus.replace(/_/g, " ")}`, { variant: "success" });
 
-      // Handle PDF download if status is CONFIRMED
+      // Handle PDF download if status is CONFIRMED (v6.0 Section 17 carries attachment: attData)
       if (newStatus === "CONFIRMED") {
-        const pdfBase64 = statusObj?.confirmedpdf || (Array.isArray(responseData) && responseData[0]?.confirmedpdf);
+        const pdfBase64 = statusObj?.attData ||
+          statusObj?.confirmedpdf ||
+          (Array.isArray(responseData) && (responseData[0]?.attData || responseData[0]?.confirmedpdf)) ||
+          (statusObj?.attList && statusObj.attList[0]?.attData);
         
         if (pdfBase64) {
           enqueueSnackbar("Downloading Confirmation PDF...", { variant: "info" });
-          downloadBase64PDF(pdfBase64, `Form13_Confirmation_${request.bookNo}.pdf`);
+          downloadBase64PDF(pdfBase64, `Form13_Confirmation_${request.bookNo || "Approved"}.pdf`);
         } else {
-          console.warn("Status is CONFIRMED but confirmedpdf field is missing in response:", responseData);
+          console.warn("Status is CONFIRMED but no confirmation PDF attachment found in response:", responseData);
         }
       }
 

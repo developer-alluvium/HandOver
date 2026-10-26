@@ -537,10 +537,128 @@ const Form13 = () => {
         const rawExporter = job.exporter || "";
 
         // 6. Consignee Name & Address
-        const consigneeNm = job.consignee_name || (job.consignees?.[0]?.consignee_name) || "";
-        const consigneeAddr = job.consignee_address || (job.consignees?.[0]?.address) || job.exporter_address || "";
+        const consigneeNm = job.consignee_name || (job.consignees?.[0]?.consignee_name) || job.buyerThirdPartyInfo?.buyer?.name || "";
+        
+        let resolvedConsigneeAddr = job.consignee_address || (job.consignees?.[0]?.address) || "";
+        if (!resolvedConsigneeAddr && job.buyerThirdPartyInfo?.buyer) {
+          const buyer = job.buyerThirdPartyInfo.buyer;
+          const parts = [
+            buyer.addressLine1,
+            buyer.addressLine2,
+            buyer.city,
+            buyer.state,
+            buyer.country,
+            buyer.pin
+          ].filter(Boolean).map(s => String(s).trim()).filter(Boolean);
+          if (parts.length > 0) {
+            resolvedConsigneeAddr = parts.join(", ");
+          }
+        }
+        if (!resolvedConsigneeAddr && (job.destination_country || job.discharge_country)) {
+          const destCountry = job.destination_country || job.discharge_country || "";
+          resolvedConsigneeAddr = destCountry.replace(/\([^)]*\)\s*/, "").trim() || destCountry;
+        }
+        if (!resolvedConsigneeAddr && job.exporter_address) {
+          resolvedConsigneeAddr = job.exporter_address;
+        }
 
-        // 7. Containers list
+        // 7. Cargo Description: Take first product description limited strictly to 120 characters
+        let resolvedCargoDesc = "";
+        const firstInvoice = Array.isArray(job.invoices) && job.invoices.length > 0 ? job.invoices[0] : null;
+        const firstProduct = firstInvoice && Array.isArray(firstInvoice.products) && firstInvoice.products.length > 0 ? firstInvoice.products[0] : null;
+
+        if (firstProduct) {
+          resolvedCargoDesc = getField(
+            firstProduct,
+            "product_description",
+            "productDescription",
+            "description",
+            "productName",
+            "goods_description",
+            "itemDescription"
+          );
+          if (!resolvedCargoDesc && Array.isArray(firstProduct.drawbackDetails) && firstProduct.drawbackDetails.length > 0) {
+            resolvedCargoDesc = firstProduct.drawbackDetails[0].dbkDescription || "";
+          }
+        }
+
+        if (!resolvedCargoDesc) {
+          resolvedCargoDesc = getField(job, "cargo_description", "cargoDesc", "goods_description") || "";
+        }
+
+        if (resolvedCargoDesc) {
+          resolvedCargoDesc = String(resolvedCargoDesc).trim().substring(0, 120);
+        }
+
+        // 8. POD (Port of Discharge) & FPOD Resolution
+        const rawPod = getField(job, "port_of_discharge", "pod", "destination_port", "destination") || "";
+        let extractedPodCode = "";
+        let extractedPodName = "";
+
+        if (rawPod) {
+          const match = String(rawPod).match(/\(([^)]+)\)\s*(.*)/);
+          if (match) {
+            extractedPodCode = match[1].trim();
+            extractedPodName = match[2].trim();
+          } else {
+            extractedPodCode = String(rawPod).trim();
+          }
+        }
+
+        let resolvedPodCode = extractedPodCode;
+        if (Array.isArray(pods) && pods.length > 0 && extractedPodCode) {
+          const codeLower = extractedPodCode.toLowerCase();
+          const nameLower = extractedPodName.toLowerCase();
+          
+          let allMasterPods = [];
+          pods.forEach(loc => {
+            loc.terminal?.forEach(term => {
+              term.service?.forEach(serv => {
+                if (Array.isArray(serv.pod)) {
+                  allMasterPods.push(...serv.pod);
+                }
+              });
+            });
+          });
+
+          const matched = allMasterPods.find(p => {
+            const pCd = (p.podCd || "").toLowerCase();
+            const pNm = (p.podNm || "").toLowerCase();
+            return (
+              (codeLower && pCd === codeLower) ||
+              (nameLower && pNm === nameLower) ||
+              (codeLower && pNm === codeLower) ||
+              (nameLower && pNm.includes(nameLower)) ||
+              (nameLower && nameLower.includes(pNm))
+            );
+          });
+
+          if (matched) {
+            resolvedPodCode = matched.podCd;
+          }
+        }
+
+        // Helper to format dates to YYYY-MM-DD for HTML5 date inputs & ODeX schema
+        const formatToYYYYMMDD = (dStr) => {
+          if (!dStr) return "";
+          const clean = String(dStr).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+          const matchDMY = clean.match(/^(\d{2})[-/.](\d{2})[-/.](\d{4})/);
+          if (matchDMY) return `${matchDMY[3]}-${matchDMY[2]}-${matchDMY[1]}`;
+          const matchIso = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (matchIso) return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
+          return clean;
+        };
+
+        const sbDateFormatted = formatToYYYYMMDD(getField(job, "sb_date", "shipping_bill_date", "shipBillDt"));
+        const leoDateFormatted = formatToYYYYMMDD(
+          job.operations?.[0]?.statusDetails?.[0]?.leoDate ||
+          job.operations?.[0]?.statusDetails?.[0]?.leoDt ||
+          getField(job, "leoDate", "leoDt", "leo_date")
+        );
+        const leoNoVal = getField(job, "leoNo", "leo_no") || (job.operations?.[0]?.statusDetails?.[0]?.leoNo) || "";
+
+        // 9. Containers list
         const rawContainers = Array.isArray(job.containers) ? job.containers : (job.operations?.[0]?.containerdetails || job.operations?.[0]?.containerDetails || []);
 
         let formattedContainers = [];
@@ -548,12 +666,18 @@ const Form13 = () => {
           formattedContainers = rawContainers.map((c) => {
             const cntrNo = getField(c, "containerNo", "cntnrNo", "containerno");
             const rawSize = getField(c, "containerSize", "type", "size", "cntnrSize");
-            let cntrSize = "20";
+            let cntrSize = "1X20";
             if (rawSize) {
-              const match = String(rawSize).match(/20|40|45/);
-              if (match) cntrSize = match[0];
+              const str = String(rawSize).toUpperCase();
+              if (str.includes("45")) cntrSize = "1X45";
+              else if (str.includes("40")) cntrSize = "1X40";
+              else if (str.includes("20")) cntrSize = "1X20";
+              else {
+                const match = str.match(/20|40|45/);
+                if (match) cntrSize = `1X${match[0]}`;
+              }
             }
-            const iso = getField(c, "isoCode", "iso", "iso_code") || (cntrSize === "40" ? "4510" : "2210");
+            const iso = getField(c, "isoCode", "iso", "iso_code") || (cntrSize === "1X40" ? "4510" : "2210");
             const agentSealNo = getField(c, "sealNo", "customSealNo", "shippingLineSealNo", "sealno");
 
             // VGM Weight: Convert KGS to MTS (if weight > 100, it is in KGS so divide by 1000)
@@ -628,9 +752,9 @@ const Form13 = () => {
               sbDtlsVo: [
                 {
                   shipBillInvNo: job.sb_no || "",
-                  shipBillDt: job.sb_date || "",
-                  leoNo: "",
-                  leoDt: "",
+                  shipBillDt: sbDateFormatted || "",
+                  leoNo: getField(c, "leoNo", "leo_no") || leoNoVal || "",
+                  leoDt: leoDateFormatted || "",
                   chaNm: "SURAJ FORWARDERS AND SHIPPING AGENCY",
                   chaPan: "AAKCS6838D",
                   exporterNm: job.exporter || "",
@@ -665,6 +789,138 @@ const Form13 = () => {
           resolvedLocId = "INVTZ1";
         }
 
+        // 10. Attachments discovery and auto-loading from export job
+        const docMappings = [];
+
+        const pickUrl = (val) => {
+          if (!val) return "";
+          if (Array.isArray(val) && val.length > 0) {
+            const item = val[0];
+            return typeof item === "string" ? item : (item.url || item.fileUrl || "");
+          }
+          if (typeof val === "string") return val;
+          return val.url || val.fileUrl || "";
+        };
+
+        const cleanFileName = (rawName, fallback) => {
+          if (!rawName) return fallback;
+          let name = String(rawName).trim();
+          name = name.replace(/^\d{10,14}[-_]/, "");
+          name = name.replace(/[-_]\d{10,14}/, "");
+          return name.toLowerCase().endsWith(".pdf") ? name : `${name}.pdf`;
+        };
+
+        const statusDet = job.operations?.[0]?.statusDetails?.[0] || {};
+
+        // Booking Copy
+        const bcUrl = pickUrl(job.booking_copy) || pickUrl(statusDet.booking_copy);
+        if (bcUrl) {
+          const rawName = bcUrl.split("/").pop().split("?")[0];
+          docMappings.push({ title: "BOOKING_COPY", url: bcUrl, name: cleanFileName(rawName, "booking_copy.pdf") });
+        }
+
+        // Invoice
+        let invoiceUrl = "";
+        let invoiceName = "invoice.pdf";
+        if (Array.isArray(job.eSanchitDocuments)) {
+          const invDoc = job.eSanchitDocuments.find(d => d.documentType === "331000" || /invoice|inv/i.test(d.icegateFilename || ""));
+          if (invDoc && invDoc.fileUrl) {
+            invoiceUrl = invDoc.fileUrl;
+            invoiceName = cleanFileName(invDoc.icegateFilename, "invoice.pdf");
+          }
+        }
+        if (!invoiceUrl && statusDet.invoiceUpload) {
+          invoiceUrl = pickUrl(statusDet.invoiceUpload);
+          if (invoiceUrl) invoiceName = cleanFileName(invoiceUrl.split("/").pop().split("?")[0], "invoice.pdf");
+        }
+        if (invoiceUrl) {
+          docMappings.push({ title: "INVOICE", url: invoiceUrl, name: invoiceName });
+        }
+
+        // Packing List
+        let plUrl = "";
+        let plName = "packing_list.pdf";
+        if (Array.isArray(job.eSanchitDocuments)) {
+          const plDoc = job.eSanchitDocuments.find(d => d.documentType === "271000" || /pack/i.test(d.icegateFilename || ""));
+          if (plDoc && plDoc.fileUrl) {
+            plUrl = plDoc.fileUrl;
+            plName = cleanFileName(plDoc.icegateFilename, "packing_list.pdf");
+          }
+        }
+        if (!plUrl && statusDet.packingListUpload) {
+          plUrl = pickUrl(statusDet.packingListUpload);
+          if (plUrl) plName = cleanFileName(plUrl.split("/").pop().split("?")[0], "packing_list.pdf");
+        }
+        if (plUrl) {
+          docMappings.push({ title: "PACK_LIST", url: plUrl, name: plName });
+        }
+
+        // Shipping Bill / LEO
+        const leoUrl = pickUrl(statusDet.leoUpload);
+        if (leoUrl) {
+          const rawName = leoUrl.split("/").pop().split("?")[0];
+          docMappings.push({ title: "SHIP_BILL", url: leoUrl, name: cleanFileName(rawName, "shipping_bill_leo.pdf") });
+        }
+
+        // VGM Annexure 1
+        const vgmUrl = pickUrl(statusDet.manualVgmUpload) || pickUrl(statusDet.odexVgmUpload);
+        if (vgmUrl) {
+          const rawName = vgmUrl.split("/").pop().split("?")[0];
+          docMappings.push({ title: "VGM_ANXR1", url: vgmUrl, name: cleanFileName(rawName, "vgm_annexure1.pdf") });
+        }
+
+        // Container Load Plan
+        const clpUrl = pickUrl(statusDet.clpUpload);
+        if (clpUrl) {
+          const rawName = clpUrl.split("/").pop().split("?")[0];
+          docMappings.push({ title: "CNTNR_LOAD_PLAN", url: clpUrl, name: cleanFileName(rawName, "container_load_plan.pdf") });
+        }
+
+        // Gate Pass
+        const gpUrl = pickUrl(statusDet.eGatePassUpload);
+        if (gpUrl) {
+          const rawName = gpUrl.split("/").pop().split("?")[0];
+          docMappings.push({ title: "GATE_PASS", url: gpUrl, name: cleanFileName(rawName, "gate_pass.pdf") });
+        }
+
+        // Fetch documents as base64 in parallel
+        let fetchedAttachments = [];
+        if (docMappings.length > 0) {
+          const results = await Promise.allSettled(
+            docMappings.map(async (doc) => {
+              const res = await form13API.fetchDocument(doc.url);
+              if (res?.data?.data?.base64) {
+                return {
+                  title: doc.title,
+                  attTitle: doc.title,
+                  name: doc.name,
+                  attNm: doc.name,
+                  attData: res.data.data.base64,
+                  fileUrl: doc.url,
+                  attReqId: "",
+                };
+              }
+              return null;
+            })
+          );
+
+          fetchedAttachments = results
+            .filter(r => r.status === "fulfilled" && r.value)
+            .map(r => r.value);
+
+          // If Booking Copy is present, also auto-populate Delivery Order copy
+          const bcAtt = fetchedAttachments.find(a => a.title === "BOOKING_COPY");
+          if (bcAtt) {
+            fetchedAttachments.push({
+              ...bcAtt,
+              title: "DLVRY_ORDER",
+              attTitle: "DLVRY_ORDER",
+              name: bcAtt.name.replace(/^booking_copy/i, "delivery_order"),
+              attNm: bcAtt.attNm.replace(/^booking_copy/i, "delivery_order"),
+            });
+          }
+        }
+
         setFormData(prev => ({
           ...prev,
           bnfCode: foundLineId || prev.bnfCode,
@@ -672,20 +928,24 @@ const Form13 = () => {
           vesselNm: job.vessel_name || job.vessel || prev.vesselNm,
           bookNo: bNo || prev.bookNo,
           shpInstructNo: bNo || prev.shpInstructNo,
+          pod: resolvedPodCode || prev.pod,
+          fpod: extractedPodCode || prev.fpod,
           cargoTp: getField(job, "cargoTp", "cargo_type") || "GEN",
+          cargoDesc: resolvedCargoDesc || prev.cargoDesc,
           origin: resolvedOrigin || prev.origin,
           emailId: userEmail,
           mobileNo: defaultMobile,
           shipperNm: prev.shipperNm || "",
           shipperCd: prev.shipperCd || "",
           consigneeNm: consigneeNm || prev.consigneeNm,
-          consigneeAddr: consigneeAddr || prev.consigneeAddr,
+          consigneeAddr: resolvedConsigneeAddr || prev.consigneeAddr,
           issueTo: "SHIPPER",
           IECode: job.ieCode || prev.IECode,
-          containers: formattedContainers
+          containers: formattedContainers,
+          attachments: fetchedAttachments.length > 0 ? fetchedAttachments : prev.attachments,
         }));
 
-        setSuccess(`Form 13 pre-filled with details for Job No: ${searchVal}`);
+        setSuccess(`Form 13 pre-filled with details for Job No: ${searchVal}${fetchedAttachments.length > 0 ? ` (${fetchedAttachments.length} document(s) attached)` : ""}`);
       } else {
         setError("No job found matching Job No: " + searchVal);
       }
@@ -2096,6 +2356,7 @@ const Form13 = () => {
 
       // Prepare API payload (Only sending fields that are visible on the UI as per conditional rules)
       const rawPayload = {
+        odexRefNo: formData.odexRefNo || "",
         hashKey: backendHashKey,
         formType: "F13",
         bookNo: formData.bookNo,
@@ -2130,9 +2391,11 @@ const Form13 = () => {
         emailId: formData.emailId || formData.email_Id || "",
         bookCopyBlNo: isVisible("bookCopyBlNo") ? formData.bookCopyBlNo : "",
         cntrList: mergeContainers(formData.containers).map((container) => {
-          // vgmWt formatting: if no decimal then add two decimal from frontend
+          // vgmWt formatting: if vgmViaODeX is Y, leave blank (""); if N, format to 2 decimals
           let formattedVgmWt = container.vgmWt;
-          if (formattedVgmWt) {
+          if (container.vgmViaODeX === "Y") {
+            formattedVgmWt = "";
+          } else if (formattedVgmWt) {
             const num = parseFloat(formattedVgmWt);
             if (!isNaN(num)) {
               formattedVgmWt = num.toFixed(2);

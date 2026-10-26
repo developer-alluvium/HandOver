@@ -5,6 +5,7 @@ import {
   SHIP_BILL_TYPE_LOV,
   PACKAGE_TYPE_LOV,
 } from "../../utils/esbValidations";
+import CustomAutocomplete from "../common/CustomAutocomplete";
 
 const ESBDateField = ({
   value,
@@ -360,20 +361,17 @@ const ESBContainerSection = ({
                   <label>
                     Package Type <span className="required">*</span>
                   </label>
-                  <select
-                    className={`form-control ${cntErrors.typOfPackages ? "error" : ""}`}
+                  <CustomAutocomplete
+                    variant="boxed"
+                    options={PACKAGE_TYPE_LOV}
                     value={container.typOfPackages || "BOX"}
+                    placeholder="Select Package Type"
                     disabled={readOnly}
-                    onChange={(e) =>
-                      handleContainerChange(index, "typOfPackages", e.target.value)
+                    error={!!cntErrors.typOfPackages}
+                    onChange={(val) =>
+                      handleContainerChange(index, "typOfPackages", val || "BOX")
                     }
-                  >
-                    {PACKAGE_TYPE_LOV.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {cntErrors.typOfPackages && (
                     <span className="error-text">{cntErrors.typOfPackages}</span>
                   )}
@@ -384,20 +382,17 @@ const ESBContainerSection = ({
                   <label>
                     Cargo Type <span className="required">*</span>
                   </label>
-                  <select
-                    className={`form-control ${cntErrors.cargoTp ? "error" : ""}`}
+                  <CustomAutocomplete
+                    variant="boxed"
+                    options={CARGO_TYPE_LOV}
                     value={container.cargoTp || "GEN"}
+                    placeholder="Select Cargo Type"
                     disabled={readOnly}
-                    onChange={(e) =>
-                      handleContainerChange(index, "cargoTp", e.target.value)
+                    error={!!cntErrors.cargoTp}
+                    onChange={(val) =>
+                      handleContainerChange(index, "cargoTp", val || "GEN")
                     }
-                  >
-                    {CARGO_TYPE_LOV.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {cntErrors.cargoTp && (
                     <span className="error-text">{cntErrors.cargoTp}</span>
                   )}
@@ -408,20 +403,17 @@ const ESBContainerSection = ({
                   <label>
                     Type of Shipping Bill <span className="required">*</span>
                   </label>
-                  <select
-                    className={`form-control ${cntErrors.shipBillTp ? "error" : ""}`}
+                  <CustomAutocomplete
+                    variant="boxed"
+                    options={SHIP_BILL_TYPE_LOV}
                     value={container.shipBillTp || "DFS"}
+                    placeholder="Select Shipping Bill Type"
                     disabled={readOnly}
-                    onChange={(e) =>
-                      handleContainerChange(index, "shipBillTp", e.target.value)
+                    error={!!cntErrors.shipBillTp}
+                    onChange={(val) =>
+                      handleContainerChange(index, "shipBillTp", val || "DFS")
                     }
-                  >
-                    {SHIP_BILL_TYPE_LOV.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {cntErrors.shipBillTp && (
                     <span className="error-text">{cntErrors.shipBillTp}</span>
                   )}
@@ -519,17 +511,19 @@ const ESBContainerSection = ({
                   <label>
                     Shipper Owned Container (SOC) <span className="required">*</span>
                   </label>
-                  <select
-                    className="form-control"
+                  <CustomAutocomplete
+                    variant="boxed"
+                    options={[
+                      { value: "N", label: "No (Liner Owned)" },
+                      { value: "Y", label: "Yes (SOC)" },
+                    ]}
                     value={container.socFlag || "N"}
+                    placeholder="Select SOC"
                     disabled={readOnly}
-                    onChange={(e) =>
-                      handleContainerChange(index, "socFlag", e.target.value)
+                    onChange={(val) =>
+                      handleContainerChange(index, "socFlag", val || "N")
                     }
-                  >
-                    <option value="N">No (Liner Owned)</option>
-                    <option value="Y">Yes (SOC)</option>
-                  </select>
+                  />
                 </div>
 
                 {/* HSN Code */}

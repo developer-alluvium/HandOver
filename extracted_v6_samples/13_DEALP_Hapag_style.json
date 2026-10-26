@@ -1,0 +1,67 @@
+{
+  "pyrCode": "YOUR_PAYOR_CODE",
+  "hashKey": "REPLACE_WITH_CRC32",
+  "bnfCode": "DEALP",
+  "locId": "INNSA1",
+  "vesselNm": "VESSEL NAME FROM VESSEL MASTER",
+  "viaNo": "VIA FROM VESSEL MASTER",
+  "terminalCode": "NSIGT",
+  "service": "SERVICE FROM VESSEL MASTER",
+  "pod": "SGSIN",
+  "fpod": "",
+  "cargoTp": "GEN",
+  "origin": "F",
+  "bookNo": "BKDEMO001",
+  "mobileNo": "9876543210",
+  "cntnrStatus": "FULL",
+  "formType": "F13",
+  "shipperNm": "SHIPPER NAME FROM SCREEN",
+  "shipperCd": "SHIPPER CODE FROM SCREEN",
+  "shipperCity": "MUMBAI",
+  "issueTo": "CODE_FROM_ISSUE_TO_DROPDOWN",
+  "cfsCode": "",
+  "emailId": "ops@example.com",
+  "isEarlyGateIn": "N",
+  "bookCopyBlNo": "HLCUDEMO123456",
+  "cntrList": [
+    {
+      "cntnrNo": "MSCU1234563",
+      "cntnrSize": "1X20",
+      "iso": "22G1",
+      "agentSealNo": "AG12345",
+      "customSealNo": "CS12345",
+      "vgmWt": "18.50",
+      "vgmViaODeX": "N",
+      "driverNm": "Ramesh Kumar",
+      "driverLicNo": "MH0120190000001",
+      "vehicleNo": "MH04AB1234",
+      "haulier": "HAULIER CODE FROM SCREEN",
+      "status": "Requested",
+      "sbDtlsVo": [
+        {
+          "shipBillInvNo": "4123456",
+          "shipBillDt": "2026-10-10",
+          "chaNm": "DEMO CHA",
+          "chaPan": "ABCDE1234F",
+          "exporterNm": "DEMO EXPORTER",
+          "exporterIec": "1234567890",
+          "noOfPkg": 100,
+          "leoNo": "",
+          "leoDt": ""
+        }
+      ]
+    }
+  ],
+  "attList": [
+    {
+      "attTitle": "BOOKING_COPY",
+      "attNm": "booking.pdf",
+      "attData": "BASE64_OF_PDF"
+    },
+    {
+      "attTitle": "VGM_ANXR1",
+      "attNm": "vgm-annexure.pdf",
+      "attData": "BASE64_OF_PDF"
+    }
+  ]
+}

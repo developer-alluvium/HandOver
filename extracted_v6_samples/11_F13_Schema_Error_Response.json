@@ -1,0 +1,6 @@
+{
+  "schema_validation": "FAIL",
+  "schema_validations": [
+    "$.pod: does not match the regex pattern ^[a-zA-Z0-9 ,./_-]+$"
+  ]
+}

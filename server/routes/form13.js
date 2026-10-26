@@ -236,6 +236,40 @@ router.post("/pod-master", async (req, res) => {
   }
 });
 
+// Fetch external document and return base64
+router.post("/fetch-document", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, error: "URL is required" });
+    }
+
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+      timeout: 20000,
+    });
+
+    const buffer = Buffer.from(response.data);
+    const base64 = buffer.toString("base64");
+    const contentType = response.headers["content-type"] || "application/pdf";
+
+    res.json({
+      success: true,
+      data: {
+        base64,
+        contentType,
+        size: buffer.length,
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching external document:", err.message);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch document: " + err.message,
+    });
+  }
+});
+
 // Submit Form 13 - Calls actual ODeX API
 // Submit Form 13 - Calls actual ODeX API
 // server/routes/form13.js - Update the submit endpoint
@@ -254,11 +288,12 @@ router.post("/submit", async (req, res) => {
     const shipperCityVal = formData.shipperCity || formData.ShipperCity || "";
     formData.shipperCity = shipperCityVal.trim();
     delete formData.ShipperCity;
-    if (formData.email_Id) {
-      formData.emailId = formData.emailId || formData.email_Id;
-      delete formData.email_Id;
+    // Preserve odexRefNo if provided for re-request / correction (v6.0 Section 11)
+    if (formData.odexRefNo && typeof formData.odexRefNo === "string" && formData.odexRefNo.trim()) {
+      formData.odexRefNo = formData.odexRefNo.trim();
+    } else {
+      delete formData.odexRefNo;
     }
-    delete formData.odexRefNo;
 
     // Key normalization for ODeX payload compliance
     if (formData.FFCode !== undefined) {
@@ -404,23 +439,41 @@ router.post("/submit", async (req, res) => {
 router.post("/status", async (req, res) => {
   try {
     const { pyrCode, odexRefNo, bookNo } = req.body;
+    let cntrList = req.body.cntrList;
 
-    if (!pyrCode || !odexRefNo || !bookNo) {
+    if (!pyrCode || !odexRefNo) {
       return res.status(400).json({
         success: false,
-        error: "pyrCode, odexRefNo and bookNo are required",
+        error: "pyrCode and odexRefNo are required",
       });
     }
 
-    // Get hashkey from environment
-    const hashKey = getHashKey();
+    // If cntrList is missing, retrieve container numbers from existing Form 13 document
+    if (!cntrList || !Array.isArray(cntrList) || cntrList.length === 0) {
+      const existingDoc = await Form13.findOne({ odexRefNo }).lean();
+      if (existingDoc) {
+        const sourceContainers = existingDoc.cntrList || existingDoc.containers || [];
+        cntrList = sourceContainers.map(c => ({ cntnrNo: c.cntnrNo })).filter(c => !!c.cntnrNo);
+      }
+    }
 
+    if (!cntrList || !Array.isArray(cntrList) || cntrList.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "cntrList with at least one container (cntnrNo) is required for status check",
+      });
+    }
+
+    // Build v6 compliant status request (Section 17) - cntrList is mandatory, hashKey is NOT sent in status request
     const statusRequest = {
-      pyrCode,
-      odexRefNo,
-      bookNo,
-      hashKey,
+      pyrCode: pyrCode.trim(),
+      odexRefNo: odexRefNo.trim(),
+      cntrList: cntrList.map(c => ({ cntnrNo: (c.cntnrNo || "").trim() }))
     };
+
+    if (bookNo && typeof bookNo === "string" && bookNo.trim()) {
+      statusRequest.bookNo = bookNo.trim();
+    }
 
     // Call actual ODeX Status API
     const odexResponse = await callOdexAPI(
@@ -439,8 +492,11 @@ router.post("/status", async (req, res) => {
 
       const newStatus = firstCntrStatus || statusObj?.status || statusObj?.currentStatus || "SUBMITTED";
 
+      const queryFilter = { odexRefNo: odexRefNo };
+      if (bookNo) queryFilter.bookNo = bookNo;
+
       const updatedDoc = await Form13.findOneAndUpdate(
-        { odexRefNo: odexRefNo, bookNo: bookNo },
+        queryFilter,
         {
           $set: {
             statusApiResponse: odexResponse,
@@ -683,6 +739,16 @@ router.put("/requests/:f13Id", async (req, res) => {
         success: false,
         error: "Form 13 request not found",
       });
+    }
+
+    // Ensure odexRefNo from original request is retained for re-request / correction (v6.0 Section 11)
+    if (!updateData.odexRefNo && originalRequest.odexRefNo) {
+      updateData.odexRefNo = originalRequest.odexRefNo;
+    }
+    if (updateData.odexRefNo && typeof updateData.odexRefNo === "string") {
+      updateData.odexRefNo = updateData.odexRefNo.trim();
+    } else {
+      delete updateData.odexRefNo;
     }
 
     // Inject correct hashKey from server configuration

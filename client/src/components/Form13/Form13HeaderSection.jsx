@@ -312,9 +312,13 @@ const Form13HeaderSection = ({
     const podsToUse = filteredPods.length > 0 ? filteredPods : allLocationPods;
 
     // Unique by podCd and sort
-    return [...new Map(podsToUse.map(p => [p.podCd, p])).values()]
+    const uniqueMap = new Map(podsToUse.map(p => [p.podCd, p]));
+    if (formData.pod && !uniqueMap.has(formData.pod)) {
+      uniqueMap.set(formData.pod, { podCd: formData.pod, podNm: formData.pod });
+    }
+    return [...uniqueMap.values()]
       .sort((a, b) => (a.podNm || "").localeCompare(b.podNm || ""));
-  }, [pods, formData.locId, formData.terminalCode, formData.service]);
+  }, [pods, formData.locId, formData.terminalCode, formData.service, formData.pod]);
 
   // 9. CFS Options with location filtering from cfs-loc-code.xlsx and strict deduplication
   const cfsOptionsMapped = React.useMemo(() => {
@@ -547,7 +551,7 @@ const Form13HeaderSection = ({
             }}
             placeholder={`Search ${label}...`}
             disabled={isDisabled}
-            freeSolo={fieldName === "cfsCode" || fieldName === "shipperNm"}
+            freeSolo={fieldName === "cfsCode" || fieldName === "shipperNm" || fieldName === "pod"}
             error={!!validationErrors[fieldName]}
             noOptionsText={`${label} is not present`}
             loading={fieldName === "shipperNm" ? shipperLoading : false}

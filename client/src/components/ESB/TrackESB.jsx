@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { esbAPI } from "../../services/esbAPI";
 import AppbarComponent from "../AppbarComponent";
 import { useAuth } from "../../context/AuthContext";
+import CustomAutocomplete from "../common/CustomAutocomplete";
 import "../../styles/ESB.scss";
 
 const TrackESB = () => {
@@ -183,18 +184,20 @@ const TrackESB = () => {
 
           <div className="form-group">
             <label>Status</label>
-            <select
-              className="form-control"
+            <CustomAutocomplete
+              variant="boxed"
+              options={[
+                { value: "", label: "All Statuses" },
+                { value: "SUBMITTED", label: "SUBMITTED" },
+                { value: "VERIFIED", label: "VERIFIED" },
+                { value: "CONFIRMED", label: "CONFIRMED" },
+                { value: "REJECTED", label: "REJECTED" },
+                { value: "AMENDMENT", label: "AMENDMENT REQUESTED" },
+              ]}
               value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              <option value="SUBMITTED">SUBMITTED</option>
-              <option value="VERIFIED">VERIFIED</option>
-              <option value="CONFIRMED">CONFIRMED</option>
-              <option value="REJECTED">REJECTED</option>
-              <option value="AMENDMENT">AMENDMENT REQUESTED</option>
-            </select>
+              onChange={(val) => handleFilterChange("status", val)}
+              placeholder="All Statuses"
+            />
           </div>
 
           <div className="form-group" style={{ justifyContent: "flex-end" }}>

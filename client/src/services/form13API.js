@@ -71,4 +71,7 @@ export const form13API = {
 
   // Get hashkey from backend
   getHashKey: (hashData) => api.post(`${FORM13_BASE_URL}/hashkey`, hashData),
+
+  // Fetch external document and return base64
+  fetchDocument: (url) => api.post(`${FORM13_BASE_URL}/fetch-document`, { url }),
 };

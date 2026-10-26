@@ -150,15 +150,15 @@ export const cleanOdexPayload = (rawEgmVo) => {
 const samplePdfData =
   "JVBERi0xLjEKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAyMDAgMjAwXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAxMCAwMDAwMCBuIAowMDAwMDAwNjIgMDAwMDAgbiAKMDAwMDAwMTE3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1Jvb3QgMSAwIFIgL1NpemUgNCA+PgpzdGFydHhyZWYKMTc4CiUlRU9G";
 
-const ALLOWED_ATT_TITLES = ["LOC", "EIR", "TSR", "CLP", "SB", "O"];
+const ALLOWED_ATT_TITLES = ["LOC", "BKG", "EIR", "TSR", "CLP", "SB", "GP", "O"];
 
 export const sanitizeAttachments = (rawAttList) => {
   let attList = Array.isArray(rawAttList) && rawAttList.length > 0 ? rawAttList : [];
 
-  attList = attList.map((a) => {
+  return attList.map((a) => {
     let title = (a.attTitle || "O").toUpperCase().trim();
     let desc = (a.attDesc || "").trim();
-    if (!ALLOWED_ATT_TITLES.includes(title)) {
+    if (!ALLOWED_ATT_TITLES.includes(title) && !/^[A-Z0-9]{2,10}$/.test(title)) {
       desc = desc ? `${title} - ${desc}` : title;
       title = "O";
     }
@@ -170,28 +170,15 @@ export const sanitizeAttachments = (rawAttList) => {
 
     const fileName = a.attNm && a.attNm.toLowerCase().endsWith(".pdf")
       ? a.attNm
-      : `${a.attNm || title || 'doc'}.pdf`;
+      : `${a.attNm || title || "doc"}.pdf`;
 
     return {
       attTitle: title,
-      attDesc: desc || "Attachment Document",
+      attDesc: desc || `${title} Document`,
       attNm: fileName,
       attData: data,
     };
   });
-
-  const hasType = (t) => attList.some((a) => a.attTitle === t);
-  if (!hasType("LOC")) {
-    attList.push({ attTitle: "LOC", attDesc: "Shipping Bill / LEO Copy", attNm: "LOC.pdf", attData: samplePdfData });
-  }
-  if (!hasType("EIR")) {
-    attList.push({ attTitle: "EIR", attDesc: "Equipment Interchange Report", attNm: "EIR.pdf", attData: samplePdfData });
-  }
-  if (!hasType("TSR")) {
-    attList.push({ attTitle: "TSR", attDesc: "Tally Sheet / Stuffing Report", attNm: "TSR.pdf", attData: samplePdfData });
-  }
-
-  return attList;
 };
 
 export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => {
@@ -309,10 +296,12 @@ router.post("/attachment-master", async (req, res) => {
       success: true,
       data: [
         { codeId: "LOC", codeDesc: "Shipping Bill / LEO", isReq: true },
-        { codeId: "EIR", codeDesc: "Equipment Interchange Report", isReq: true },
-        { codeId: "TSR", codeDesc: "Tally Sheet / Stuffing Report", isReq: true },
+        { codeId: "BKG", codeDesc: "Booking Copy", isReq: true },
+        { codeId: "EIR", codeDesc: "Equipment Interchange Report", isReq: false },
+        { codeId: "TSR", codeDesc: "Tally Sheet / Stuffing Report", isReq: false },
         { codeId: "CLP", codeDesc: "Container Load Plan (CLP)", isReq: false },
         { codeId: "SB", codeDesc: "Upload .SB File (Checklist)", isReq: false },
+        { codeId: "GP", codeDesc: "Gate Pass Copy", isReq: false },
         { codeId: "O", codeDesc: "Other", isReq: false },
       ],
     });

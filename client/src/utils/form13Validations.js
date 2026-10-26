@@ -692,14 +692,20 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
     }
 
     case 'driverNm':
-      // Driver name is mandatory ONLY if terminal is MICT, and NOT required if origin is Dock Stuffed (C)
+      // v6.0 Section 7.2: Required when origin is F and terminal is NSICT, NSIGT or MICT
       if (formData.origin === "C") return false;
-      return formData.terminalCode === "MICT";
+      return formData.origin === "F" && ["NSICT", "NSIGT", "MICT"].includes(formData.terminalCode);
 
     case 'haulier':
-      // Haulier is mandatory if terminal is NOT MICT, and NOT required if origin is Dock Stuffed (C)
+      // v6.0 Section 13: Required when status is Requested, origin is not Dock Stuffed (C)
       if (formData.origin === "C") return false;
-      return formData.terminalCode !== "MICT";
+      const cStatus = (formData.containers?.[containerIndex]?.status || formData.status || "Requested");
+      return cStatus.toUpperCase() === "REQUESTED";
+
+    case 'vehicleNo':
+      // v6.0 Section 7.2: Required when origin is F or R and terminal is NSICT, NSIGT, MICT, AICTPL, ACMTPL, or AMCT
+      return ["F", "R"].includes(formData.origin) &&
+        ["NSICT", "NSIGT", "MICT", "AICTPL", "ACMTPL", "AMCT"].includes(formData.terminalCode);
 
     case 'vgmWt':
       return formData.vgmViaODeX === 'N';
@@ -736,7 +742,8 @@ export const isFieldRequired = (fieldName, formData, containerIndex = null) => {
     }
 
     case 'issueTo': {
-      const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+      // v6.0 Section 14: Mandatory except NSIGT, NSICT, MICT, IGT and CCTL (where it must be left blank)
+      const hiddenTerminals = ["NSIGT", "NSICT", "MICT", "IGT", "CCTL"];
       return !hiddenTerminals.includes(formData.terminalCode);
     }
 
@@ -758,14 +765,38 @@ export const getRequiredAttachments = (formData) => {
   const { locId, cargoTp, origin, cntnrStatus } = formData;
   const required = [];
 
-  const normCargoTp = (cargoTp || "").toUpperCase();
-  const normOrigin = (origin || "").toUpperCase();
-  const normCntnrStatus = (cntnrStatus || "").toUpperCase();
+  const normLocId = (locId || "").trim().toUpperCase();
+  const normCargoTp = (cargoTp || "").trim().toUpperCase();
+  const normOrigin = (origin || "").trim().toUpperCase();
+  const normCntnrStatus = (cntnrStatus || "").trim().toUpperCase();
 
-  // Port Lists from Excel
+  // Port Lists from Excel / ODeX Documentation
   const ListA = ["INNSA1", "INMUN1", "INNML1", "INTUT1", "INCCU1", "INPAV1", "INHZA1", "INMRM1", "INCOK1", "INVTZ1", "INHAL1", "INKRI1", "INIXY1"];
   const ListChennaiGroup = ["INMAA1", "INKAT1", "INENN1"];
   const ListExtended = [...ListA, ...ListChennaiGroup, "INPRT1", "INKAK1"];
+
+  // 18 ports where VGM_ANXR1 is mandatory:
+  // Nhava Sheva (INNSA1), Mundra (INMUN1), Mangalore (INNML1/INIXE1), Tuticorin (INTUT1),
+  // Kolkata (INCCU1), Pipavav (INPAV1), Hazira (INHZA1), Marmagoa (INMRM1), Cochin (INCOK1),
+  // Chennai (INMAA1), Vishakapatnam (INVTZ1), Haldia (INHAL1), Krishnapatnam (INKRI1),
+  // Kattupalli (INKAT1), Paradip (INPRT1), Kandla (INIXY1), Kakinada (INKAK1), Ennore (INENN1/INENR1)
+  const VgmAnxr1Ports = [
+    ...ListExtended,
+    "INIXE1",
+    "INENR1",
+    "NHAVA SHEVA", "MUNDRA", "MANGALORE", "TUTICORIN", "KOLKATA", "PIPAVAV",
+    "HAZIRA", "MARMAGOA", "MORMUGAO", "COCHIN", "CHENNAI", "VISHAKAPATNAM",
+    "VISAKHAPATNAM", "HALDIA", "KRISHNAPATNAM", "KATTUPALLI", "PARADIP",
+    "KANDLA", "KAKINADA", "ENNORE",
+  ];
+
+  // Origins where VGM_ANXR1 is mandatory: Dock Stuff, Factory stuff, On wheel, Empty tank
+  const VgmAnxr1Origins = [
+    "C", "DOCK STUFF", "DOCK STUFFED",
+    "F", "FACTORY STUFF", "FACTORY STUFFED",
+    "W", "ON WHEEL", "ON WHEEL CONTAINER",
+    "E_TANK", "EMPTY TANK",
+  ];
 
   // Helper to check cargo types
   const isHazCargo = normCargoTp.includes("HAZ");
@@ -788,7 +819,7 @@ export const getRequiredAttachments = (formData) => {
   addReq("BOOKING_COPY");
 
   // 2. PRE_EGM - Optional for Chennai
-  if (locId === "INMAA1") {
+  if (normLocId === "INMAA1") {
     required.push({
       code: "PRE_EGM",
       name: ATTACHMENT_REQUIREMENTS.ATTACHMENT_TITLES["PRE_EGM"],
@@ -797,107 +828,115 @@ export const getRequiredAttachments = (formData) => {
   }
 
   // 3. BOOK_CNFRM_CPY - Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF
-  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
+  if (ListChennaiGroup.includes(normLocId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
     addReq("BOOK_CNFRM_CPY");
   }
 
   // 4. BOOKING_CONF_COPY - VTZ, Origin: C, F, W, E_TANK
-  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  if (normLocId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("BOOKING_CONF_COPY");
   }
 
   // 5. CHK_LIST - Chennai Group, Cargo: HAZ, ODC, GEN, ONION, REF
-  if (ListChennaiGroup.includes(locId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
+  if (ListChennaiGroup.includes(normLocId) && ["HAZ", "ODC", "GEN", "ONION", "REF", "ODC(HAZ)"].some(tp => normCargoTp.includes(tp))) {
     addReq("CHK_LIST");
   }
 
   // 6. CLN_CRTFCT - ListA, Cargo: HAZ, Status: Empty
-  if (ListA.includes(locId) && isHazCargo && normCntnrStatus === "EMPTY") {
+  if (ListA.includes(normLocId) && isHazCargo && normCntnrStatus === "EMPTY") {
     addReq("CLN_CRTFCT");
   }
 
   // 7. CNTNR_LOAD_PLAN - ListA, Origin: C
-  if (ListA.includes(locId) && normOrigin === "C") {
+  if (ListA.includes(normLocId) && normOrigin === "C") {
     addReq("CNTNR_LOAD_PLAN");
   }
 
   // 8. CUSTOMS_EXAM_REPORT - ListA, Origin: W
-  if (ListA.includes(locId) && normOrigin === "W") {
+  if (ListA.includes(normLocId) && normOrigin === "W") {
     addReq("CUSTOMS_EXAM_REPORT");
   }
 
   // 9. DG_DCLRTION - ListA + Chennai + Kattupalli, Cargo: HAZ, ODC
-  if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && isHazOrOdc) {
+  if ((ListA.includes(normLocId) || normLocId === "INMAA1" || normLocId === "INKAT1") && isHazOrOdc) {
     addReq("DG_DCLRTION");
   }
 
   // 10. DLVRY_ORDER - ListA + Chennai + Kattupalli, Origin: F, C, E_TANK
-  if ((ListA.includes(locId) || locId === "INMAA1" || locId === "INKAT1") && ["F", "C", "E_TANK"].includes(normOrigin)) {
+  if ((ListA.includes(normLocId) || normLocId === "INMAA1" || normLocId === "INKAT1") && ["F", "C", "E_TANK"].includes(normOrigin)) {
     addReq("DLVRY_ORDER");
   }
 
   // 11. FIRE_OFC_CRTFCT - ListChennaiGroup, Cargo: HAZ, ODC
-  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
+  if (ListChennaiGroup.includes(normLocId) && isHazOrOdc) {
     addReq("FIRE_OFC_CRTFCT");
   }
 
   // 12. HAZ_DG_DECLARATION - ListExtended, Cargo: ODC / HAZ
-  if (ListExtended.includes(locId) && isHazOrOdc) {
+  if (ListExtended.includes(normLocId) && isHazOrOdc) {
     addReq("HAZ_DG_DECLARATION");
   }
 
   // 13. INVOICE - ListExtended, Origin: F, E_TANK
-  if (ListExtended.includes(locId) && ["F", "E_TANK"].includes(normOrigin)) {
+  if (ListExtended.includes(normLocId) && ["F", "E_TANK"].includes(normOrigin)) {
     addReq("INVOICE");
   }
 
   // 14. LASHING_CERTIFICATE - ListExtended, Cargo: ODC & HAZ
-  if (ListExtended.includes(locId) && isHazOrOdc) {
+  if (ListExtended.includes(normLocId) && isHazOrOdc) {
     addReq("LASHING_CERTIFICATE");
   }
 
   // 15. MMD_APPRVL - ListChennaiGroup, Cargo: HAZ, ODC
-  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
+  if (ListChennaiGroup.includes(normLocId) && isHazOrOdc) {
     addReq("MMD_APPRVL");
   }
 
   // 16. MSDS - ListExtended, Cargo: ODC / HAZ
-  if (ListExtended.includes(locId) && isHazOrOdc) {
+  if (ListExtended.includes(normLocId) && isHazOrOdc) {
     addReq("MSDS");
   }
 
   // 17. MSDS_SHEET - ListChennaiGroup, Cargo: HAZ, ODC
-  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
+  if (ListChennaiGroup.includes(normLocId) && isHazOrOdc) {
     addReq("MSDS_SHEET");
   }
 
   // 18. ODC_SURVEYOR_REPORT_PHOTOS - ListExtended, Cargo: ODC / HAZ
-  if (ListExtended.includes(locId) && isHazOrOdc) {
+  if (ListExtended.includes(normLocId) && isHazOrOdc) {
     addReq("ODC_SURVEYOR_REPORT_PHOTOS");
   }
 
   // 19. PACK_LIST - ListA, Origin: F
-  if (ListA.includes(locId) && normOrigin === "F") {
+  if (ListA.includes(normLocId) && normOrigin === "F") {
     addReq("PACK_LIST");
   }
 
   // 20. SHIP_BILL - ListA, Origin: C, F, W, E_TANK (Exclude Mundra)
-  if (locId !== "INMUN1" && ListA.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  if (normLocId !== "INMUN1" && ListA.includes(normLocId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("SHIP_BILL");
   }
 
   // 21. SHIPPING_INSTRUCTION - VTZ, Origin: C, F, W, E_TANK
-  if (locId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  if (normLocId === "INVTZ1" && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
     addReq("SHIPPING_INSTRUCTION");
   }
 
   // 22. SURVY_RPRT - ListChennaiGroup, Cargo: HAZ, ODC
-  if (ListChennaiGroup.includes(locId) && isHazOrOdc) {
+  if (ListChennaiGroup.includes(normLocId) && isHazOrOdc) {
     addReq("SURVY_RPRT");
   }
 
-  // 23. VGM_ANXR1 - ListExtended, Origin: C, F, W, E_TANK (Exclude Mundra)
-  if (locId !== "INMUN1" && ListExtended.includes(locId) && ["C", "F", "W", "E_TANK"].includes(normOrigin)) {
+  // 23. VGM_ANXR1 - Mandatory for 18 ports:
+  // Nhava Sheva, Mundra, Mangalore, Tuticorin, Kolkata, Pipavav, Hazira, Marmagoa, Cochin,
+  // Chennai, Vishakapatnam, Haldia, Krishnapatnam, Kattupalli, Paradip, Kandla, Kakinada, Ennore.
+  // Origin: Dock Stuff, Factory stuff, On wheel, Empty tank.
+  // v6.0 Section 7.4 & 10: Required when vgmViaODeX is N (or omitted/default). Not required when vgmViaODeX is Y.
+  const hasVgmN = Array.isArray(formData.containers) && formData.containers.length > 0
+    ? formData.containers.some(c => (c.vgmViaODeX || "N") === "N")
+    : (formData.vgmViaODeX || "N") === "N";
+
+  if (hasVgmN && VgmAnxr1Ports.includes(normLocId) && VgmAnxr1Origins.includes(normOrigin)) {
     addReq("VGM_ANXR1");
   }
 
@@ -1246,9 +1285,11 @@ export const validateFormData = (formData) => {
       checkContPattern("odcUnits", "ODC Units", container.odcUnits, alphanumericNoSpacePattern, false);
     }
 
-    // Vehicle No
-    const isMundraFactoryOrRoad = formData.locId === "INMUN1" && (formData.origin === "F" || formData.origin === "R");
-    if (isMundraFactoryOrRoad) {
+    // Vehicle No - v6.0 Section 7.2
+    const isVehicleNoRequired = ["F", "R"].includes(formData.origin) &&
+      ["NSICT", "NSIGT", "MICT", "AICTPL", "ACMTPL", "AMCT"].includes(formData.terminalCode);
+
+    if (isVehicleNoRequired) {
       checkContLength("vehicleNo", "Vehicle No", container.vehicleNo, 50, 1, true);
       checkContPattern("vehicleNo", "Vehicle No", container.vehicleNo, alphanumericPattern, false);
     } else if (container.vehicleNo) {
@@ -1294,80 +1335,83 @@ export const validateFormData = (formData) => {
       checkContPattern("shpInstructNo", "Shipping Instruction No", container.shpInstructNo, alphanumericNoSpacePattern, true);
     }
 
-    // Shipping Bill Section
-    if (container.sbDtlsVo?.[0]) {
-      const sbDetails = container.sbDtlsVo[0];
+    // Shipping Bill Section - v6.0 Section 7.3
+    if (Array.isArray(container.sbDtlsVo) && container.sbDtlsVo.length > 0) {
+      container.sbDtlsVo.forEach((sbDetails, sbIdx) => {
+        const sbPrefix = container.sbDtlsVo.length > 1 ? ` (SB ${sbIdx + 1})` : "";
+        const errKey = (f) => (sbIdx === 0 ? `container_${index}_${f}` : `container_${index}_${f}_${sbIdx}`);
 
-      const checkSbPattern = (field, label, value, pattern, allowEmpty = true) => {
-        if (!validatePattern(value, pattern, allowEmpty)) {
-          errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} contains invalid characters`;
-          return false;
-        }
-        return true;
-      };
-
-      const checkSbLength = (field, label, value, max, min = 0, isRequired = false) => {
-        if (isRequired && (value === null || value === undefined || value.toString().trim() === "")) {
-          errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} is required`;
-          return false;
-        }
-        if (value !== null && value !== undefined && value.toString().trim() !== "") {
-          if (!validateLength(value, max, min)) {
-            errors[`container_${index}_${field}`] = `Container ${index + 1}: ${label} length must be between ${min} and ${max} characters`;
+        const checkSbPattern = (field, label, value, pattern, allowEmpty = true) => {
+          if (!validatePattern(value, pattern, allowEmpty)) {
+            errors[errKey(field)] = `Container ${index + 1}${sbPrefix}: ${label} contains invalid characters`;
             return false;
           }
+          return true;
+        };
+
+        const checkSbLength = (field, label, value, max, min = 0, isRequired = false) => {
+          if (isRequired && (value === null || value === undefined || value.toString().trim() === "")) {
+            errors[errKey(field)] = `Container ${index + 1}${sbPrefix}: ${label} is required`;
+            return false;
+          }
+          if (value !== null && value !== undefined && value.toString().trim() !== "") {
+            if (!validateLength(value, max, min)) {
+              errors[errKey(field)] = `Container ${index + 1}${sbPrefix}: ${label} length must be between ${min} and ${max} characters`;
+              return false;
+            }
+          }
+          return true;
+        };
+
+        // shipBillInvNo: business 7 chars, schema permits up to 22
+        checkSbLength("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, 22, 1, true);
+        checkSbPattern("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, alphanumericNoSpacePattern, false);
+
+        // shipBillDt
+        if (!sbDetails.shipBillDt) {
+          errors[errKey("shipBillDt")] = `Container ${index + 1}${sbPrefix}: Shipping Bill Date is required`;
+        } else if (!validatePattern(sbDetails.shipBillDt, datePattern, false)) {
+          errors[errKey("shipBillDt")] = `Container ${index + 1}${sbPrefix}: Shipping Bill Date must be in YYYY-MM-DD format (1900-2099)`;
         }
-        return true;
-      };
 
-      // shipBillInvNo
-      checkSbLength("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, 22, 1, true);
-      checkSbPattern("shipBillInvNo", "Shipping Bill Invoice No", sbDetails.shipBillInvNo, alphanumericNoSpacePattern, false);
+        // chaNm: max 50 as per v6.0 Section 7.3
+        checkSbLength("chaNm", "CHA Name", sbDetails.chaNm, 50, 1, true);
+        checkSbPattern("chaNm", "CHA Name", sbDetails.chaNm, alphanumericPattern, false);
 
-      // shipBillDt
-      if (!sbDetails.shipBillDt) {
-        errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date is required`;
-      } else if (!validatePattern(sbDetails.shipBillDt, datePattern, false)) {
-        errors[`container_${index}_shipBillDt`] = `Container ${index + 1}: Shipping Bill Date must be in YYYY-MM-DD format (1900-2099)`;
-      }
+        // chaPan: 10 chars
+        checkSbLength("chaPan", "CHA PAN", sbDetails.chaPan, 10, 1, true);
+        checkSbPattern("chaPan", "CHA PAN", sbDetails.chaPan, alphanumericNoSpacePattern, false);
 
-      // chaNm
-      checkSbLength("chaNm", "CHA Name", sbDetails.chaNm, 200, 1, true);
-      checkSbPattern("chaNm", "CHA Name", sbDetails.chaNm, alphanumericPattern, false);
+        // exporterNm: max 50
+        checkSbLength("exporterNm", "Exporter Name", sbDetails.exporterNm, 50, 1, true);
+        checkSbPattern("exporterNm", "Exporter Name", sbDetails.exporterNm, alphanumericPattern, false);
 
-      // chaPan
-      checkSbLength("chaPan", "CHA PAN", sbDetails.chaPan, 10, 1, true);
-      checkSbPattern("chaPan", "CHA PAN", sbDetails.chaPan, alphanumericNoSpacePattern, false);
+        // exporterIec: max 10
+        checkSbLength("exporterIec", "Exporter IEC", sbDetails.exporterIec, 10, 1, true);
+        checkSbPattern("exporterIec", "Exporter IEC", sbDetails.exporterIec, alphanumericNoSpacePattern, false);
 
-      // exporterNm
-      checkSbLength("exporterNm", "Exporter Name", sbDetails.exporterNm, 50, 1, true);
-      checkSbPattern("exporterNm", "Exporter Name", sbDetails.exporterNm, alphanumericPattern, false);
-
-      // exporterIec
-      checkSbLength("exporterIec", "Exporter IEC", sbDetails.exporterIec, 10, 1, true);
-      checkSbPattern("exporterIec", "Exporter IEC", sbDetails.exporterIec, alphanumericNoSpacePattern, false);
-
-      // noOfPkg
-      if (sbDetails.noOfPkg === null || sbDetails.noOfPkg === undefined || sbDetails.noOfPkg === "") {
-        errors[`container_${index}_noOfPkg`] = `Container ${index + 1}: Number of Packages is required`;
-      } else {
-        const pkgVal = parseInt(sbDetails.noOfPkg, 10);
-        if (isNaN(pkgVal) || pkgVal <= 0 || !/^\d+$/.test(sbDetails.noOfPkg.toString())) {
-          errors[`container_${index}_noOfPkg`] = `Container ${index + 1}: Number of Packages must be a positive integer`;
+        // noOfPkg: positive integer
+        if (sbDetails.noOfPkg === null || sbDetails.noOfPkg === undefined || sbDetails.noOfPkg === "") {
+          errors[errKey("noOfPkg")] = `Container ${index + 1}${sbPrefix}: Number of Packages is required`;
+        } else {
+          const pkgVal = parseInt(sbDetails.noOfPkg, 10);
+          if (isNaN(pkgVal) || pkgVal <= 0 || !/^\d+$/.test(sbDetails.noOfPkg.toString())) {
+            errors[errKey("noOfPkg")] = `Container ${index + 1}${sbPrefix}: Number of Packages must be a positive integer`;
+          }
         }
-      }
 
-      // LEO No
-      if (sbDetails.leoNo) {
-        checkSbLength("leoNo", "LEO No", sbDetails.leoNo, 50, 0, false);
-      }
+        // LEO No: max 15 as per v6.0 Section 7.3
+        if (sbDetails.leoNo) {
+          checkSbLength("leoNo", "LEO No", sbDetails.leoNo, 15, 0, false);
+        }
 
-      // LEO Date
-      if (sbDetails.leoNo && !sbDetails.leoDt) {
-        errors[`container_${index}_leoDt`] = `Container ${index + 1}: LEO Date is required when LEO No is provided`;
-      } else if (sbDetails.leoDt && !validatePattern(sbDetails.leoDt, datePattern, true)) {
-        errors[`container_${index}_leoDt`] = `Container ${index + 1}: LEO Date must be in YYYY-MM-DD format (1900-2099)`;
-      }
+        // LEO Date
+        if (sbDetails.leoNo && !sbDetails.leoDt) {
+          errors[errKey("leoDt")] = `Container ${index + 1}${sbPrefix}: LEO Date is required when LEO No is provided`;
+        } else if (sbDetails.leoDt && !validatePattern(sbDetails.leoDt, datePattern, true)) {
+          errors[errKey("leoDt")] = `Container ${index + 1}${sbPrefix}: LEO Date must be in YYYY-MM-DD format (1900-2099)`;
+        }
+      });
     }
   });
 
@@ -1582,9 +1626,9 @@ export const isFieldVisible = (fieldName, formData) => {
     return locId === "INNSA1";
   }
 
-  // Issue To - Hidden/Blank for NSICT/NSIGT/CCTL/ICT terminals
+  // Issue To - Hidden/Blank for NSIGT, NSICT, MICT, IGT, CCTL terminals (v6.0 Section 14)
   if (fieldName === "issueTo") {
-    const hiddenTerminals = ["NSICT", "NSIGT", "CCTL", "ICT"];
+    const hiddenTerminals = ["NSIGT", "NSICT", "MICT", "IGT", "CCTL"];
     return !hiddenTerminals.includes(terminalCode);
   }
 

@@ -1,0 +1,10 @@
+{
+  "pyrCode": "YOUR_PAYOR_CODE",
+  "odexRefNo": "261016000001",
+  "bookNo": "BKDEMO001",
+  "cntrList": [
+    {
+      "cntnrNo": "MSCU1234563"
+    }
+  ]
+}

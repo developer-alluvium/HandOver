@@ -1,0 +1,6 @@
+{
+  "pyrCode": "YOUR_PAYOR_CODE",
+  "hashKey": "CRC32 of pyrCode + fromTs + secretKey",
+  "fromTs": "2000-01-01 00:00:00",
+  "listTyp": "Gatepass"
+}

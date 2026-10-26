@@ -11,6 +11,7 @@ import {
   validateESBHeader,
   validateESBContainer,
   SHIPPING_LINE_LOV,
+  ESB_ATTACHMENT_CONFIG,
 } from "../../utils/esbValidations";
 import "../../styles/ESB.scss";
 import axios from "axios";
@@ -29,7 +30,9 @@ const ESB = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [headerErrors, setHeaderErrors] = useState({});
   const [containerErrors, setContainerErrors] = useState({});
+  const [attachmentErrors, setAttachmentErrors] = useState({});
   const [declarationChecked, setDeclarationChecked] = useState(true);
+  const [docConfigs, setDocConfigs] = useState(ESB_ATTACHMENT_CONFIG);
 
   // Master Data
   const [vessels, setVessels] = useState([]);
@@ -529,8 +532,30 @@ const ESB = () => {
     });
     setContainerErrors(cErrs);
 
-    if (Object.keys(hErrs).length > 0 || hasContainerError) {
-      setError("Please resolve the highlighted validation errors before submitting.");
+    // Validate Mandatory Attachments dynamically according to ODeX attachment-master
+    const mandatoryConfigs = docConfigs.filter((cfg) => cfg.required);
+    const aErrs = {};
+    let hasAttachmentError = false;
+
+    mandatoryConfigs.forEach((cfg) => {
+      const code = cfg.code;
+      const hasUploaded = (formData.attachments || []).some(
+        (a) => a.attTitle === code && a.attData
+      );
+      if (!hasUploaded) {
+        aErrs[code] = `${cfg.title || code} is required before submission.`;
+        hasAttachmentError = true;
+      }
+    });
+    setAttachmentErrors(aErrs);
+
+    if (Object.keys(hErrs).length > 0 || hasContainerError || hasAttachmentError) {
+      if (hasAttachmentError) {
+        const missingList = Object.keys(aErrs).join(", ");
+        setError(`Please upload all mandatory attachments (${missingList}) before submitting to ODeX.`);
+      } else {
+        setError("Please resolve the highlighted validation errors before submitting.");
+      }
       return false;
     }
     setError("");
@@ -572,16 +597,18 @@ const ESB = () => {
       attData: att.attData,
     }));
 
-    // Ensure only valid ODeX document types exist in attachment list (LOC, EIR, TSR)
-    const hasType = (t) => attList.some((a) => a.attTitle === t);
-    if (!hasType("LOC")) {
-      attList.push({ attTitle: "LOC", attDesc: "New Bitmap image", attNm: "LOC.pdf", attData: samplePdfData });
-    }
-    if (!hasType("EIR")) {
-      attList.push({ attTitle: "EIR", attDesc: "New Bitmap image", attNm: "EIR.pdf", attData: samplePdfData });
-    }
-    if (!hasType("TSR")) {
-      attList.push({ attTitle: "TSR", attDesc: "New Bitmap image", attNm: "TSR.pdf", attData: samplePdfData });
+    // Ensure mandatory document types exist if in draft mode
+    if (skipOdex) {
+      const hasType = (t) => attList.some((a) => a.attTitle === t);
+      if (!hasType("LOC")) {
+        attList.push({ attTitle: "LOC", attDesc: "Shipping Bill / LEO Copy", attNm: "LOC.pdf", attData: samplePdfData });
+      }
+      if (!hasType("EIR")) {
+        attList.push({ attTitle: "EIR", attDesc: "Equipment Interchange Report", attNm: "EIR.pdf", attData: samplePdfData });
+      }
+      if (!hasType("TSR")) {
+        attList.push({ attTitle: "TSR", attDesc: "Tally Sheet / Stuffing Report", attNm: "TSR.pdf", attData: samplePdfData });
+      }
     }
 
     const egmRequestVo = {
@@ -815,8 +842,19 @@ const ESB = () => {
         {/* Section 3: Attachments */}
         <ESBAttachmentSection
           attachments={formData.attachments}
+          onAttachmentsChange={(newAtts) =>
+            setFormData((prev) => ({ ...prev, attachments: newAtts }))
+          }
           onAddAttachment={handleAddAttachment}
           onRemoveAttachment={handleRemoveAttachment}
+          bnfCode={formData.bnfCode}
+          locCode={formData.portOfSBFiled || formData.locCode}
+          cntStatus={formData.cntStatus}
+          pyrCode={formData.pyrCode}
+          errors={attachmentErrors}
+          setAttachmentErrors={setAttachmentErrors}
+          docConfigs={docConfigs}
+          onDocConfigsChange={setDocConfigs}
         />
       </div>
 

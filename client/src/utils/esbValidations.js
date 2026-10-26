@@ -68,12 +68,105 @@ export const PACKAGE_TYPE_LOV = [
 
 export const ATTACHMENT_TITLE_LOV = [
   { value: "LOC", label: "LOC - Shipping Bill / LEO" },
+  { value: "BKG", label: "BKG - Booking Copy" },
   { value: "EIR", label: "EIR - Equipment Interchange Report" },
   { value: "TSR", label: "TSR - Tally Sheet / Stuffing Report" },
-  { value: "SB", label: "SB - .SB File (Checklist)" },
   { value: "CLP", label: "CLP - Container Load Plan" },
+  { value: "SB", label: "SB - .SB File (Checklist)" },
+  { value: "GP", label: "GP - Gate Pass Copy" },
   { value: "O", label: "O - Other / Booking Party Declaration" },
 ];
+
+export const MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB max per file (ODeX spec: 5,242,880 bytes)
+export const MAX_RECOMMENDED_TOTAL_MB = 4.0; // 4.0 MB recommended total limit
+
+export const ESB_ATTACHMENT_CONFIG = [
+  {
+    code: "LOC",
+    title: "Shipping Bill / LEO",
+    subtitle: "Let Export Order / Shipping Bill (issued by Customs)",
+    required: true,
+    category: "mandatory",
+    defaultDesc: "Shipping Bill / LEO Document",
+    hint: "Mandatory declaration issued by Customs / Shipping Line for container gate-in authorization.",
+  },
+  {
+    code: "BKG",
+    title: "Booking Copy",
+    subtitle: "Carrier booking confirmation copy issued by shipping line",
+    required: false,
+    category: "optional",
+    defaultDesc: "Booking Copy Confirmation",
+    hint: "Carrier booking confirmation copy issued by shipping line.",
+  },
+  {
+    code: "EIR",
+    title: "Equipment Interchange Report (EIR)",
+    subtitle: "Equipment Interchange receipt from terminal or empty yard",
+    required: false,
+    category: "optional",
+    defaultDesc: "Equipment Interchange Report",
+    hint: "Interchange document confirming container condition & transfer.",
+  },
+  {
+    code: "TSR",
+    title: "Tally Sheet / Stuffing Report (TSR)",
+    subtitle: "Container stuffing report or cargo tally sheet",
+    required: false,
+    category: "optional",
+    defaultDesc: "Tally Sheet / Stuffing Report",
+    hint: "Stuffing report verifying loaded cargo packages and container seal.",
+  },
+  {
+    code: "CLP",
+    title: "Container Load Plan (CLP)",
+    subtitle: "Container weight, volume distribution, and stowage layout",
+    required: false,
+    category: "optional",
+    defaultDesc: "Container Load Plan",
+    hint: "Optional load plan detailing cargo weight and volume distribution inside container.",
+  },
+  {
+    code: "SB",
+    title: "Upload .SB File (Checklist)",
+    subtitle: "Electronic Shipping Bill checklist file",
+    required: false,
+    category: "optional",
+    defaultDesc: "Shipping Bill Checklist (.SB)",
+    hint: "Optional electronic checklist generated during customs declaration filing.",
+  },
+  {
+    code: "GP",
+    title: "Gate Pass Copy",
+    subtitle: "Terminal / CFS Gate Pass copy",
+    required: false,
+    category: "optional",
+    defaultDesc: "Gate Pass Copy",
+    hint: "Gate Pass copy issued by port, terminal, or CFS.",
+  },
+  {
+    code: "O",
+    title: "Other / Party Declaration",
+    subtitle: "Booking party declaration or additional supporting documents",
+    required: false,
+    category: "optional",
+    defaultDesc: "Party Declaration / Other Document",
+    hint: "Optional additional certificates, packing list, or party declarations.",
+  },
+];
+
+export const validateESBAttachments = (attachments = [], configList = ESB_ATTACHMENT_CONFIG) => {
+  const errors = {};
+  configList.forEach((cfg) => {
+    if (cfg.required) {
+      const found = attachments.find((a) => a.attTitle === cfg.code && a.attData);
+      if (!found) {
+        errors[cfg.code] = `${cfg.title} (${cfg.code}) is mandatory.`;
+      }
+    }
+  });
+  return errors;
+};
 
 export const validateContainerNo = (cntNo) => {
   if (!cntNo) return "Container No is required";

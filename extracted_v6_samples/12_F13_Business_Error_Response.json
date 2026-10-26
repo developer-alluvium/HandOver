@@ -1,0 +1,6 @@
+{
+  "bookNo": "BKDEMO001",
+  "schema_validation": "PASS",
+  "business_validation": "FAIL",
+  "business_validations": " 1 - Error (1005) -  Mentioned vessel name has been cut-off. [Solution: Kindly contact shipping line.]"
+}

@@ -111,7 +111,12 @@ const ContainerRow = ({
               if (typeof option === 'string') return option;
               return option.label || "";
             }}
-            value={containerSizes.find(opt => opt.value === container.cntnrSize) || null}
+            value={
+              containerSizes.find(opt => 
+                opt.value === container.cntnrSize || 
+                (container.cntnrSize && (opt.value.endsWith(container.cntnrSize) || opt.label.startsWith(container.cntnrSize)))
+              ) || null
+            }
             onChange={(e, newValue) => {
               const val = newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : "";
               handleContainerChange("cntnrSize", val);

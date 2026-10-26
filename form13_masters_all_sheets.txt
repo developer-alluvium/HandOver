@@ -1,0 +1,266 @@
+
+=== SHEET: How to use ===
+ODeX Form 13 — customer master workbook | 
+This workbook is embedded in the Form 13 API document. Double-click the Excel icon in the Word file to open it. | 
+Testing is on the PRODUCTION system. Use only demo users, and only these shipping line codes: DEMO, DEBET, DEALP. | 
+DEMO = general shipping lines. DEBET = MSC configuration. DEALP = Hapag-Lloyd configuration. | 
+Do not send any other bnfCode during testing. A request with a live line code is a real production Form 13. | 
+Where a code exists more than once, send the value shown on the Form 13 screen, not an inactive or duplicate master row. | 
+Vessel, POD, shipper and haulier lists change. Refresh them from the APIs and from the Form 13 screen. Do not hard-code yesterday's vessel. | 
+Sheets in this workbook are the code lists the API expects. Attachment titles, issue-to, haulier and shipper still depend on port, terminal and line. | 
+
+=== SHEET: Demo shipping lines ===
+Name shown for testing | API field bnfCode | What it exercises | Allowed during production testing
+DEMO | DEMO | General shipping line behaviour. | Yes. This is the only general-line code for testing.
+DEBET | DEBET | MSC configuration. Shipping instruction number is handled at container level. | Yes. Use this instead of the live MSC code.
+DEALP | DEALP | Hapag-Lloyd configuration. Booking-copy BL number and shipping-instruction check apply, except reefer cargo. | Yes. Use this instead of the live Hapag-Lloyd code.
+
+=== SHEET: Shipping line rule ===
+Rule | What the customer sends
+Which code | bnfCode is the shipping line code (SCAC) of the line selected on the Form 13 screen.
+Duplicates | If the same line name or the same code exists more than once in master, send the name and code that appear on the Form 13 dropdown. Ignore inactive rows and rows that are not enabled for Form 13.
+How to confirm | The Vessel Master API returns bnfCode on every vessel. That value is the same code to send in saveF13 for that vessel.
+Testing | On this production test kit the only permitted codes are DEMO, DEBET and DEALP. Live production codes are shared after UAT sign-off.
+Invalid code | Any other value returns Beneficiary Code is invalid.
+
+=== SHEET: Locations ===
+S.N | Location | API locId
+1 | Nhava Sheva | INNSA1
+2 | Mundra | INMUN1
+3 | Mangalore | INNML1
+4 | Tuticorin | INTUT1
+5 | Kolkata | INCCU1
+6 | Pipavav | INPAV1
+7 | Hazira | INHZA1
+8 | Marmagoa | INMRM1
+9 | Cochin | INCOK1
+10 | Chennai | INMAA1
+11 | Vishakapatnam | INVTZ1
+12 | Haldia | INHAL1
+13 | Krishnapatnam | INKRI1
+14 | Kattupalli | INKAT1
+15 | Paradip | INPRT1
+16 | Kandla | INIXY1
+17 | Kakinada | INKAK1
+
+=== SHEET: Origin ===
+API origin | Meaning on screen | Extra fields
+C | Dock stuffed | cfsCode is required. Haulier is not required.
+F | Factory stuffed | Vehicle number is required at NSICT, NSIGT and MICT. Driver name is required at those terminals. Haulier is required when the terminal has a haulier list.
+B | Buffer | cfsCode is required at Mundra terminal MICT.
+R | ICD by road | icdCode is required at Mundra for MICT and Adani terminals. Vehicle number is required at NSICT, NSIGT and MICT.
+W | On wheel container | Use this origin for DPE shipments and send the CHA code in terminal login id, other than OTHR.
+F_CFS | Factory stuffed via CFS | cfsCode is required at Mundra terminal MICT.
+E_TANK | Empty tank | Attachment set follows the empty-tank list for the location.
+
+=== SHEET: Cargo type ===
+API cargoTp | Meaning | Extra container fields | Attachment family
+GEN | General | None | General document list
+HAZ | Hazardous | imoNo1 and unNo1 required. imoNo2-4 and unNo2-4 optional. | Hazardous document list. Cleaning certificate also applies when the container is EMPTY.
+REF | Reefer | temp is required. | Reefer document list
+REF(HAZ) | Reefer hazardous | temp, imoNo1 and unNo1 required. | Hazardous document list
+ODC | Out of gauge | right, left, top, back, front dimensions and odcUnits required. | ODC document list
+ODC(HAZ) | ODC hazardous | ODC dimensions plus imoNo1 and unNo1. | ODC hazardous document list
+ONION | Onion | None | Onion / perishable document list
+PERISH | Perishable | None | Onion / perishable document list
+FLT | Flexi tank | None | Treated with the general or flexi list configured for the location
+FLT(HAZ) | Hazardous flexi tank | imoNo1 and unNo1 required. | Hazardous document list
+STEAM_ACTIVATED_CARBON | Steam activated carbon | None | Steam-activated-carbon document list
+
+=== SHEET: Container size and status ===
+Field | API value | Meaning
+cntnrSize | 1X20 | 20 ft
+cntnrSize | 1X40 | 40 ft
+cntnrSize | 1X45 | 45 ft
+iso | Size-specific ISO code | Must belong to the selected size on the Form 13 screen. Common pairs to confirm on the screen: 22G1 with 1X20, 42G1 with 1X40, 45G1 with 1X45.
+cntnrStatus (header) | FULL | Loaded container
+cntnrStatus (header) | EMPTY | Empty container. Hazardous empty also requires the cleaning-certificate attachment where configured.
+status (inside cntrList) | Requested | Submit this container to the shipping line in the same call.
+status (inside cntrList) | NOT_SUBMITTED | Save as draft. Any value other than Requested is stored as not submitted, unless early gate-in sets EARLY_GATE_IN.
+
+=== SHEET: Request status ===
+API status | Meaning | Re-request with same odexRefNo | Cancellation API
+NOT_SUBMITTED | Saved, not sent to the line. | Allowed | No
+REQUESTED | Sent to the line, not yet verified. | Allowed | No
+AWAITING_VGM | VGM via ODeX was requested and no verified VGM exists yet for this container. | Not allowed | No
+VERIFIED | Line has verified the container. | Not allowed | Yes, with CHA remarks
+CONFIRMED | Line has confirmed the container. PIN may be available. | Not allowed | Yes, with CHA remarks
+REJECTED | Line has rejected the container. | Not allowed | No
+EARLY_GATE_IN | Early gate-in request. | Not allowed unless every container is still Requested or Not Submitted | No
+REQUEST_FOR_CANCELLATION | Cancellation has been asked after verify/confirm. | Not allowed | Already in cancellation
+CANCELLED | Cancellation accepted. | Not allowed | Already cancelled
+
+=== SHEET: IMO ===
+API imoNo1 to imoNo4 | Description
+0 | Hazardous
+1.1 | Explosives
+1.2 | Explosives
+1.3 | Explosives
+1.4 | Explosives
+1.5 | Explosives
+2.1 | Inflammable gases
+2.2 | Non-flammable gases
+2.3 | Poisonous gases
+3 | Flammable liquids
+3.1 | Inflammable liquids
+3.2 | Inflammable liquids
+3.3 | Inflammable liquids
+4.1 | Inflammable solids
+4.2 | Spontaneously combustible
+4.3 | Dangerous when wet
+5.1 | Oxidizing substances
+5.2 | Organic peroxides
+6.1 | Poisonous (toxic) substances
+6.2 | Infectious substances
+7 | Radioactive substances
+8 | Corrosives
+8.1 | Hazardous
+9 | Miscellaneous dangerous substances
+9.O | Hazardous
+ONI | Onion
+
+=== SHEET: ODC units ===
+API odcUnits | Meaning
+CM | Centimetre
+FT | Feet
+IN | Inch
+M | Metre
+
+=== SHEET: Special stow ===
+API spclStow | Description
+UN | Under deck stowage
+DO | Open door
+AD | Above deck
+BD | Below deck
+AF | Above fore
+BF | Below fore
+AA | Above aft
+BA | Below aft
+WS | Winter storage
+AH | Away from heat / boiler
+AS | Above deck away from heat / boiler / sunlight
+BH | Below deck away from heat / boiler / sunlight
+AT | Above deck top tier stowage
+BT | Below deck top tier stowage
+BW | Below water line stowage
+OD | On deck for one door open
+
+=== SHEET: Attachment titles ===
+Send this in attTitle | Description | M/O/C | When it applies
+BOOKING_COPY | Booking Copy | M | Standard booking copy. Required for the locations where this title is configured.
+BOOK_CNFRM_CPY | Booking Confirmation Copy | C | Chennai, Kattupalli, Ennore when cargo is HAZ, ODC, GEN, ONION or REF, where configured.
+BOOKING_CONF_COPY | Booking confirmation copy | C | Vishakapatnam, where configured.
+CHK_LIST | Check List | C | Chennai, Kattupalli, Ennore for HAZ, ODC, GEN, ONION, REF, where configured.
+CLN_CRTFCT | Cleaning certificate | C | Hazardous EMPTY container, where configured.
+CNTNR_LOAD_PLAN | Container Load Plan | C | Dock stuff origin, where configured.
+CUSTOMS_EXAM_REPORT | Customs Examination Report | C | On wheel origin, where configured.
+DG_DCLRTION | DG Declaration | C | HAZ / ODC cargo, where configured.
+DLVRY_ORDER | Delivery Order | C | Factory, dock or empty tank, where configured.
+FIRE_OFC_CRTFCT | Fire Office Certificate | C | Chennai, Kattupalli, Ennore for HAZ / ODC, where configured.
+HAZ_DG_DECLARATION | HAZ DG declaration | C | HAZ / ODC cargo, where configured.
+INVOICE | Invoice | C | Factory stuff or empty tank, where configured.
+LASHING_CERTIFICATE | Lashing certificate | C | ODC and HAZ, where configured.
+MMD_APPRVL | MMD Approval | C | Chennai, Kattupalli, Ennore for HAZ / ODC, where configured.
+MSDS | MSDS | C | ODC / HAZ, where configured.
+MSDS_SHEET | MSDS Sheet | C | Chennai, Kattupalli, Ennore for HAZ / ODC, where configured.
+ODC_SURVEYOR_REPORT_PHOTOS | ODC surveyor report and photos | C | ODC / HAZ, where configured.
+PACK_LIST | Packing List | C | Factory stuff, where configured.
+PRE_EGM | Pre-EGM | O | Chennai, where the title is offered. Not a default mandatory title.
+SHIP_BILL | Shipping Bill | C | Dock, factory, on wheel or empty tank, where configured.
+SHIPPING_INSTRUCTION | Shipping instruction (SI) | C | Vishakapatnam, where configured.
+SURVY_RPRT | Survey Report | C | Chennai, Kattupalli, Ennore for HAZ / ODC, where configured.
+VGM_ANXR1 | VGM Annexure 1 | C | Required when vgmViaODeX is N (VGM is not verified on ODeX). Not required when vgmViaODeX is Y.
+
+=== SHEET: Issue to ===
+Rule | Detail
+API field | issueTo
+Where it is mandatory | Form 13, every terminal except NSIGT, NSICT, MICT, IGT and CCTL.
+Where it is omitted | Leave it blank for NSIGT, NSICT, MICT, IGT and CCTL.
+Which value | Send the code shown in the Issue To dropdown on the Form 13 screen for that line, port and terminal. The usual descriptions are Shipper and CHA.
+Duplicates | If a value is listed twice, send the code that is shown on the screen.
+Invalid value | Error (1017): issueTo is invalid.
+
+=== SHEET: Haulier ===
+Rule | Detail
+API field | haulier, inside each container object.
+What to send | The haulier code, not the transporter name. Use the code shown on the Form 13 screen for that terminal and port.
+When required | Form 13, status Requested, origin is not Dock stuffed (C), and the terminal has an active haulier list.
+When not required | Origin C (dock stuffed), or the terminal has no haulier master.
+Invalid code | Error (1053) - Haulier Code is invalid.
+How the list is kept | Active rows for the terminal and location. Adani terminals are refreshed from the terminal transporter feed. Copy the code from the screen on the day of the request.
+Duplicates | If the same transporter appears twice, send the code shown on the screen.
+
+=== SHEET: Shipper ===
+Situation | shipperNm | shipperCd | What ODeX does
+Ordinary terminal | Mandatory. Free text, max 100. Letters, numbers and , . / _ - | Send the code you hold. It is not checked against a terminal shipper list. | The name is stored as sent.
+Terminal integrated with the shipper master (Adani-family terminals that have a terminal API and a liner code) | Mandatory. Must match an active shipper for that port and terminal, by name or by code. | Mandatory. Must match the same master row. | ODeX replaces both fields with the name and code stored on the master, which are the values shown on the Form 13 screen.
+No match on an integrated terminal | Rejected | Rejected | Error (1024) - Shipper Name or Shipper Code is invalid.
+Tuticorin terminal DBGT | Still required | Still required | shipperCity is also mandatory.
+Duplicates | Use the name shown in the shipper dropdown. | Use the code shown beside that name. | Do not send an old spelling or an inactive code.
+
+=== SHEET: Terminal login ===
+Rule | Detail
+API field | terminalLoginId. Max 200. Letters, numbers and , . / _ -
+Mandatory | 1) Ports where the Form 13 screen shows Terminal Login Id as mandatory (exception ports such as Chennai, Kattupalli, Ennore, Paradip and Kolkata). 2) Any terminal whose master flag is Mandatory (M). 3) Mundra terminals ADANI, AMCT, AICTPL, ACMTPL and AMCT2.
+Adani check | On an Adani-integrated terminal the value must exist as a CHA code in the terminal cross-reference for that terminal and port. Otherwise the terminal login id is rejected.
+Value to send | Send the code (XREF_VAL), not the company description. If you do not have an id, the Form 13 screen says to enter ALL_CHA / MUNCUST. At Hazira the screen says to enter OTH.
+On-wheel / DPE | For DPE shipments select origin W and enter the CHA code in terminal login id, other than OTHR.
+Duplicates | If one company has more than one code, send the code shown on the Form 13 screen.
+Master sheet | The next sheet is the AMCT CHA cross-reference from the current master extract. Other terminals use the same columns. Take the live code from the screen for the terminal you are filing.
+
+=== SHEET: AMCT terminal login master ===
+Terminal | Cross-reference type | Send this code in terminalLoginId | Name | Status | Default | Note
+AMCT | CHA_CODE | ASL | ACCURACY SHIPPING PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | DROF | M/S. DORF KETAL SPECIALITY CATALYST PVT. LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | HCF | HONEYCOM CFS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | VEN | VENJOH | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | VPS | VELJI P. & SONS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | SSSL | SAI SHIPPING CO. | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | DBC | DBC SONS PVT.LTD. | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AML | ADITYA MARINE LIMITED | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | NDS | NIDHI SHIPPING | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ASPL | Aman Logistics | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | PH | Prachi Handling | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | CST | Cargo Seatrans | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | VASL | V Arjoon | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | HSLPL | Hardip Shipping | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | VDS | VELJI DOSABHAI & SONS P.LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | DIVYA | Divya Shipping & Clearing Services Pvt.Ltd. | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | FAST | Fast Track CFS Pvt LTd | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | SMR | SHRI MARUTI SHIPPING SERVICES | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ABL_CHA | A B LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ADA_CHA | A D MATHA | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ARL_CHA | A R LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AKS_CHA | A.K.SHIPPING SERVISES | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | APA_CHA | A.P. SHIPPING AGENCY | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ATP_CHA | A.T.P. SONS-MUNDRA | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AAI_CHA | AAI KRUPA SHIPPING   LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AMA_CHA | AARKAY MARINE AGENCIES | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AIN_CHA | AASHITA INTERNATIONAL | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ABS_CHA | Abhinandan Cargo Services | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ACC_CHA | ACCURACY SHIPPING PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ACP_CHA | ACCURATE CARGO CLEARING PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AMT_CHA | ADANI CMA MUNDRA TERMINAL PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ACT_CHA | ADANI INTERNATIONAL CONTAINER TERMINAL PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ALL_CHA | ADANI LOGISTICS LIMITED | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ADL_CHA | ADITYA LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AHE_CHA | AHAN EXIM | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AHI_CHA | Ahlers India Pvt Ltd. [Del] | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AHL_CHA | AHLSAHLOSTROM | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ASA_CHA | ALBATROSS SHIPPING AGENCY | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ALP_CHA | Alianca Logistics Pvt Ltd. | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ACN_CHA | ALL CARGO NVOCC | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ACF_CHA | ALL FRIEGHT CLEARING   FORWARDING AGENCY PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AMC_CHA | ALL MARINE CARGO SERVICES | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ATL_CHA | ALLTRANS LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AML_CHA | AMAN LOGISTICS | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AMS_CHA | AMAN SEATRANS PVT LTD | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | ABP_CHA | AMBICA LOGISTICS PRIVATE LIMITED | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+AMCT | CHA_CODE | AMB_CHA | AMBICA SHIPPING AGENCY | ACTIVE | Y | Send XREF_VAL in terminalLoginId. If the same code is listed twice, use the description shown on the Form 13 screen.
+
+=== SHEET: Vessel refresh ===
+Step | fromTs | Result
+First load | A timestamp far in the past, for example 2000-01-01 00:00:00 | One response with every vessel created or updated since that time. Store the greatest lastUpdatedOn.
+Daily job | The greatest lastUpdatedOn saved from the previous call | Only vessels added or changed since that time. Merge them into the local vessel table by line, port, vessel name and VIA.
+On request | Same as the daily job, or repeat the full load | Run this before a filing day if the line has opened a new vessel or changed a cut-off.
+Do not | A date-only value such as 2026-10-16 | Rejected. fromTs must be YYYY-MM-DD HH:MM:SS.

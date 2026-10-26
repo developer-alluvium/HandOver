@@ -1,0 +1,13 @@
+{
+  "_headers": {
+    "clientId": "YOUR_PAYOR_CODE",
+    "secretKey": "YOUR_SECRET_OR_HASH"
+  },
+  "odexRefNo": "261016000001",
+  "form13ReqCntnrVoList": [
+    {
+      "cntnrNo": "MSCU1234563",
+      "chaRemarks": "Booking rolled to next vessel"
+    }
+  ]
+}
