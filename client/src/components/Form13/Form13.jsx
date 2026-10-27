@@ -498,12 +498,17 @@ const Form13 = () => {
           }
 
           if (!foundLineId) {
-            foundLineId = nameAfterHyphen;
+            foundLineId = codeBeforeHyphen || nameAfterHyphen;
           }
         }
 
         // 2. Booking No (bookNo) & Shipping Instruction No (shpInstructNo = bookNo)
-        const bNo = job.booking_no || job.bookingNo || "";
+        const bNo =
+          job.booking_no ||
+          job.bookingNo ||
+          job.operations?.[0]?.bookingDetails?.[0]?.bookingNo ||
+          job.operations?.[0]?.bookingDetails?.[0]?.booking_no ||
+          "";
 
         // 3. User email & default mobile
         // 3. User email & default mobile
@@ -929,7 +934,7 @@ const Form13 = () => {
           bookNo: bNo || prev.bookNo,
           shpInstructNo: bNo || prev.shpInstructNo,
           pod: resolvedPodCode || prev.pod,
-          fpod: extractedPodCode || prev.fpod,
+          fpod: "", // Operator will manually enter FPOD (no auto-fill)
           cargoTp: getField(job, "cargoTp", "cargo_type") || "GEN",
           cargoDesc: resolvedCargoDesc || prev.cargoDesc,
           origin: resolvedOrigin || prev.origin,

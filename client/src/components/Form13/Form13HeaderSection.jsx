@@ -178,8 +178,12 @@ const Form13HeaderSection = ({
       ? shippingLines.map(sl => sl.value || sl.code).filter(Boolean)
       : [];
 
-    return [...new Set([...vesselCodes, ...masterCodes])].sort((a, b) => (a || "").localeCompare(b || ""));
-  }, [allActiveVessels, formData.locId, shippingLines]);
+    const combined = [...new Set([...vesselCodes, ...masterCodes])];
+    if (formData.bnfCode && !combined.includes(formData.bnfCode)) {
+      combined.unshift(formData.bnfCode);
+    }
+    return combined.sort((a, b) => (a || "").localeCompare(b || ""));
+  }, [allActiveVessels, formData.locId, shippingLines, formData.bnfCode]);
 
   // 3. Location Options (Filtered by Shipping Line if selected, defaults to all portIds)
   const locOptions = React.useMemo(() => {
@@ -551,7 +555,7 @@ const Form13HeaderSection = ({
             }}
             placeholder={`Search ${label}...`}
             disabled={isDisabled}
-            freeSolo={fieldName === "cfsCode" || fieldName === "shipperNm" || fieldName === "pod"}
+            freeSolo={fieldName === "cfsCode" || fieldName === "shipperNm" || fieldName === "pod" || fieldName === "bnfCode"}
             error={!!validationErrors[fieldName]}
             noOptionsText={`${label} is not present`}
             loading={fieldName === "shipperNm" ? shipperLoading : false}

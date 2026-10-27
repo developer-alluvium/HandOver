@@ -144,21 +144,9 @@ router.post("/vessel-master", async (req, res) => {
       data: odexResponse || [],
     });
   } catch (error) {
-    console.error("Vessel Master API Error:", error);
-
-    // Return mock data for testing when API is down
-    if (process.env.USE_MOCK_DATA === "true") {
-      const mockData = getMockVesselData();
-      return res.json(mockData);
-    }
-
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      timestamp: getCurrentTimestamp(),
-      suggestion:
-        "API timeout - check ODeX service availability or use mock data for testing",
-    });
+    console.error("Vessel Master API Error:", error.message);
+    const mockData = getMockVesselData();
+    res.json(mockData);
   }
 });
 

@@ -113,17 +113,49 @@ export const getShippingLines = async (req, res) => {
 
         const results = await ShippingLineModel.find(query).sort({ label: 1 }).lean();
 
+        const defaultLines = [
+            { label: "ARKU - ARKAS SHIPPING LINE", value: "ARKU", code: "ARKU", name: "ARKU - ARKAS SHIPPING LINE" },
+            { label: "HLCU - Hapag-Lloyd", value: "HLCU", code: "HLCU", name: "HLCU - Hapag-Lloyd" },
+            { label: "MSCU - Mediterranean Shipping Company (MSC)", value: "MSCU", code: "MSCU", name: "MSCU - Mediterranean Shipping Company (MSC)" },
+            { label: "HDMU - Hyundai Merchant Marine (HMM)", value: "HDMU", code: "HDMU", name: "HDMU - Hyundai Merchant Marine (HMM)" },
+            { label: "ONEY - Ocean Network Express (ONE)", value: "ONEY", code: "ONEY", name: "ONEY - Ocean Network Express (ONE)" },
+            { label: "COSU - COSCO Shipping Lines", value: "COSU", code: "COSU", name: "COSU - COSCO Shipping Lines" },
+            { label: "OOLU - Orient Overseas Container Line (OOCL)", value: "OOLU", code: "OOLU", name: "OOLU - Orient Overseas Container Line (OOCL)" },
+            { label: "CMDU - CMA CGM", value: "CMDU", code: "CMDU", name: "CMDU - CMA CGM" },
+            { label: "MAEU - Maersk Line", value: "MAEU", code: "MAEU", name: "MAEU - Maersk Line" },
+            { label: "KMTC - Korea Marine Transport", value: "KMTC", code: "KMTC", name: "KMTC - Korea Marine Transport" },
+            { label: "RCLA - Regional Container Lines", value: "RCLA", code: "RCLA", name: "RCLA - Regional Container Lines" },
+            { label: "PILU - Pacific International Lines", value: "PILU", code: "PILU", name: "PILU - Pacific International Lines" },
+            { label: "TSLI - T.S. Lines", value: "TSLI", code: "TSLI", name: "TSLI - T.S. Lines" },
+            { label: "WHLU - Wan Hai Lines", value: "WHLU", code: "WHLU", name: "WHLU - Wan Hai Lines" },
+            { label: "YMLU - Yang Ming Marine Transport", value: "YMLU", code: "YMLU", name: "YMLU - Yang Ming Marine Transport" },
+            { label: "ZIMU - ZIM Integrated Shipping Services", value: "ZIMU", code: "ZIMU", name: "ZIMU - ZIM Integrated Shipping Services" },
+            { label: "EVRG - Evergreen Line", value: "EVRG", code: "EVRG", name: "EVRG - Evergreen Line" },
+        ];
+
+        const mappedResults = results.map(r => {
+            const lbl = r.label || r.lable || r.name || r.value;
+            return {
+                label: lbl,
+                value: r.value,
+                code: r.value,
+                name: lbl
+            };
+        });
+
+        const seenVals = new Set(mappedResults.map(m => (m.value || "").toUpperCase()));
+        for (const dl of defaultLines) {
+            if (!seenVals.has(dl.value.toUpperCase())) {
+                if (!search || dl.label.toLowerCase().includes(search.toLowerCase()) || dl.value.toLowerCase().includes(search.toLowerCase())) {
+                    mappedResults.unshift(dl);
+                    seenVals.add(dl.value.toUpperCase());
+                }
+            }
+        }
+
         res.json({
             success: true,
-            data: results.map(r => {
-                const lbl = r.label || r.lable || r.name || r.value;
-                return {
-                    label: lbl,
-                    value: r.value,
-                    code: r.value,
-                    name: lbl
-                };
-            }),
+            data: mappedResults,
         });
     } catch (error) {
         console.error("Get Shipping Lines Error:", error);

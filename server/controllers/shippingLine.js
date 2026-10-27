@@ -1,6 +1,23 @@
 
 
 export const SHIPPING_LINES = [
+    { label: "ARKU - ARKAS SHIPPING LINE", value: "ARKU" },
+    { label: "HLCU - Hapag-Lloyd", value: "HLCU" },
+    { label: "MSCU - Mediterranean Shipping Company (MSC)", value: "MSCU" },
+    { label: "HDMU - Hyundai Merchant Marine (HMM)", value: "HDMU" },
+    { label: "ONEY - Ocean Network Express (ONE)", value: "ONEY" },
+    { label: "COSU - COSCO Shipping Lines", value: "COSU" },
+    { label: "OOLU - Orient Overseas Container Line (OOCL)", value: "OOLU" },
+    { label: "CMDU - CMA CGM", value: "CMDU" },
+    { label: "MAEU - Maersk Line", value: "MAEU" },
+    { label: "KMTC - Korea Marine Transport", value: "KMTC" },
+    { label: "RCLA - Regional Container Lines", value: "RCLA" },
+    { label: "PILU - Pacific International Lines", value: "PILU" },
+    { label: "TSLI - T.S. Lines", value: "TSLI" },
+    { label: "WHLU - Wan Hai Lines", value: "WHLU" },
+    { label: "YMLU - Yang Ming Marine Transport", value: "YMLU" },
+    { label: "ZIMU - ZIM Integrated Shipping Services", value: "ZIMU" },
+    { label: "EVRG - Evergreen Line", value: "EVRG" },
     { label: "Sawa Logistics", value: "SAWAL" },
     { label: "Moon Arc", value: "MOONA" },
     { label: "Aurotrans Maritime Services Pvt Ltd - (NVOCC)", value: "AUROT" },

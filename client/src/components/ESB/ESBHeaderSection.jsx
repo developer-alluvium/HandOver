@@ -86,6 +86,29 @@ const ESBHeaderSection = ({
           }))
         : SHIPPING_LINE_LOV;
 
+    // Build combined list ensuring default LOVs (e.g. ARKU, MSCU) are available
+    const combined = [...rawLines];
+    const seen = new Set(combined.map((l) => (l.value || "").toUpperCase().trim()));
+    for (const def of SHIPPING_LINE_LOV) {
+      const defVal = (def.value || "").toUpperCase().trim();
+      if (!seen.has(defVal)) {
+        seen.add(defVal);
+        combined.push(def);
+      }
+    }
+
+    // Ensure currently selected or prefilled formData.bnfCode is always preserved
+    if (formData.bnfCode) {
+      const bnf = formData.bnfCode.toUpperCase().trim();
+      if (!seen.has(bnf)) {
+        seen.add(bnf);
+        combined.unshift({
+          value: formData.bnfCode,
+          label: `${formData.bnfCode} - ${formData.bnfCode}`,
+        });
+      }
+    }
+
     if (formData.vesselNm && Array.isArray(vessels) && vessels.length > 0) {
       const selectedV = (formData.vesselNm || "").toUpperCase().trim();
       const matchingVesselObjs = vessels.filter(
@@ -99,17 +122,18 @@ const ESBHeaderSection = ({
       );
 
       if (validBnfCodes.size > 0) {
-        const matchedLines = rawLines.filter((l) =>
-          validBnfCodes.has((l.value || "").toUpperCase().trim())
-        );
+        const matchedLines = combined.filter((l) => {
+          const val = (l.value || "").toUpperCase().trim();
+          return validBnfCodes.has(val) || (formData.bnfCode && val === formData.bnfCode.toUpperCase().trim());
+        });
         if (matchedLines.length > 0) {
           return matchedLines;
         }
       }
     }
 
-    return rawLines;
-  }, [shippingLines, vessels, formData.vesselNm]);
+    return combined;
+  }, [shippingLines, vessels, formData.vesselNm, formData.bnfCode]);
 
   // 2. Dynamically Filter Vessel Options according to Selected Shipping Line & Port Location
   const filteredVessels = useMemo(() => {
@@ -278,6 +302,7 @@ const ESBHeaderSection = ({
               options={filteredLineOptions}
               value={formData.bnfCode || ""}
               placeholder="-- Select Shipping Line --"
+              freeSolo={true}
               disabled={readOnly}
               error={!!errors.bnfCode}
               onChange={(selectedBnf) => {
@@ -417,7 +442,7 @@ const ESBHeaderSection = ({
                 if (rawOpt && rawOpt.raw) {
                   const matchedV = rawOpt.raw;
                   if (matchedV.viaNo) onChange("viaNo", matchedV.viaNo);
-                  if (matchedV.bnfCode) {
+                  if (matchedV.bnfCode && !formData.bnfCode) {
                     onChange("bnfCode", matchedV.bnfCode.toUpperCase());
                     onChange("bookLine", matchedV.bnfCode.toUpperCase());
                   }
@@ -435,7 +460,7 @@ const ESBHeaderSection = ({
                       ) || matchedVessels[0];
 
                     if (matchedV.viaNo) onChange("viaNo", matchedV.viaNo);
-                    if (matchedV.bnfCode) {
+                    if (matchedV.bnfCode && !formData.bnfCode) {
                       onChange("bnfCode", matchedV.bnfCode.toUpperCase());
                       onChange("bookLine", matchedV.bnfCode.toUpperCase());
                     }

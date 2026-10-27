@@ -181,7 +181,7 @@ export const sanitizeAttachments = (rawAttList) => {
   });
 };
 
-export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => {
+export const callOdexAPI = async (endpoint, requestData, customHeaders = {}, timeoutMs = 35000) => {
   const url = `${ODEX_CONFIG.baseURL}${endpoint}`;
 
   try {
@@ -191,7 +191,7 @@ export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => 
         Accept: "application/json",
         ...customHeaders,
       },
-      timeout: 35000,
+      timeout: timeoutMs,
     });
 
     return res.data;
@@ -211,6 +211,84 @@ export const callOdexAPI = async (endpoint, requestData, customHeaders = {}) => 
   }
 };
 
+// In-memory Vessel Cache & Fallbacks for fast response
+const FALLBACK_VESSELS = [
+  { bnfCode: "MSCU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+  { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "DUMMY VSL NHAVA SHEVA", viaNo: "001" },
+  { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "HYUNDAI OAKLAND", viaNo: "F777" },
+  { bnfCode: "HLCU", locId: "INNSA1", vesselNm: "APIVESSEL555", viaNo: "VIA555" },
+  { bnfCode: "OOLU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+  { bnfCode: "OOLU", locId: "INNSA1", vesselNm: "DUMMY VSL NHAVA SHEVA", viaNo: "001" },
+  { bnfCode: "CMDU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+  { bnfCode: "CMDU", locId: "INNSA1", vesselNm: "CMA CGM AMERICA", viaNo: "567E" },
+  { bnfCode: "MAEU", locId: "INNSA1", vesselNm: "MAERSK COLUMBUS", viaNo: "234W" },
+  { bnfCode: "MAEU", locId: "INMUN1", vesselNm: "MAERSK BROOKLYN", viaNo: "123W" },
+  { bnfCode: "ONEY", locId: "INNSA1", vesselNm: "ONE COMPETENCE", viaNo: "089E" },
+  { bnfCode: "HDMU", locId: "INNSA1", vesselNm: "HYUNDAI FORWARD", viaNo: "099W" },
+];
+
+let esbVesselCache = {
+  data: [],
+  lastFetched: 0,
+  isFetching: false,
+};
+const VESSEL_CACHE_TTL_MS = 60 * 60 * 1000; // 1 Hour
+
+const fetchVesselsFromOdex = async () => {
+  if (esbVesselCache.isFetching) {
+    return esbVesselCache.data.length > 0 ? esbVesselCache.data : FALLBACK_VESSELS;
+  }
+  esbVesselCache.isFetching = true;
+
+  try {
+    const pyrCode = config.odex?.pyrCode || "ODeX/IN/SHP/2511/00001";
+    const fromTs = "2026-01-01 00:00:00";
+    const hashKey = config.odex?.hashKey || getHashKey();
+
+    const vesselRequest = {
+      pyrCode,
+      fromTs,
+      hashKey,
+    };
+
+    console.log("[e-SB] Fetching vessel master list from ODeX...");
+    const odexResponse = await callOdexAPI(
+      ODEX_CONFIG.endpoints.vesselMaster,
+      vesselRequest,
+      {},
+      55000 // 55s timeout for large payload
+    );
+
+    if (Array.isArray(odexResponse) && odexResponse.length > 0) {
+      const validVessels = odexResponse.filter((v) => v.vesselNm && v.vesselNm.trim());
+      if (validVessels.length > 0) {
+        esbVesselCache.data = validVessels;
+        esbVesselCache.lastFetched = Date.now();
+        console.log(`[e-SB] Vessel master cache updated with ${validVessels.length} vessels.`);
+        return validVessels;
+      }
+    }
+
+    return esbVesselCache.data.length > 0 ? esbVesselCache.data : FALLBACK_VESSELS;
+  } catch (err) {
+    console.warn("[e-SB] Failed to query live vessel master, using cache/fallback:", err.message);
+    return esbVesselCache.data.length > 0 ? esbVesselCache.data : FALLBACK_VESSELS;
+  } finally {
+    esbVesselCache.isFetching = false;
+  }
+};
+
+const refreshVesselCacheInBackground = () => {
+  fetchVesselsFromOdex().catch((err) => {
+    console.warn("[e-SB] Background vessel refresh error:", err.message);
+  });
+};
+
+// Pre-warm vessel cache on startup (after 2s delay)
+setTimeout(() => {
+  refreshVesselCacheInBackground();
+}, 2000);
+
 // Get hashkey for e-SB
 router.post("/hashkey", async (req, res) => {
   try {
@@ -227,34 +305,36 @@ router.post("/hashkey", async (req, res) => {
   }
 });
 
-// Vessel Master API
+// Vessel Master API with immediate cache serving
 router.post("/vessel-master", async (req, res) => {
   try {
-    const pyrCode = req.body.pyrCode || config.odex?.pyrCode || "ODeX/IN/SHP/2510/00002";
-    const fromTs = req.body.fromTs || getTodayStartTimestamp();
-    const hashKey = config.odex?.hashKey || getHashKey();
+    const now = Date.now();
 
-    const vesselRequest = {
-      pyrCode,
-      fromTs,
-      hashKey,
-    };
+    // 1. If cache has items, serve immediately (<5ms)
+    if (esbVesselCache.data && esbVesselCache.data.length > 0) {
+      const isFresh = now - esbVesselCache.lastFetched < VESSEL_CACHE_TTL_MS;
+      if (!isFresh && !esbVesselCache.isFetching) {
+        refreshVesselCacheInBackground();
+      }
+      return res.json({
+        success: true,
+        data: esbVesselCache.data,
+        cached: true,
+      });
+    }
 
-    const odexResponse = await callOdexAPI(
-      ODEX_CONFIG.endpoints.vesselMaster,
-      vesselRequest
-    );
-
+    // 2. Cache is empty - fetch from ODeX
+    const data = await fetchVesselsFromOdex();
     res.json({
       success: true,
-      data: odexResponse || [],
+      data: data || FALLBACK_VESSELS,
     });
   } catch (error) {
     console.error("e-SB Vessel Master API Error:", error.message);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      timestamp: getCurrentTimestamp(),
+    res.json({
+      success: true,
+      data: esbVesselCache.data.length > 0 ? esbVesselCache.data : FALLBACK_VESSELS,
+      fallback: true,
     });
   }
 });

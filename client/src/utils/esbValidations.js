@@ -8,6 +8,7 @@ export const datePattern = /^\d{2}-\d{2}-\d{4}$/;
 
 // List of Values (LOVs)
 export const SHIPPING_LINE_LOV = [
+  { value: "ARKU", label: "ARKU - ARKAS SHIPPING LINE" },
   { value: "HLCU", label: "HLCU - Hapag-Lloyd" },
   { value: "MSCU", label: "MSCU - Mediterranean Shipping Company (MSC)" },
   { value: "HDMU", label: "HDMU - Hyundai Merchant Marine (HMM)" },
@@ -18,6 +19,15 @@ export const SHIPPING_LINE_LOV = [
   { value: "MAEU", label: "MAEU - Maersk Line" },
   { value: "KMTC", label: "KMTC - Korea Marine Transport (KMTC)" },
   { value: "RCLA", label: "RCLA - Regional Container Lines (RCL)" },
+  { value: "PILU", label: "PILU - Pacific International Lines (PIL)" },
+  { value: "TSLI", label: "TSLI - T.S. Lines" },
+  { value: "WHLU", label: "WHLU - Wan Hai Lines" },
+  { value: "YMLU", label: "YMLU - Yang Ming Marine Transport" },
+  { value: "ZIMU", label: "ZIMU - ZIM Integrated Shipping Services" },
+  { value: "EVRG", label: "EVRG - Evergreen Line" },
+  { value: "BLPL", label: "BLPL - BLPL Singapore" },
+  { value: "SMCU", label: "SMCU - Samudera Shipping Line" },
+  { value: "IALU", label: "IALU - Interasia Lines" },
 ];
 
 export const CONTAINER_STATUS_LOV = [

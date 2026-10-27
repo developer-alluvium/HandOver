@@ -33,23 +33,21 @@ export const AuthProvider = ({ children }) => {
 
       let hasLocalAuth = false;
 
-      // Priority: 1. Cookie (Freshest), 2. LocalStorage
+      // Priority: 1. Cookie, 2. LocalStorage
       if (cookieAuth) {
         try {
-          // Decode URI component because cookie value might be encoded
           const decodedCookie = decodeURIComponent(cookieAuth);
           const parsedCookie = JSON.parse(decodedCookie);
+          const cookieUser = parsedCookie?.userData || parsedCookie?.user;
 
-          if (parsedCookie && parsedCookie.userData) {
-            setUserData(parsedCookie.userData);
+          if (cookieUser) {
+            setUserData(cookieUser);
             setShippers(parsedCookie.shippers || []);
             setIsAuthenticated(true);
             hasLocalAuth = true;
 
-            // Sync to LocalStorage
-            localStorage.setItem("userData", JSON.stringify(parsedCookie.userData));
+            localStorage.setItem("userData", JSON.stringify(cookieUser));
             localStorage.setItem("shippers", JSON.stringify(parsedCookie.shippers || []));
-
             setLoading(false);
           }
         } catch (e) {
@@ -57,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Fallback to LocalStorage if Cookie didn't work
+      // Fallback to LocalStorage
       if (!hasLocalAuth && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -66,9 +64,6 @@ export const AuthProvider = ({ children }) => {
           setShippers(parsedShippers);
           setIsAuthenticated(true);
           hasLocalAuth = true;
-          // Don't set loading false yet, we still want to try to reach server if possible, 
-          // or we can set it false to show UI immediately. 
-          // User wants to avoid login screen, so let's show UI.
           setLoading(false);
         } catch (e) {
           console.error("Error parsing local storage auth data", e);
@@ -80,48 +75,64 @@ export const AuthProvider = ({ children }) => {
       try {
         // 2. Check server session (Source of Truth)
         const meResponse = await authAPI.me();
-        if (meResponse.data) {
+        const meData = meResponse.data?.data || meResponse.data;
+        const resolvedUser = meData?.userData || meData?.user;
+
+        if (resolvedUser) {
           setIsAuthenticated(true);
-          setUserData(meResponse.data.userData);
-          const freshShippers = meResponse.data.shippers || [];
+          setUserData(resolvedUser);
+          const freshShippers = meData.shippers || [];
           setShippers(freshShippers);
 
-          // Refresh Local Storage
-          localStorage.setItem("userData", JSON.stringify(meResponse.data.userData));
+          localStorage.setItem("userData", JSON.stringify(resolvedUser));
           localStorage.setItem("shippers", JSON.stringify(freshShippers));
 
           setLoading(false);
           return;
         }
       } catch (error) {
-        // Not authenticated on server or error
-
-        // If we have local auth, do we trust it? 
-        // If it was a network error (not 401), we might trust it.
-        // If it was 401, our cookie is dead.
-        // User asked to "use localstorage", implying they want to rely on it.
-        // We will Fallback to Auto Login only if we don't have local auth or if we want to repair session.
+        // me() failed - will attempt auto-login
       }
 
       try {
-        // 3. Auto-login (if enabled/needed)
+        // 3. Auto-login if session is not active
         const autoLoginResponse = await authAPI.autoLogin();
-        if (autoLoginResponse.data || autoLoginResponse.status === 200) {
-          const meResponse = await authAPI.me();
-          if (meResponse.data) {
-            setIsAuthenticated(true);
-            setUserData(meResponse.data.userData);
-            setShippers(meResponse.data.shippers || []);
-            // Refresh Local Storage
-            localStorage.setItem("userData", JSON.stringify(meResponse.data.userData));
-            localStorage.setItem("shippers", JSON.stringify(meResponse.data.shippers || []));
+        if (autoLoginResponse.data) {
+          const autoData = autoLoginResponse.data.data || autoLoginResponse.data;
+          const autoUser = autoData?.userData || autoData?.user || autoLoginResponse.data.user || autoLoginResponse.data.userData;
 
+          if (autoLoginResponse.data.token) {
+            localStorage.setItem("authToken", autoLoginResponse.data.token);
+          }
+
+          if (autoUser) {
+            setIsAuthenticated(true);
+            setUserData(autoUser);
+            const freshShippers = autoData?.shippers || autoLoginResponse.data.shippers || [];
+            setShippers(freshShippers);
+
+            localStorage.setItem("userData", JSON.stringify(autoUser));
+            localStorage.setItem("shippers", JSON.stringify(freshShippers));
+            setLoading(false);
+            return;
+          }
+
+          // Try verifying session one more time with newly set token/cookie
+          const retryMe = await authAPI.me();
+          const retryData = retryMe.data?.data || retryMe.data;
+          const retryUser = retryData?.userData || retryData?.user;
+          if (retryUser) {
+            setIsAuthenticated(true);
+            setUserData(retryUser);
+            setShippers(retryData.shippers || []);
+            localStorage.setItem("userData", JSON.stringify(retryUser));
+            localStorage.setItem("shippers", JSON.stringify(retryData.shippers || []));
+            setLoading(false);
+            return;
           }
         }
       } catch (error) {
-        console.error("[AUTH] Auto-login failed:", error);
-        // If we had local auth, we remain "authenticated" in UI 
-        // but API calls might fail if cookie is missing.
+        console.error("[AUTH] Auto-login failed:", error.message || error);
         if (!hasLocalAuth) {
           setIsAuthenticated(false);
         }
@@ -133,15 +144,19 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = (userData, shippersData) => {
-    setIsAuthenticated(true);
-    setUserData(userData);
-    const safeShippers = shippersData || [];
-    setShippers(safeShippers);
+  const login = (userPayload, shippersData, token) => {
+    const user = userPayload?.user || userPayload?.userData || userPayload;
+    const shippersList = shippersData || userPayload?.shippers || [];
 
-    // Save to Local Storage
-    localStorage.setItem("userData", JSON.stringify(userData));
-    localStorage.setItem("shippers", JSON.stringify(safeShippers));
+    setIsAuthenticated(true);
+    setUserData(user);
+    setShippers(shippersList);
+
+    if (token) {
+      localStorage.setItem("authToken", token);
+    }
+    localStorage.setItem("userData", JSON.stringify(user));
+    localStorage.setItem("shippers", JSON.stringify(shippersList));
   };
 
   const logout = async () => {
@@ -153,7 +168,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setUserData(null);
       setShippers([]);
-      // Clear Local Storage
+      localStorage.removeItem("authToken");
       localStorage.removeItem("userData");
       localStorage.removeItem("shippers");
     }

@@ -6,7 +6,7 @@ const ESB_BASE_URL = "esb";
 export const esbAPI = {
   // Vessel Master API
   getVesselMaster: (requestData) =>
-    api.post(`${ESB_BASE_URL}/vessel-master`, requestData),
+    api.post(`${ESB_BASE_URL}/vessel-master`, requestData, { timeout: 75000 }),
 
   // Attachment Master API
   getAttachmentMaster: (requestData) =>

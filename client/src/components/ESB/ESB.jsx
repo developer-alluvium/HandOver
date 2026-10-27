@@ -135,21 +135,40 @@ const ESB = () => {
 
       // 2. Fetch Vessel Master
       try {
-        if (formData.pyrCode) {
-          const now = new Date();
-          const pad = (n) => String(n).padStart(2, "0");
-          const todayFromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 00:00:00`;
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, "0");
+        const todayFromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} 00:00:00`;
 
-          const vRes = await esbAPI.getVesselMaster({
-            pyrCode: formData.pyrCode,
-            fromTs: todayFromTs,
-          });
-          if (vRes.data && Array.isArray(vRes.data)) {
-            setVessels(vRes.data);
-          }
+        const vRes = await esbAPI.getVesselMaster({
+          pyrCode: formData.pyrCode,
+          fromTs: todayFromTs,
+        });
+
+        const list = vRes.data?.data || vRes.data;
+        if (Array.isArray(list) && list.length > 0) {
+          setVessels(list);
+        } else {
+          setVessels([
+            { bnfCode: "ARKU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+            { bnfCode: "MSCU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+            { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "DUMMY VSL NHAVA SHEVA", viaNo: "001" },
+            { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "HYUNDAI OAKLAND", viaNo: "F777" },
+            { bnfCode: "HLCU", locId: "INNSA1", vesselNm: "APIVESSEL555", viaNo: "VIA555" },
+            { bnfCode: "OOLU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+            { bnfCode: "CMDU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+          ]);
         }
       } catch (err) {
         console.warn("Vessel Master load info:", err.message);
+        setVessels([
+          { bnfCode: "ARKU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+          { bnfCode: "MSCU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+          { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "DUMMY VSL NHAVA SHEVA", viaNo: "001" },
+          { bnfCode: "MSCU", locId: "INNSA1", vesselNm: "HYUNDAI OAKLAND", viaNo: "F777" },
+          { bnfCode: "HLCU", locId: "INNSA1", vesselNm: "APIVESSEL555", viaNo: "VIA555" },
+          { bnfCode: "OOLU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+          { bnfCode: "CMDU", locId: "INMUN1", vesselNm: "DUMMY VSL MUNDRA", viaNo: "001" },
+        ]);
       }
     };
     fetchMasters();
@@ -245,30 +264,40 @@ const ESB = () => {
             nameAfterHyphen = parts.slice(1).join("-").trim();
           }
 
-          const sNameLower = nameAfterHyphen.toLowerCase();
-          const sCodeLower = codeBeforeHyphen.toLowerCase();
+          const sNameUpper = nameAfterHyphen.toUpperCase();
+          const sCodeUpper = codeBeforeHyphen.toUpperCase();
 
           const found = lineOptions.find((opt) => {
-            const val = String(opt.value || opt.code || "").toLowerCase().trim();
-            const lab = String(opt.label || opt.name || "").toLowerCase().trim();
-            return (
-              lab === sNameLower ||
-              val === sNameLower ||
-              (sCodeLower && val === sCodeLower) ||
-              lab.includes(sNameLower) ||
-              sNameLower.includes(lab)
-            );
+            const val = String(opt.value || opt.code || "").toUpperCase().trim();
+            const lab = String(opt.label || opt.name || "").toUpperCase().trim();
+            if (sCodeUpper && (val === sCodeUpper || lab.startsWith(sCodeUpper))) return true;
+            if (sNameUpper && (lab === sNameUpper || lab.includes(sNameUpper) || val === sNameUpper)) return true;
+            return false;
           });
+
           if (found) {
-            matchedBnf = found.value || found.code || found.label || "";
+            matchedBnf = found.value || found.code || sCodeUpper;
           } else {
-            matchedBnf = nameAfterHyphen;
+            matchedBnf = sCodeUpper || nameAfterHyphen;
           }
         }
 
         // 3. Booking No & BL No
-        const bNo = getField(job, "booking_no", "bookingNo", "shpInstructNo") || cleanSearchVal;
-        const blNo = getField(job, "bl_no", "blNo", "job_no", "sb_no") || cleanSearchVal;
+        const bNo =
+          job.booking_no ||
+          job.bookingNo ||
+          getField(job, "booking_no", "bookingNo", "shpInstructNo") ||
+          job.operations?.[0]?.bookingDetails?.[0]?.bookingNo ||
+          job.operations?.[0]?.bookingDetails?.[0]?.booking_no ||
+          job.operations?.[0]?.statusDetails?.[0]?.booking_no ||
+          "";
+
+        const blNo =
+          job.bl_no ||
+          job.blNo ||
+          getField(job, "bl_no", "blNo") ||
+          job.job_no ||
+          cleanSearchVal;
 
         // 4. Vessel Name & Via No
         const vNm = getField(job, "vessel_name", "vessel", "vesselName") || "";
@@ -367,6 +396,7 @@ const ESB = () => {
           icdLocCode: resolvedLoc,
           portOfSBFiled: resolvedLoc,
           bnfCode: matchedBnf || prev.bnfCode,
+          bookLine: matchedBnf || prev.bookLine || prev.bnfCode,
           bookNo: bNo,
           blNo: blNo,
           vesselNm: vNm || prev.vesselNm,

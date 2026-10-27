@@ -6,7 +6,7 @@ const FORM13_BASE_URL = "form13";
 export const form13API = {
   // Vessel Master API - Calls actual ODeX API
   getVesselMaster: (requestData) =>
-    api.post(`${FORM13_BASE_URL}/vessel-master`, requestData),
+    api.post(`${FORM13_BASE_URL}/vessel-master`, requestData, { timeout: 75000 }),
 
   // POD Master API - Calls actual ODeX API
   getPODMaster: (requestData) =>

@@ -302,28 +302,37 @@ export const getAuthorization = async (req, res) => {
         { expiresIn: config.jwt.expiration }
       );
 
+      const isHttps = Boolean(req.secure || req.headers["x-forwarded-proto"] === "https");
+
       res.cookie("odex_auth", token, {
         httpOnly: true,
-        secure: config.isProduction, // True for HTTPS in production, false for HTTP in dev
-        sameSite: config.isProduction ? "None" : "Lax", // None for HTTPS cross-site support, Lax for HTTP localhost
+        secure: isHttps,
+        sameSite: isHttps ? "None" : "Lax",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       });
 
+      const userPayload = {
+        id: user._id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email || "",
+        role: user.role,
+        pyrCode: pyrCode,
+        pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+      };
+
       res.json({
         success: true,
+        token,
+        user: userPayload,
+        userData: userPayload,
         data: {
-          user: {
-            id: user._id,
-            username: user.username,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            email: user.email || "",
-            role: user.role,
-            pyrCode: pyrCode,
-            pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim()
-          },
-          shippers: shippers
+          user: userPayload,
+          userData: userPayload,
+          shippers: shippers,
         },
+        shippers: shippers,
         logId: result.logId,
       });
     } else {
@@ -349,7 +358,13 @@ export const logout = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
   try {
-    const token = req.cookies.odex_auth;
+    const authHeader = req.headers.authorization;
+    const bearerToken =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7).trim()
+        : null;
+    const token = req.cookies.odex_auth || bearerToken;
+
     if (!token) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
@@ -358,26 +373,32 @@ export const getCurrentUser = async (req, res) => {
 
     // If environment configurations changed (e.g. PILOT_PYRCODE updated in env),
     // force clean re-authentication so frontend syncs with new credentials.
-    if (config.odex.pyrCode && decoded.pyrCode !== config.odex.pyrCode) {
+    if (config.odex.pyrCode && decoded.pyrCode && decoded.pyrCode !== config.odex.pyrCode) {
       res.clearCookie("odex_auth");
       return res.status(401).json({ success: false, message: "Session stale due to configuration change" });
     }
 
+    const userInfo = {
+      id: decoded.id,
+      username: decoded.username,
+      first_name: decoded.first_name,
+      last_name: decoded.last_name,
+      email: decoded.email || "",
+      role: decoded.role,
+      pyrCode: decoded.pyrCode,
+      pyrName: decoded.pyrName,
+    };
+
     res.json({
       success: true,
+      user: userInfo,
+      userData: userInfo,
+      shippers: decoded.shippers || [],
       data: {
-        userData: {
-          id: decoded.id,
-          username: decoded.username,
-          first_name: decoded.first_name,
-          last_name: decoded.last_name,
-          email: decoded.email || "",
-          role: decoded.role,
-          pyrCode: decoded.pyrCode,
-          pyrName: decoded.pyrName
-        },
-        shippers: decoded.shippers
-      }
+        user: userInfo,
+        userData: userInfo,
+        shippers: decoded.shippers || [],
+      },
     });
   } catch (error) {
     res.status(401).json({ success: false, message: "Invalid session" });
@@ -399,7 +420,7 @@ export const autoLogin = async (req, res) => {
     }
 
     // Find the first user in the DB to associate with auto-login
-    const user = await UserModel.findOne({ username: "arpit_singhal" }) || await UserModel.findOne();
+    const user = (await UserModel.findOne({ username: "arpit_singhal" })) || (await UserModel.findOne());
     if (!user) {
       return res.status(500).json({
         success: false,
@@ -409,7 +430,7 @@ export const autoLogin = async (req, res) => {
 
     // Generate current timestamp in YYYY-MM-DD HH:mm:ss format
     const now = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
+    const pad = (n) => n.toString().padStart(2, "0");
     const fromTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
     const requestBody = {
@@ -432,7 +453,7 @@ export const autoLogin = async (req, res) => {
 
     if (result.success) {
       const shippers = result.data || [];
-      
+
       // Create JWT token containing user details and shippers list
       const token = jwt.sign(
         {
@@ -444,22 +465,43 @@ export const autoLogin = async (req, res) => {
           role: user.role,
           pyrCode: pyrCode,
           pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-          shippers: shippers
+          shippers: shippers,
         },
         config.jwt.secret,
         { expiresIn: config.jwt.expiration }
       );
 
+      const isHttps = Boolean(req.secure || req.headers["x-forwarded-proto"] === "https");
+
       res.cookie("odex_auth", token, {
         httpOnly: true,
-        secure: config.isProduction,
-        sameSite: config.isProduction ? "None" : "Lax",
+        secure: isHttps,
+        sameSite: isHttps ? "None" : "Lax",
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       });
 
+      const userPayload = {
+        id: user._id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email || "",
+        role: user.role,
+        pyrCode: pyrCode,
+        pyrName: user.company || `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+      };
+
       res.json({
         success: true,
-        data: shippers,
+        token,
+        user: userPayload,
+        userData: userPayload,
+        data: {
+          user: userPayload,
+          userData: userPayload,
+          shippers: shippers,
+        },
+        shippers: shippers,
         logId: result.logId,
         message: "Auto-login successful",
       });

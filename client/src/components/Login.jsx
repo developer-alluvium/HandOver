@@ -43,9 +43,13 @@ const Login = () => {
 
         const response = await authAPI.login(payload);
 
-        if (response.data && response.data.user) {
-          const { user, shippers } = response.data;
-          login(user, shippers);
+        const resData = response.data?.data || response.data;
+        const user = resData?.user || resData?.userData || response.data?.user || response.data?.userData;
+        const shippers = resData?.shippers || response.data?.shippers || [];
+        const token = response.data?.token || resData?.token;
+
+        if (user) {
+          login(user, shippers, token);
           enqueueSnackbar("Login successful!", { variant: "success" });
           navigate("/dashboard");
         } else {

@@ -8,9 +8,32 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: 60000,
   withCredentials: true,
 });
+
+// Attach Authorization Bearer token from localStorage to support cross-origin HTTP without relying solely on cookies
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Auto-persist token from auth responses if returned
+api.interceptors.response.use(
+  (response) => {
+    if (response.data && response.data.token) {
+      localStorage.setItem("authToken", response.data.token);
+    }
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
 
 export const authAPI = {
   login: (credentials) => api.post("auth/login", credentials),
